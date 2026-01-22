@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   Calendar,
@@ -27,7 +27,7 @@ interface FormData {
   notes: string
 }
 
-export default function BookingPage() {
+function BookingPageContent() {
   const searchParams = useSearchParams()
   const selectedServiceId = searchParams.get('service') || ''
 
@@ -544,5 +544,13 @@ export default function BookingPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-xl">Loading...</div></div>}>
+      <BookingPageContent />
+    </Suspense>
   )
 }

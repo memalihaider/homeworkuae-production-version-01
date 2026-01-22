@@ -443,7 +443,7 @@ Please let me know if you have any questions!
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-slate-50 to-white">
       <div className="w-full px-4 lg:px-8 py-6">
         {/* Header */}
         <div className="mb-8">

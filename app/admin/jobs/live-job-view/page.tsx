@@ -201,7 +201,7 @@ function LiveJobViewContent() {
                 </div>
                 <div className="h-4 bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
                   <div 
-                    className="h-full bg-gradient-to-r from-indigo-600 to-blue-500 rounded-full transition-all duration-1000 relative"
+                    className="h-full bg-linear-to-r from-indigo-600 to-blue-500 rounded-full transition-all duration-1000 relative"
                     style={{ width: `${selectedJob.progress}%` }}
                   >
                     <div className="absolute inset-0 bg-white/20 animate-pulse" />

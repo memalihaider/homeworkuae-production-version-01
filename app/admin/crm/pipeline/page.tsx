@@ -198,7 +198,7 @@ export default function PipelineView() {
       {/* Compact Kanban Board with Drag & Drop */}
       <div className="flex gap-3 overflow-x-auto pb-6 snap-x scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {leadsByStage.map((stageData) => (
-          <div key={stageData.stage} className="flex-shrink-0 w-72 snap-start">
+          <div key={stageData.stage} className="shrink-0 w-72 snap-start">
             {/* Stage Header */}
             <div className="mb-3 flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ export default function PipelineView() {
                   style={{ cursor: draggedLead?.id === lead.id ? 'grabbing' : 'grab' }}
                 >
                   <div className="flex items-start gap-2">
-                    <GripVertical className="h-3.5 w-3.5 text-gray-300 flex-shrink-0 mt-0.5" />
+                    <GripVertical className="h-3.5 w-3.5 text-gray-300 shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-gray-900 text-xs group-hover:text-blue-600 truncate">
                         {lead.name.split(' ')[0]} {lead.name.split(' ')[1]?.charAt(0)}.
@@ -282,7 +282,7 @@ export default function PipelineView() {
       {showDetails && selectedLead && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white border border-gray-300 rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-linear-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center border border-blue-300">
                   <Target className="h-5 w-5 text-blue-700" />
@@ -385,7 +385,7 @@ export default function PipelineView() {
       {showNewForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white border border-gray-300 rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-linear-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center border border-blue-300">
                   <Plus className="h-5 w-5 text-blue-700" />

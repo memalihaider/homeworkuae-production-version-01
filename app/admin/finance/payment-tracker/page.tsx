@@ -293,7 +293,7 @@ export default function PaymentTrackerPage() {
         <div className="lg:col-span-7 space-y-6">
           {/* Payment Detail Card */}
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-transparent">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-linear-to-r from-green-50 to-transparent">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-100 rounded-xl">
                   <Wallet className="w-6 h-6 text-green-600" />

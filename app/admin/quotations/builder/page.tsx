@@ -5,20 +5,20 @@ import {
   Plus, Trash2, Search, Eye, Download, Save, 
   FileText, DollarSign, Calendar, User, Building2, Mail, Phone, 
   MapPin, Percent, Tag, ShoppingCart, Sparkles, Settings,
-  FileCheck, AlertCircle, X, Send
+  FileCheck, AlertCircle, X, Send, Upload, Paperclip
 } from 'lucide-react'
 
 export default function QuotationBuilder() {
   const [builderMode, setBuilderMode] = useState<'quotation' | 'contract'>('quotation')
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
-
-  // Mock data for clients
-  const mockClients = [
+  const [showNewClientModal, setShowNewClientModal] = useState(false)
+  const [newClient, setNewClient] = useState({ name: '', company: '', email: '', phone: '', address: '' })
+  const [clients, setClients] = useState([
     { id: 1, name: 'John Doe', company: 'Tech Solutions Inc.', email: 'john@techsolutions.com', phone: '+1 234 567 890', address: '123 Tech Lane, Silicon Valley, CA' },
     { id: 2, name: 'Jane Smith', company: 'Creative Agency', email: 'jane@creativeagency.com', phone: '+1 987 654 321', address: '456 Design St, New York, NY' },
     { id: 3, name: 'Robert Brown', company: 'Global Logistics', email: 'robert@globallogistics.com', phone: '+1 555 123 456', address: '789 Port Rd, Miami, FL' },
-  ]
+  ])
 
   // Mock data for services
   const availableServices = [
@@ -45,6 +45,7 @@ export default function QuotationBuilder() {
     depositPercentage: 0, // Added deposit
     validUntil: '',
     paymentTerms: '30',
+    paymentDocuments: [] as any[], // Added payment documents
     lineItems: [] as any[],
     subtotal: 0,
     taxRate: 5,
@@ -82,7 +83,7 @@ export default function QuotationBuilder() {
   })
 
   const handleClientSelect = (clientId: string) => {
-    const client = mockClients.find(c => c.id === parseInt(clientId))
+    const client = clients.find(c => c.id === parseInt(clientId))
     if (client) {
       if (builderMode === 'quotation') {
         setQuotationData(prev => ({
@@ -107,6 +108,51 @@ export default function QuotationBuilder() {
         }))
       }
     }
+  }
+
+  const handleAddNewClient = () => {
+    if (newClient.name && newClient.company && newClient.email) {
+      const client = {
+        id: Math.max(...clients.map(c => c.id), 0) + 1,
+        ...newClient
+      }
+      setClients([...clients, client])
+      setShowNewClientModal(false)
+      setNewClient({ name: '', company: '', email: '', phone: '', address: '' })
+      // Auto-select the new client
+      setTimeout(() => {
+        handleClientSelect(client.id.toString())
+      }, 0)
+    }
+  }
+
+  const handleAddPaymentDocument = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          setQuotationData(prev => ({
+            ...prev,
+            paymentDocuments: [...prev.paymentDocuments, {
+              id: Date.now(),
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              url: event.target?.result as string
+            }]
+          }))
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  const handleRemovePaymentDocument = (id: number) => {
+    setQuotationData(prev => ({
+      ...prev,
+      paymentDocuments: prev.paymentDocuments.filter(doc => doc.id !== id)
+    }))
   }
 
   const handleServiceSelect = (itemId: number, serviceId: string) => {
@@ -199,13 +245,22 @@ export default function QuotationBuilder() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Select Client</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Select Client</label>
+              <button
+                onClick={() => setShowNewClientModal(true)}
+                className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Add Client
+              </button>
+            </div>
             <select
               onChange={(e) => handleClientSelect(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-slate-900"
             >
               <option value="">Choose a client...</option>
-              {mockClients.map(client => (
+              {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name} ({client.company})</option>
               ))}
             </select>
@@ -477,7 +532,68 @@ export default function QuotationBuilder() {
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Payment Documents */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <Upload className="h-5 w-5 text-emerald-500" />
+            Payment Documents
+          </h2>
+          <label className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all text-xs font-bold cursor-pointer">
+            <Upload className="h-3.5 w-3.5" />
+            Upload Document
+            <input
+              type="file"
+              onChange={handleAddPaymentDocument}
+              multiple
+              className="hidden"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
+            />
+          </label>
+        </div>
+        
+        {quotationData.paymentDocuments.length === 0 ? (
+          <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <Paperclip className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm">No documents uploaded yet</p>
+            <p className="text-slate-400 text-xs mt-1">Upload payment methods, bank details, or terms documents</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {quotationData.paymentDocuments.map((doc) => (
+              <div key={doc.id} className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-100 hover:border-emerald-200 transition-all">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="p-2 bg-white rounded-lg">
+                    <Paperclip className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">{doc.name}</p>
+                    <p className="text-xs text-slate-500">{(doc.size / 1024).toFixed(2)} KB</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemovePaymentDocument(doc.id)}
+                  className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">Payment Information</p>
+              <p className="text-xs text-blue-700 mt-1">
+                Upload supporting documents such as payment terms, invoicing details, bank account information, or payment method documentation.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="flex gap-4 justify-end pt-4">
         <button className="px-8 py-3 text-slate-600 font-semibold hover:text-slate-900 transition-colors">
           Discard
@@ -512,13 +628,22 @@ export default function QuotationBuilder() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Select Client for Contract</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Select Client for Contract</label>
+              <button
+                onClick={() => setShowNewClientModal(true)}
+                className="text-xs text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Add Client
+              </button>
+            </div>
             <select
               onChange={(e) => handleClientSelect(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-purple-500 transition-all text-slate-900"
             >
               <option value="">Choose a client...</option>
-              {mockClients.map(client => (
+              {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name} ({client.company})</option>
               ))}
             </select>
@@ -812,6 +937,97 @@ export default function QuotationBuilder() {
         <div className="bg-linear-to-b from-white/50 to-transparent">
           {builderMode === 'quotation' ? <QuotationBuilderUI /> : <ContractBuilderUI />}
         </div>
+
+        {/* New Client Modal */}
+        {showNewClientModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 shadow-2xl w-full max-w-md">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-slate-900">Add New Client</h3>
+                <button
+                  onClick={() => setShowNewClientModal(false)}
+                  className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Client Name *</label>
+                  <input
+                    type="text"
+                    value={newClient.name}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Company Name *</label>
+                  <input
+                    type="text"
+                    value={newClient.company}
+                    onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Tech Solutions Inc."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Email *</label>
+                  <input
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="+1 234 567 890"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Address</label>
+                  <textarea
+                    value={newClient.address}
+                    onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                    rows={2}
+                    placeholder="123 Main St, City, State, ZIP"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowNewClientModal(false)}
+                  className="px-4 py-2 text-slate-600 font-semibold hover:text-slate-900 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddNewClient}
+                  disabled={!newClient.name || !newClient.company || !newClient.email}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Client
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

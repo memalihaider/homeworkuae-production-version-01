@@ -417,7 +417,7 @@ export default function PreJobChecklist() {
 
       {/* AI Insights Panel */}
       {showAIPanel && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 mb-6">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
               <Bot className="w-5 h-5" />

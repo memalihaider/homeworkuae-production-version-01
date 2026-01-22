@@ -286,7 +286,7 @@ export default function EmployeeFeedbackAndComplaints() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+        <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Star className="w-4 h-4 text-blue-600" />
@@ -297,7 +297,7 @@ export default function EmployeeFeedbackAndComplaints() {
           <div className="text-xs text-blue-600 mt-2">{feedbacks.filter(f => f.status === 'Active').length} Active</div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6">
+        <div className="bg-linear-to-br from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-red-100 rounded-lg">
               <AlertCircle className="w-4 h-4 text-red-600" />
@@ -308,7 +308,7 @@ export default function EmployeeFeedbackAndComplaints() {
           <div className="text-xs text-red-600 mt-2">{complaints.filter(c => c.status === 'Open').length} Open</div>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6">
+        <div className="bg-linear-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Clock className="w-4 h-4 text-yellow-600" />
@@ -319,7 +319,7 @@ export default function EmployeeFeedbackAndComplaints() {
           <div className="text-xs text-yellow-600 mt-2">Complaints</div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+        <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle className="w-4 h-4 text-green-600" />
@@ -411,7 +411,7 @@ export default function EmployeeFeedbackAndComplaints() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
                         {feedback.employeeName.charAt(0)}
                       </div>
                       <div>
@@ -504,7 +504,7 @@ export default function EmployeeFeedbackAndComplaints() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded-full bg-linear-to-br from-red-400 to-pink-500 flex items-center justify-center text-white font-bold">
                         {complaint.employeeName.charAt(0)}
                       </div>
                       <div>

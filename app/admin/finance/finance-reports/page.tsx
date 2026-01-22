@@ -692,7 +692,7 @@ export default function FinanceReportsPage() {
             </div>
 
             <div className="space-y-8">
-              <div className="bg-gradient-to-br from-green-600 to-blue-600 rounded-[32px] p-8 text-white shadow-2xl shadow-green-600/20">
+              <div className="bg-linear-to-br from-green-600 to-blue-600 rounded-[32px] p-8 text-white shadow-2xl shadow-green-600/20">
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
                   <ShieldCheck className="h-6 w-6" />
                   Recovery Strategy

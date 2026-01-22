@@ -1,276 +1,438 @@
+"use client"
+
 import { CheckCircle2, ArrowRight, Star, Shield, Clock, Users, Award, Leaf, Sparkles, ShieldCheck, Zap } from 'lucide-react'
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
+import { useRef, useEffect } from 'react'
 
 export default function Home() {
+  const ref = useRef(null)
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+
+  // Smooth mouse movement
+  const springX = useSpring(mouseX, { stiffness: 50, damping: 20 })
+  const springY = useSpring(mouseY, { stiffness: 50, damping: 20 })
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX)
+      mouseY.set(e.clientY)
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [mouseX, mouseY])
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  })
+
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
+  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "200%"])
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col overflow-hidden">
+      {/* Interactive Cursor Spotlight */}
+      <motion.div
+        className="fixed inset-0 z-30 pointer-events-none opacity-40"
+        style={{
+          background: useTransform(
+            [springX, springY],
+            ([x, y]) => `radial-gradient(600px circle at ${x}px ${y}px, rgba(236, 72, 153, 0.1), transparent 80%)`
+          ),
+        }}
+      />
+
       {/* Hero Section */}
-      <section className="relative min-h-[80vh] flex items-center pt-20 pb-32 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-linear-to-r from-white via-white/90 to-transparent z-10"></div>
+      <section ref={ref} className="relative min-h-[90vh] flex items-center pt-20 pb-32 overflow-hidden bg-white">
+        <motion.div 
+          className="absolute inset-0 z-0"
+          style={{ y: backgroundY }}
+        >
+          <div className="absolute inset-0 bg-linear-to-r from-white via-white/50 to-transparent z-10 font-sans"></div>
           <img 
-            src="https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1600" 
-            alt="Professional Cleaning" 
-            className="w-full h-full object-cover object-center"
+            src="https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80" 
+            alt="Premium Home Interior" 
+            className="w-full h-full object-cover object-center scale-110"
           />
-        </div>
+        </motion.div>
         
         <div className="container mx-auto px-4 relative z-20">
-          <div className="max-w-2xl space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pink-50 text-primary text-sm font-bold border border-pink-100 animate-fade-in">
-              <Sparkles className="h-4 w-4" />
-              <span>#1 RATED CLEANING SERVICE IN UAE</span>
-            </div>
-            <h1 className="text-5xl lg:text-7xl font-black tracking-tight text-slate-900 leading-[1.1]">
-              UAE's Most <span className="text-primary">Trusted</span> & Professional Cleaners
-            </h1>
-            <p className="text-xl text-slate-600 leading-relaxed max-w-xl">
-              Experience pristine living and working spaces with our premium hygiene solutions. We bring professional standards to every corner of your home.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a
-                href="/book-service"
-                className="inline-flex h-14 items-center justify-center rounded-full bg-primary text-white px-10 text-lg font-bold shadow-xl shadow-primary/25 transition-all hover:bg-pink-700 hover:scale-105 active:scale-95"
+          <motion.div 
+            className="max-w-3xl space-y-10"
+            style={{ y: textY }}
+          >
+            <motion.div 
+              className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white text-primary text-sm font-black border border-pink-100 shadow-xl shadow-pink-100/50"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <Sparkles className="h-4 w-4 text-pink-500 animate-pulse" />
+              <span className="uppercase tracking-widest">Premium Hygiene Solutions in UAE</span>
+            </motion.div>
+
+            <motion.h1 
+              className="text-6xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              CLEANING <br />
+              <span className="text-primary relative">
+                EXCELLENCE
+                <motion.span 
+                  className="absolute -bottom-2 left-0 h-2 bg-pink-100 -z-10"
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 1, delay: 1 }}
+                />
+              </span>
+              <br />
+              FOR YOUR HOME
+            </motion.h1>
+
+            <motion.p 
+              className="text-xl text-slate-600 max-w-xl leading-relaxed font-medium"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.5 }}
+            >
+              Experience the UAE's most trusted hygiene partner. We deliver meticulously detailed cleaning services tailored for modern living.
+            </motion.p>
+            
+            <motion.div 
+              className="flex flex-wrap gap-6 pt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+            >
+              <motion.a 
+                href="/quote" 
+                className="group relative inline-flex items-center justify-center px-10 py-5 bg-slate-900 text-white font-black rounded-2xl overflow-hidden active:scale-95 transition-transform"
+                whileHover={{ scale: 1.02 }}
               >
-                BOOK ONLINE NOW
-              </a>
-              <a
-                href="/services"
-                className="inline-flex h-14 items-center justify-center rounded-full bg-white border-2 border-slate-200 text-slate-900 px-10 text-lg font-bold transition-all hover:border-primary hover:text-primary"
+                <motion.div className="absolute inset-0 bg-primary translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="relative z-10 uppercase tracking-widest flex items-center gap-3">
+                  Get a Free Quote <ArrowRight className="h-5 w-5" />
+                </span>
+              </motion.a>
+              <motion.a 
+                href="/services" 
+                className="inline-flex items-center justify-center px-10 py-5 bg-white text-slate-900 font-black rounded-2xl border-2 border-slate-100 shadow-sm hover:border-primary transition-all active:scale-95"
+                whileHover={{ y: -5 }}
               >
-                OUR SERVICES
-              </a>
-            </div>
-            <div className="flex items-center gap-6 pt-4">
-              <div className="flex -space-x-3">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
-                    <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" />
-                  </div>
-                ))}
-              </div>
-              <div className="text-sm">
-                <div className="flex items-center gap-1 text-yellow-400">
-                  {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}
-                </div>
-                <p className="text-slate-500 font-medium">Trusted by 10,000+ Happy Clients</p>
-              </div>
-            </div>
-          </div>
+                <span className="uppercase tracking-widest">Our Services</span>
+              </motion.a>
+            </motion.div>
+          </motion.div>
         </div>
+
+        {/* Floating background elements */}
+        <motion.div 
+          className="absolute right-[10%] top-[20%] w-64 h-64 bg-primary/5 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, -30, 0]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-white border-y border-slate-100">
+      <section className="py-16 bg-white border-y border-slate-100/50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
             {[
-              { label: "Happy Clients", value: "10k+", icon: Users },
-              { label: "Cleanings Done", value: "25k+", icon: Sparkles },
-              { label: "Expert Staff", value: "150+", icon: ShieldCheck },
-              { label: "Service Areas", value: "7+", icon: Award },
+              { label: "Happy Clients Across UAE", value: "12,000+", icon: Users },
+              { label: "Hygiene Sessions Completed", value: "35,000+", icon: Sparkles },
+              { label: "Certified Expert Staff", value: "200+", icon: ShieldCheck },
+              { label: "Emirates Covered", value: "7", icon: Award },
             ].map((stat, i) => (
-              <div key={i} className="flex items-center gap-4 justify-center md:justify-start">
-                <div className="h-12 w-12 rounded-2xl bg-pink-50 flex items-center justify-center text-primary">
-                  <stat.icon className="h-6 w-6" />
+              <motion.div 
+                key={i} 
+                className="flex items-center gap-6 justify-center md:justify-start group"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <div className="h-16 w-16 rounded-2xl bg-slate-50 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-sm border border-slate-100 group-hover:rotate-12">
+                  <stat.icon className="h-8 w-8" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-slate-900">{stat.value}</div>
-                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{stat.label}</div>
+                  <div className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Vision Mission Values */}
-      <section className="py-24 bg-slate-50">
+      <section className="py-32 bg-slate-50/50 relative">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-4">Our Foundation</h2>
-            <h3 className="text-4xl font-black text-slate-900 mb-6">Excellence in Every Detail</h3>
-            <p className="text-slate-600 text-lg">
-              We are committed to providing reliable, flexible, and consistent hygiene solutions to our internal and external stakeholders.
+          <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+            <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em]">Our Core</h2>
+            <h3 className="text-5xl font-black text-slate-900 tracking-tight">The Foundation of Trust</h3>
+            <p className="text-slate-500 text-lg font-medium leading-relaxed">
+              We operate with a philosophy of uncompromising quality and transparency, setting new benchmarks for the cleaning industry in the UAE.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="group p-10 bg-white rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="h-14 w-14 rounded-2xl bg-pink-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-colors">
-                <Zap className="h-7 w-7" />
+          <div className="grid md:grid-cols-3 gap-8 items-stretch">
+            <motion.div 
+              className="group p-12 bg-white rounded-[3rem] shadow-xl shadow-slate-200/50 border border-slate-100 hover:border-primary/20 transition-all duration-500 flex flex-col"
+              whileHover={{ y: -10 }}
+            >
+              <div className="h-20 w-20 rounded-3xl bg-pink-50 flex items-center justify-center text-primary mb-10 group-hover:scale-110 transition-transform shadow-inner">
+                <Zap className="h-10 w-10" />
               </div>
-              <h3 className="text-2xl font-black mb-4 text-slate-900">Our Vision</h3>
-              <p className="text-slate-600 leading-relaxed">
-                To be the first choice to our employees, suppliers and customers in the region we operate, setting the gold standard for hygiene.
+              <h3 className="text-3xl font-black mb-6 text-slate-900 leading-tight">Our Vision</h3>
+              <p className="text-slate-500 leading-relaxed font-medium">
+                To be the undisputed leader in hygiene solutions, empowering residents and businesses with healthy, sparkling environments.
               </p>
-            </div>
-            <div className="group p-10 bg-white rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="h-14 w-14 rounded-2xl bg-pink-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-colors">
-                <Shield className="h-7 w-7" />
+            </motion.div>
+            
+            <motion.div 
+              className="group p-12 bg-slate-900 rounded-[3rem] shadow-2xl shadow-slate-900/20 border border-slate-800 hover:bg-slate-800 transition-all duration-500 flex flex-col text-white"
+              whileHover={{ y: -10 }}
+            >
+              <div className="h-20 w-20 rounded-3xl bg-primary flex items-center justify-center text-white mb-10 group-hover:scale-110 transition-transform shadow-lg shadow-primary/25">
+                <Shield className="h-10 w-10" />
               </div>
-              <h3 className="text-2xl font-black mb-4 text-slate-900">Our Mission</h3>
-              <p className="text-slate-600 leading-relaxed">
-                To provide reliable, flexible and consistent solution to our internal and external stakeholders in our hygiene business.
+              <h3 className="text-3xl font-black mb-6 leading-tight">Our Mission</h3>
+              <p className="text-slate-400 leading-relaxed font-medium">
+                To deliver consistent, flexible, and professional cleaning experiences through trained experts and eco-friendly practices.
               </p>
-            </div>
-            <div className="group p-10 bg-white rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="h-14 w-14 rounded-2xl bg-pink-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-colors">
-                <Award className="h-7 w-7" />
+            </motion.div>
+
+            <motion.div 
+              className="group p-12 bg-white rounded-[3rem] shadow-xl shadow-slate-200/50 border border-slate-100 hover:border-primary/20 transition-all duration-500 flex flex-col"
+              whileHover={{ y: -10 }}
+            >
+              <div className="h-20 w-20 rounded-3xl bg-pink-50 flex items-center justify-center text-primary mb-10 group-hover:scale-110 transition-transform shadow-inner">
+                <Award className="h-10 w-10" />
               </div>
-              <h3 className="text-2xl font-black mb-4 text-slate-900">Core Values</h3>
-              <ul className="text-slate-600 space-y-3 font-medium">
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Honoring our words</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Reliability & Trust</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Long-term approach</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Customer Centricity</li>
+              <h3 className="text-3xl font-black mb-6 text-slate-900 leading-tight">Core Values</h3>
+              <ul className="space-y-4">
+                {[
+                  "Honoring Professional SlAs",
+                  "Deep Reliability & Integrity",
+                  "Customer-First Approach",
+                  "Sustainable Green Cleaning"
+                ].map((val, i) => (
+                  <li key={i} className="flex items-center gap-3 font-bold text-slate-700">
+                    <div className="h-2 w-2 rounded-full bg-primary" /> {val}
+                  </li>
+                ))}
               </ul>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+      <section className="py-32 bg-white overflow-hidden relative">
+        {/* Background Text Decor */}
+        <div className="absolute top-40 -left-20 text-[15rem] font-black text-slate-50 select-none pointer-events-none tracking-tighter -rotate-90">
+          SERVICES
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
             <div className="max-w-2xl">
-              <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-4">What We Do</h2>
-              <h3 className="text-4xl font-black text-slate-900 mb-6">Premium Cleaning Services</h3>
-              <p className="text-slate-600 text-lg">
-                Homework aims to provide a fresh and clean environment – be it your home or office. Our teams use innovative techniques tailored to your unique needs.
+              <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em] mb-6">Our Expertise</h2>
+              <h3 className="text-5xl lg:text-6xl font-black text-slate-900 leading-[0.9] tracking-tighter mb-8">
+                Meticulous Care <br />
+                <span className="text-primary italic">for every space</span>
+              </h3>
+              <p className="text-slate-500 text-lg leading-relaxed font-medium">
+                From luxury villas to corporate headquarters, we deploy specialized teams equipped with industrial-grade technology and medical-grade disinfectants.
               </p>
             </div>
-            <a href="/services" className="inline-flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all">
-              VIEW ALL SERVICES <ArrowRight className="h-5 w-5" />
-            </a>
+            <motion.a 
+              href="/services" 
+              className="inline-flex items-center gap-4 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-colors shadow-lg shadow-slate-200"
+              whileHover={{ x: 10 }}
+            >
+              All Services <ArrowRight className="h-5 w-5" />
+            </motion.a>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[
               {
-                title: "Regular Residential",
-                description: "UAE's Trusted Residential Cleaning - Experience Pristine Living Spaces",
-                image: "https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=600",
-                tag: "Popular"
+                title: "Residential Hygiene",
+                description: "Deep-clean protocols designed for high-end UAE residences.",
+                image: "https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=800",
+                tag: "Bestseller"
               },
               {
-                title: "Villa Deep Cleaning",
-                description: "Transform Your Villa with UAE's Expert Deep Cleaning Services",
-                image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=600",
-                tag: "Premium"
+                title: "Villa Rejuvenation",
+                description: "Complete interior and exterior sanitization for spacious villas.",
+                image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800",
+                tag: "Exclusive"
               },
               {
-                title: "Move in/out Cleaning",
-                description: "Stress-Free Move In/Move Out Cleaning in UAE – Your Perfect Transition Partner",
-                image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=600",
-                tag: "Essential"
+                title: "Technical Ducting",
+                description: "Advanced AC duct cleaning and sterilization for peak performance.",
+                image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&q=80&w=800",
+                tag: "Specialist"
               },
               {
-                title: "Kitchen Hood Cleaning",
-                description: "Expert Kitchen Hood Cleaning in UAE – Safe and Hygienic Kitchens",
-                image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=600",
-                tag: "Technical"
+                title: "Post-Refurbishment",
+                description: "Removing fine dust and construction residue with precision.",
+                image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=800",
+                tag: "Express"
               },
               {
-                title: "AC Duct Cleaning",
-                description: "Breathe Easy with UAE's Professional AC Duct Cleaning Services",
-                image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&q=80&w=600",
-                tag: "Health"
+                title: "Corporate Clean",
+                description: "Maintaining productive environments for Dubai's top firms.",
+                image: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=800",
+                tag: "Enterprise"
               },
               {
-                title: "Regular Office cleaning",
-                description: "Transform Your Office with UAE's Expert Office Deep Cleaning Services",
-                image: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=600",
-                tag: "Corporate"
+                title: "Kitchen Sterilization",
+                description: "Heavy-duty degreasing and hood cleaning for busy kitchens.",
+                image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=800",
+                tag: "Mandatory"
               }
             ].map((service, i) => (
-              <div key={i} className="group bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl transition-all duration-500">
-                <div className="relative h-64 overflow-hidden">
-                  <img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
-                      {service.tag}
-                    </span>
-                  </div>
+              <motion.div 
+                key={i} 
+                className="group relative h-125 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-100"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <img 
+                  src={service.image} 
+                  alt={service.title} 
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-slate-900/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                
+                <div className="absolute top-8 left-8">
+                  <span className="px-4 py-1.5 rounded-full bg-primary/90 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-lg">
+                    {service.tag}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <h3 className="text-2xl font-black mb-3 text-slate-900">{service.title}</h3>
-                  <p className="text-slate-600 mb-6 line-clamp-2">{service.description}</p>
-                  <a href="/services" className="inline-flex items-center gap-2 text-sm font-bold text-primary group-hover:gap-3 transition-all">
-                    LEARN MORE <ArrowRight className="h-4 w-4" />
-                  </a>
+
+                <div className="absolute bottom-10 left-10 right-10">
+                  <h3 className="text-3xl font-black text-white mb-4 leading-tight">{service.title}</h3>
+                  <p className="text-slate-300 font-medium mb-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-y-4 group-hover:translate-y-0">
+                    {service.description}
+                  </p>
+                  <motion.a 
+                    href="/book-service" 
+                    className="inline-flex items-center gap-3 text-white font-black uppercase tracking-widest text-sm"
+                    whileHover={{ gap: "1.5rem" }}
+                  >
+                    Explore service <ArrowRight className="h-5 w-5 text-primary" />
+                  </motion.a>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-primary/10 skew-x-12 translate-x-20"></div>
+      <section className="py-32 bg-slate-900 text-white overflow-hidden relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.1),transparent_50%)]" />
+        
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div>
-              <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-4">Why Choose Us</h2>
-              <h3 className="text-4xl lg:text-5xl font-black mb-8 leading-tight">The Gold Standard in <br /><span className="text-primary">Professional Hygiene</span></h3>
-              <div className="space-y-8">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-12">
+              <div className="space-y-6">
+                <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em]">The Advantage</h2>
+                <h3 className="text-5xl lg:text-7xl font-black tracking-tighter leading-[0.9]">
+                  WHY <br />
+                  <span className="text-primary italic">HOMEWORK</span> <br />
+                  UAECLEAN?
+                </h3>
+              </div>
+
+              <div className="space-y-10">
                 {[
                   {
-                    title: "Expert and Trusted Cleaners",
-                    desc: "A certified cleaning company with professionally trained & background-verified cleaners.",
-                    icon: Users
+                    title: "Advanced Bio-Protocols",
+                    desc: "We use laboratory-tested solutions that are 99.9% effective against pathogens while remaining family safe.",
+                    icon: ShieldCheck
                   },
                   {
-                    title: "Customer-centric Services",
-                    desc: "Cleaning services that cater to your requirements with a great deal of attention to detail.",
+                    title: "Dubai Municipality Approved",
+                    desc: "Full compliance with the highest government standards for commercial and residential hygiene.",
                     icon: Award
                   },
                   {
-                    title: "Eco-Friendly Products",
-                    desc: "We use safe, non-toxic products that are effective yet gentle on your environment.",
-                    icon: Leaf
+                    title: "Zero-Latency Booking",
+                    desc: "Our real-time scheduling engine allows you to confirm your expert cleaner in under 60 seconds.",
+                    icon: Zap
                   }
                 ].map((item, i) => (
-                  <div key={i} className="flex gap-6">
-                    <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary shrink-0 border border-white/10">
-                      <item.icon className="h-7 w-7" />
+                  <motion.div 
+                    key={i} 
+                    className="flex gap-8 group"
+                    initial={{ opacity: 0, x: -30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.2 }}
+                  >
+                    <div className="h-20 w-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-2xl">
+                      <item.icon className="h-10 w-10" />
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold mb-2">{item.title}</h4>
-                      <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+                      <h4 className="text-2xl font-black mb-3">{item.title}</h4>
+                      <p className="text-slate-400 font-medium leading-relaxed max-w-md">{item.desc}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
+
             <div className="relative">
-              <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full"></div>
-              <div className="relative bg-slate-800 rounded-4xl p-10 border border-white/10 shadow-2xl">
-                <h4 className="text-2xl font-black mb-8">Our Commitment</h4>
-                <div className="space-y-6">
-                  {[
-                    "Experienced & Certified Team",
-                    "Same cleaner for every visit",
-                    "Flexible scheduling options",
-                    "Book, manage & pay online",
-                    "100% Satisfaction Guarantee"
-                  ].map((text, i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                        <CheckCircle2 className="h-4 w-4" />
-                      </div>
-                      <span className="text-slate-200 font-medium">{text}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-10 pt-10 border-t border-white/10">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl">800</div>
+              <motion.div 
+                className="absolute -inset-20 bg-primary/20 blur-[120px] rounded-full"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 8, repeat: Infinity }}
+              />
+              <div className="relative bg-slate-800/50 backdrop-blur-2xl rounded-[4rem] p-16 border border-white/10 shadow-3xl">
+                <h4 className="text-3xl font-black mb-12 tracking-tight">Direct Support</h4>
+                <div className="space-y-10">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 rounded-3xl bg-primary flex items-center justify-center font-black text-2xl shadow-xl shadow-primary/40">800</div>
                     <div>
-                      <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Call Us Toll Free</div>
-                      <div className="text-xl font-black text-white">800 4663 9675</div>
+                      <div className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Toll Free Support</div>
+                      <div className="text-3xl font-black tracking-tighter">800 4663 9675</div>
                     </div>
                   </div>
+                  <div className="h-px bg-white/10" />
+                  <div className="grid gap-6">
+                    {[
+                      "Instant WhatsApp Booking",
+                      "Same-Day Urgent Deep Clean",
+                      "Key-Drop Service Available",
+                      "Subscription Discounts (-20%)"
+                    ].map((text, i) => (
+                      <div key={i} className="flex items-center gap-4 group">
+                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
+                        <span className="text-slate-200 font-bold uppercase text-xs tracking-widest">{text}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <motion.a 
+                    href="https://wa.me/80046639675"
+                    className="w-full h-16 bg-white text-slate-950 rounded-2xl flex items-center justify-center font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-100 transition-colors"
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Chat via WhatsApp
+                  </motion.a>
                 </div>
               </div>
             </div>
@@ -278,79 +440,100 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em] mb-4">Testimonials</h2>
-            <h3 className="text-4xl font-black text-slate-900 mb-6">What Our Clients Say</h3>
-            <div className="flex justify-center gap-1 text-yellow-400 mb-4">
-              {[1,2,3,4,5].map(i => <Star key={i} className="h-6 w-6 fill-current" />)}
-            </div>
-            <p className="text-slate-500 font-bold">4.9/5 Average Rating based on 2,500+ reviews</p>
+      {/* Testimonials Section */}
+      <section className="py-32 bg-white relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-24 space-y-4">
+            <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em]">Client Voices</h2>
+            <h3 className="text-5xl font-black text-slate-900 tracking-tighter italic">Trusted by UAE's finest</h3>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {[
               {
-                text: "The cleaning was perfect. I booked the deep cleaning service. Everything was over my expectations. It was super clean and my floor looks like new.",
-                author: "Mathias Nothegger",
-                role: "NOM TRAINING"
+                name: "Amna Al Maktoum",
+                role: "Villa Owner, Jumeirah",
+                image: "https://randomuser.me/api/portraits/women/68.jpg",
+                text: "The post-renovation cleaning was flawless. They handled our delicate interiors with extreme care and left no trace of dust."
               },
               {
-                text: "Homework is one of the finest cleaning services in UAE I have ever booked. They delivered an exceptional cleaning job with dedication and utmost professionalism.",
-                author: "Mr. Amir Gaffry",
-                role: "Business Owner"
+                name: "David Sterling",
+                role: "CEO, TechHub Dubai",
+                image: "https://randomuser.me/api/portraits/men/75.jpg",
+                text: "Consistency is key for our office hygiene. Homework UAE has been our partner for 3 years, and their standards never slip."
               },
               {
-                text: "Marcia, Mylen and Rosalie were professional and courteous and cleaned the house very well and paid attention to detail. Highly recommended!",
-                author: "Johanna Chung",
-                role: "Home Owner"
+                name: "Fatima Ahmad",
+                role: "Resident, Marina",
+                image: "https://randomuser.me/api/portraits/women/88.jpg",
+                text: "Same-day booking for AC duct cleaning saved us. Professional, quick, and the air quality improvement was immediate."
               }
             ].map((testimonial, i) => (
-              <div key={i} className="p-10 bg-slate-50 rounded-4xl relative group hover:bg-white hover:shadow-2xl transition-all duration-500 border border-transparent hover:border-slate-100">
-                <div className="absolute -top-4 left-10 h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/30">
-                  <Star className="h-4 w-4 fill-current" />
+              <motion.div 
+                key={i} 
+                className="bg-slate-50 p-12 rounded-[3rem] relative border border-slate-100/50 hover:bg-white hover:shadow-3xl hover:shadow-slate-200 transition-all duration-500"
+                whileHover={{ y: -15 }}
+              >
+                <div className="flex text-pink-500 mb-8 gap-1">
+                  {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
                 </div>
-                <p className="text-slate-600 mb-8 text-lg leading-relaxed italic">"{testimonial.text}"</p>
-                <div>
-                  <p className="font-black text-slate-900">{testimonial.author}</p>
-                  <p className="text-sm font-bold text-primary uppercase tracking-widest">{testimonial.role}</p>
+                <p className="text-xl text-slate-700 font-medium mb-10 leading-relaxed italic">"{testimonial.text}"</p>
+                <div className="flex items-center gap-6 mt-auto">
+                  <img src={testimonial.image} alt={testimonial.name} className="w-16 h-16 rounded-2xl object-cover ring-4 ring-white shadow-lg" />
+                  <div>
+                    <h4 className="font-black text-slate-900 text-lg uppercase tracking-wider">{testimonial.name}</h4>
+                    <p className="text-primary font-black text-[10px] uppercase tracking-widest">{testimonial.role}</p>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="bg-primary rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-primary/40">
-            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-            <div className="relative z-10 max-w-3xl mx-auto space-y-8">
-              <h2 className="text-4xl md:text-6xl font-black tracking-tight">Ready for a Spotless Home?</h2>
-              <p className="text-xl text-pink-100 font-medium">
-                Join thousands of satisfied customers in the UAE. Book your professional cleaning service in less than 60 seconds.
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <motion.div 
+            className="bg-primary rounded-[4rem] p-16 md:p-24 relative overflow-hidden shadow-3xl shadow-primary/30 text-center"
+            whileInView={{ scale: [0.95, 1], opacity: [0, 1] }}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.2),transparent_70%)] opacity-50" />
+            <div className="relative z-10 max-w-4xl mx-auto space-y-12">
+              <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none">
+                EXPERIENCE THE <br />
+                <span className="italic">GOLD STANDARD</span>
+              </h2>
+              <p className="text-xl text-white/80 font-medium max-w-2xl mx-auto">
+                Join 12,000+ satisfied clients across the UAE. Your journey to a healthier, cleaner environment begins with a single click.
               </p>
-              <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
-                <a
-                  href="/book-service"
-                  className="inline-flex h-16 items-center justify-center rounded-full bg-white text-primary px-12 text-xl font-black shadow-xl transition-all hover:bg-slate-50 hover:scale-105 active:scale-95"
+              <div className="flex flex-wrap justify-center gap-6">
+                <motion.a 
+                  href="/quote" 
+                  className="bg-white text-primary px-12 py-6 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-50 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  BOOK NOW
-                </a>
-                <a
-                  href="tel:80046639675"
-                  className="inline-flex h-16 items-center justify-center rounded-full bg-pink-700 text-white px-12 text-xl font-black transition-all hover:bg-pink-800"
+                  Get Instant Quote
+                </motion.a>
+                <motion.a 
+                  href="/contact" 
+                  className="bg-slate-900 text-white px-12 py-6 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  CALL 800 4663 9675
-                </a>
+                  Contact Expert
+                </motion.a>
               </div>
             </div>
-          </div>
+            
+            {/* Decorative circles */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-pink-300/20 rounded-full blur-3xl animate-pulse delay-700" />
+          </motion.div>
         </div>
       </section>
     </div>
   )
 }
+    

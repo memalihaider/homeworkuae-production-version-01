@@ -209,7 +209,7 @@ export function JobHoursTracker() {
 
       {/* Selected Job Details */}
       {selectedJob && (
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-300 rounded-2xl p-6">
+        <div className="bg-linear-to-br from-indigo-50 to-blue-50 border border-indigo-300 rounded-2xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h4 className="text-lg font-bold text-gray-900 mb-2">{selectedJob.jobTitle}</h4>

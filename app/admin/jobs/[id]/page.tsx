@@ -481,7 +481,7 @@ function JobDetailContent() {
 
       {/* Enhanced Workflow Actions - Dynamic based on status */}
       {job.status === 'Scheduled' && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
               <Navigation className="w-5 h-5" />
@@ -540,7 +540,7 @@ function JobDetailContent() {
       )}
 
       {job.status === 'In Progress' && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-green-900 flex items-center gap-2">
               <Activity className="w-5 h-5" />
@@ -597,7 +597,7 @@ function JobDetailContent() {
       )}
 
       {job.status === 'Completed' && (
-        <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
               <Award className="w-5 h-5" />
@@ -694,7 +694,7 @@ function JobDetailContent() {
 
               {/* Pre-Execution Checklist */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
                     <ClipboardCheck className="w-5 h-5" />
                     Pre-Job Checklist
@@ -714,7 +714,7 @@ function JobDetailContent() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5" />
                     Team Readiness
@@ -748,7 +748,7 @@ function JobDetailContent() {
 
               {/* Permits & Equipment */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5" />
                     Permits & Access
@@ -773,7 +773,7 @@ function JobDetailContent() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-orange-900 mb-4 flex items-center gap-2">
                     <Wrench className="w-5 h-5" />
                     Equipment Status
@@ -802,7 +802,7 @@ function JobDetailContent() {
               </div>
 
               {/* Pre-Execution Actions */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
+              <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
                 <h4 className="text-lg font-bold text-blue-900 mb-4">Quick Actions</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Link
@@ -951,7 +951,7 @@ function JobDetailContent() {
               
               {/* Execution Progress */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <CheckSquare className="w-5 h-5 text-green-600" />
                     <span className="text-sm font-bold text-green-900">Task Progress</span>
@@ -963,7 +963,7 @@ function JobDetailContent() {
                   <div className="text-xs text-green-700">{executionTasks.filter(t => t.status === 'completed').length} of {executionTasks.length} tasks completed</div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <Clock className="w-5 h-5 text-blue-600" />
                     <span className="text-sm font-bold text-blue-900">Time Tracking</span>
@@ -973,7 +973,7 @@ function JobDetailContent() {
                   <div className="text-xs text-blue-600">Estimated completion: {executionTime.estimatedCompletion}h</div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <Activity className="w-5 h-5 text-orange-600" />
                     <span className="text-sm font-bold text-orange-900">Live Updates</span>
@@ -1195,7 +1195,7 @@ function JobDetailContent() {
               </div>
 
               {/* Completion Checklist */}
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 mb-6">
+              <div className="bg-linear-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 mb-6">
                 <h4 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
                   <CheckSquare className="w-5 h-5" />
                   Completion Checklist
@@ -1268,7 +1268,7 @@ function JobDetailContent() {
               </div>
 
               {/* Final Actions */}
-              <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6">
+              <div className="bg-linear-to-r from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6">
                 <h4 className="text-lg font-bold text-emerald-900 mb-4">Final Actions</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button className="p-4 bg-emerald-100 hover:bg-emerald-200 border border-emerald-400 rounded-xl text-center transition-all hover:scale-105">
@@ -1315,7 +1315,7 @@ function JobDetailContent() {
                   </h4>
                   <div className="space-y-3">
                     {jobNotes.map((note) => (
-                      <div key={note.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5">
+                      <div key={note.id} className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5">
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <div className="text-sm text-gray-900">{note.text}</div>
@@ -1350,7 +1350,7 @@ function JobDetailContent() {
                   </div>
                   <div className="space-y-3">
                     {jobReminders.map((reminder) => (
-                      <div key={reminder.id} className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+                      <div key={reminder.id} className="flex items-center justify-between bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
                         <div className="flex items-center gap-4">
                           <input
                             type="checkbox"
@@ -1393,7 +1393,7 @@ function JobDetailContent() {
 
               <div className="space-y-4">
                 {taskAssignments.map((assignment, idx) => (
-                  <div key={assignment.taskId} className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                  <div key={assignment.taskId} className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h4 className="font-bold text-gray-900 mb-2">{assignment.taskName}</h4>
@@ -1433,7 +1433,7 @@ function JobDetailContent() {
               <h3 className="text-xl font-bold text-gray-900 mb-8">Team Member Management</h3>
               <div className="space-y-5">
                 {taskAssignments.map((assignment, idx) => (
-                  <div key={assignment.taskId} className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
+                  <div key={assignment.taskId} className="bg-linear-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h4 className="font-bold text-gray-900 mb-1">{assignment.taskName}</h4>
@@ -1514,21 +1514,21 @@ function JobDetailContent() {
 
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                   <div className="text-sm font-medium text-green-700 mb-1">Total Job Cost</div>
                   <div className="text-3xl font-bold text-green-900">
                     AED {teamMembers.reduce((sum, m) => sum + m.totalCompensation, 0).toLocaleString()}
                   </div>
                   <div className="text-xs text-green-600 mt-2">{teamMembers.length} team members</div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                   <div className="text-sm font-medium text-blue-700 mb-1">Average Rate/Hour</div>
                   <div className="text-3xl font-bold text-blue-900">
                     AED {Math.round(teamMembers.reduce((sum, m) => sum + m.hourlyRate, 0) / teamMembers.length)}
                   </div>
                   <div className="text-xs text-blue-600 mt-2">Across all roles</div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
                   <div className="text-sm font-medium text-purple-700 mb-1">Total Estimated Hours</div>
                   <div className="text-3xl font-bold text-purple-900">
                     {teamMembers.reduce((sum, m) => sum + m.estimatedHours, 0)} hrs
@@ -1572,7 +1572,7 @@ function JobDetailContent() {
               </div>
 
               {/* Comparison Chart */}
-              <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-2xl">
+              <div className="mt-8 p-6 bg-linear-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-2xl">
                 <h4 className="font-bold text-gray-900 mb-4">Cost Breakdown by Role</h4>
                 <div className="space-y-4">
                   {teamMembers.map((member) => {
@@ -1626,7 +1626,7 @@ function JobDetailContent() {
               {/* Feedback Cards */}
               <div className="space-y-6">
                 {employeeFeedback.map((feedback) => (
-                  <div key={feedback.id} className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6">
+                  <div key={feedback.id} className="bg-linear-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h4 className="font-bold text-gray-900 text-lg">{feedback.employee}</h4>

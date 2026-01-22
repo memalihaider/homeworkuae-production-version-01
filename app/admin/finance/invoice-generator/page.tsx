@@ -593,7 +593,7 @@ export default function InvoiceGeneratorPage() {
         <div className="lg:col-span-8 space-y-6">
           {/* Invoice Preview */}
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-transparent">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-linear-to-r from-blue-50 to-transparent">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-100 rounded-xl">
                   <FileText className="w-6 h-6 text-blue-600" />

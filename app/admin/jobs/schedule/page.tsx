@@ -148,7 +148,7 @@ export default function ScheduleCalendar() {
             <div className="p-2 bg-indigo-500/10 rounded-lg">
               <CalendarIcon className="w-6 h-6 text-indigo-400" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent">
               Operational Scheduler
             </h1>
           </div>
