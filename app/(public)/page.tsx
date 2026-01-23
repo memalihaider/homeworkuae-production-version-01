@@ -225,7 +225,7 @@ export default function Home() {
               </div>
               <h3 className="text-3xl font-black mb-6 text-slate-900 leading-tight">Our Vision</h3>
               <p className="text-slate-500 leading-relaxed font-medium">
-                To be the undisputed leader in hygiene and technical solutions, empowering residents and businesses with healthy, sparkling, and perfectly maintained environments.
+                To be the first choice to our employees, suppliers and customers in the region we operate.
               </p>
             </motion.div>
             
@@ -238,7 +238,7 @@ export default function Home() {
               </div>
               <h3 className="text-3xl font-black mb-6 leading-tight">Our Mission</h3>
               <p className="text-slate-400 leading-relaxed font-medium">
-                To deliver consistent, flexible, and professional hygiene experiences through trained experts and advanced technical practices.
+                To provide reliable, flexible and consistent solution to our internal and external stakeholders in our hygiene business.
               </p>
             </motion.div>
 

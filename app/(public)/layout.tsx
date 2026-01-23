@@ -296,7 +296,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <div className="fixed bottom-8 right-8 z-[9999] flex flex-col gap-4 pointer-events-none">
         {/* WhatsApp Button - Primary with Pulse */}
         <a 
-          href="https://wa.me/97180046639675" 
+          href="https://wa.me/971507177059" 
           target="_blank" 
           rel="noopener noreferrer"
           className="pointer-events-auto group relative"

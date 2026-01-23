@@ -130,7 +130,7 @@ export default function About() {
               <div>
                 <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight uppercase">Our Vision</h3>
                 <p className="text-slate-500 text-lg leading-relaxed font-medium">
-                  To be the undisputed leader in hygiene and technical solutions, empowering residents and businesses with healthy, sparkling, and perfectly maintained environments.
+                  To be the first choice to our employees, suppliers and customers in the region we operate.
                 </p>
               </div>
             </motion.div>
@@ -145,7 +145,7 @@ export default function About() {
               <div>
                 <h3 className="text-3xl font-black text-white mb-4 tracking-tight uppercase">Our Mission</h3>
                 <p className="text-slate-400 text-lg leading-relaxed font-medium">
-                  To deliver consistent, flexible, and professional hygiene experiences through trained experts and advanced technical practices.
+                  To provide reliable, flexible and consistent solution to our internal and external stakeholders in our hygiene business.
                 </p>
               </div>
             </motion.div>
