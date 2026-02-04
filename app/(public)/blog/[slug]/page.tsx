@@ -5,21 +5,173 @@ import { ArrowLeft, Clock, User, Share2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { notFound } from 'next/navigation'
-import { use } from 'react'
+import { use, useEffect, useState } from 'react'
+import { db } from '@/lib/firebase'
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
 
-type BlogPost = typeof INITIAL_BLOG_POSTS[0]
+// Firebase blog post type
+type FirebaseBlogPost = {
+  id: string;
+  title: string;
+  name: string;
+  description: string;
+  content: string;
+  readTime: number;
+  imageURL: string;
+  featured: boolean;
+  tags: string[];
+  createdAt: any;
+  slug?: string;
+  excerpt?: string;
+  author?: string;
+  category?: string;
+  publishedAt?: string;
+  image?: string;
+}
+
+// Combined blog post type
+type BlogPost = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  image: string;
+  category: string;
+  readTime: number;
+  author: string;
+  publishedAt: string;
+  featured: boolean;
+  authorImage?: string;
+}
 
 export default function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  const post = INITIAL_BLOG_POSTS.find(p => p.slug === slug)
-  
+  const [post, setPost] = useState<BlogPost | null>(null)
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
+  const [allFirebasePosts, setAllFirebasePosts] = useState<FirebaseBlogPost[]>([])
+
+  // Fetch all Firebase posts
+  useEffect(() => {
+    const fetchAllPosts = async () => {
+      try {
+        // Fetch all Firebase posts
+        const querySnapshot = await getDocs(collection(db, 'blog-post'))
+        const firebasePosts: FirebaseBlogPost[] = []
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          const firebasePost: FirebaseBlogPost = {
+            id: doc.id,
+            title: data.title || '',
+            name: data.name || 'Admin',
+            description: data.description || '',
+            content: data.content || '',
+            readTime: data.readTime || 5,
+            imageURL: data.imageURL || '',
+            featured: data.featured || false,
+            tags: data.tags || [],
+            createdAt: data.createdAt,
+            slug: data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${doc.id}`,
+            excerpt: data.description?.substring(0, 100) + '...' || '',
+            author: data.name || 'Admin',
+            category: data.tags?.[0]?.toLowerCase()?.replace(/\s+/g, '-') || 'how-to',
+            publishedAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+            image: data.imageURL || '/api/placeholder/600/400'
+          }
+          firebasePosts.push(firebasePost)
+        })
+        
+        setAllFirebasePosts(firebasePosts)
+
+        // Convert Firebase posts to match the format of INITIAL_BLOG_POSTS
+        const convertedFirebasePosts: BlogPost[] = firebasePosts.map(post => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug || `post-${post.id}`,
+          excerpt: post.excerpt || post.description?.substring(0, 100) + '...' || 'No description available',
+          content: post.content,
+          image: post.image || '/api/placeholder/600/400',
+          category: post.category || 'how-to',
+          readTime: post.readTime || 5,
+          author: post.author || 'Admin',
+          publishedAt: post.publishedAt || new Date().toISOString(),
+          featured: post.featured || false,
+          authorImage: undefined // Firebase posts don't have author image yet
+        }))
+
+        // Combine Firebase posts with dummy posts
+        const allPosts: BlogPost[] = [...convertedFirebasePosts, ...INITIAL_BLOG_POSTS]
+
+        // Find the current post by slug
+        const currentPost = allPosts.find(p => p.slug === slug)
+        
+        if (!currentPost) {
+          notFound()
+          return
+        }
+
+        setPost(currentPost)
+
+        // Find related posts (same category, excluding current post)
+        const related = allPosts
+          .filter(p => p.category === currentPost.category && p.id !== currentPost.id)
+          .slice(0, 3)
+        
+        setRelatedPosts(related)
+
+      } catch (error) {
+        console.error('Error fetching blog post:', error)
+        // Fallback to dummy posts if Firebase fails
+        const dummyPost = INITIAL_BLOG_POSTS.find(p => p.slug === slug)
+        if (dummyPost) {
+          setPost(dummyPost)
+          const related = INITIAL_BLOG_POSTS
+            .filter(p => p.category === dummyPost.category && p.id !== dummyPost.id)
+            .slice(0, 3)
+          setRelatedPosts(related)
+        } else {
+          notFound()
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAllPosts()
+  }, [slug])
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col overflow-hidden pt-20">
+        <section className="py-24 bg-linear-to-br from-slate-900 via-slate-800 to-primary/20">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto">
+              <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-6 leading-tight">
+                Loading Post...
+              </h1>
+            </div>
+          </div>
+        </section>
+        
+        <div className="container mx-auto px-4 py-16">
+          <div className="animate-pulse">
+            <div className="h-96 bg-slate-200 rounded-xl mb-8"></div>
+            <div className="h-8 bg-slate-200 rounded-lg w-3/4 mb-4"></div>
+            <div className="h-4 bg-slate-200 rounded-lg w-full mb-2"></div>
+            <div className="h-4 bg-slate-200 rounded-lg w-5/6 mb-2"></div>
+            <div className="h-4 bg-slate-200 rounded-lg w-4/6"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!post) {
     notFound()
   }
-
-  const relatedPosts = INITIAL_BLOG_POSTS
-    .filter(p => p.category === post.category && p.id !== post.id)
-    .slice(0, 3)
 
   return (
     <div className="flex flex-col overflow-hidden pt-20">
@@ -82,7 +234,9 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
                   {post.authorImage ? (
                     <img src={post.authorImage} alt={post.author} className="h-full w-full rounded-full object-cover" />
                   ) : (
-                    <User className="h-8 w-8 text-slate-600" />
+                    <div className="h-full w-full rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-8 w-8 text-primary" />
+                    </div>
                   )}
                 </div>
                 <div>

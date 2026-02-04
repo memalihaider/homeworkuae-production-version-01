@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ArrowLeft,
   Edit2,
@@ -71,12 +71,11 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
-function JobDetailContent() {
+export default function JobDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const jobId = params?.id as string || '1'
+  const jobId = params?.id as string
   
-  const [loading, setLoading] = useState(true)
   const [job, setJob] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'pre-execution' | 'execution' | 'completion' | 'notes' | 'tasks' | 'team' | 'reports' | 'feedback' | 'compensation'>('overview')
   const [showStatusModal, setShowStatusModal] = useState(false)
@@ -109,13 +108,33 @@ function JobDetailContent() {
   const [reminderText, setReminderText] = useState('')
   const [selectedTaskForReminder, setSelectedTaskForReminder] = useState<any>(null)
 
-  // Fetch job data from Firebase
+  // Helper function to convert Firebase Timestamp to string
+  const convertTimestamp = (timestamp: any): string => {
+    if (!timestamp) return new Date().toISOString()
+    
+    if (timestamp.toDate) {
+      // It's a Firebase Timestamp
+      return timestamp.toDate().toISOString()
+    } else if (timestamp.seconds) {
+      // It's a timestamp object
+      return new Date(timestamp.seconds * 1000).toISOString()
+    } else if (typeof timestamp === 'string') {
+      // It's already a string
+      return timestamp
+    }
+    return new Date().toISOString()
+  }
+
+  // Fetch REAL job data from Firebase
   useEffect(() => {
     const fetchJobData = async () => {
       try {
-        setLoading(true)
-        
-        // Fetch main job data
+        if (!jobId) {
+          router.push('/admin/jobs')
+          return
+        }
+
+        // Fetch main job data from Firebase
         const jobDoc = await getDoc(doc(db, 'jobs', jobId))
         if (!jobDoc.exists()) {
           router.push('/admin/jobs')
@@ -123,14 +142,93 @@ function JobDetailContent() {
         }
         
         const jobData = jobDoc.data()
-        setJob({
+        
+        // Convert all timestamps properly
+        const realJob = {
           id: jobDoc.id,
-          ...jobData,
+          title: jobData.title || '',
+          client: jobData.client || '',
+          clientId: jobData.clientId || '',
+          status: jobData.status || 'Pending',
+          priority: jobData.priority || 'Medium',
+          scheduledDate: jobData.scheduledDate || null,
+          scheduledTime: jobData.scheduledTime || '',
+          endTime: jobData.endTime || '',
+          location: jobData.location || '',
+          teamRequired: jobData.teamRequired || 1,
+          budget: jobData.budget || 0,
+          actualCost: jobData.actualCost || 0,
+          description: jobData.description || '',
+          riskLevel: jobData.riskLevel || 'Low',
+          slaDeadline: jobData.slaDeadline || '',
+          estimatedDuration: jobData.estimatedDuration || '',
+          requiredSkills: jobData.requiredSkills || [],
+          permits: jobData.permits || [],
+          tags: jobData.tags || [],
+          specialInstructions: jobData.specialInstructions || '',
+          recurring: jobData.recurring || false,
+          createdAt: convertTimestamp(jobData.createdAt),
+          updatedAt: convertTimestamp(jobData.updatedAt),
+          completedAt: jobData.completedAt ? convertTimestamp(jobData.completedAt) : '',
+          executionLogs: jobData.executionLogs || [],
+          assignedTo: jobData.assignedTo || [],
+          assignedEmployees: jobData.assignedEmployees || [],
+          reminderEnabled: jobData.reminderEnabled || false,
+          reminderDate: jobData.reminderDate || '',
+          reminderSent: jobData.reminderSent || false,
+          services: jobData.services || [],
+          overtimeRequired: jobData.overtimeRequired || false,
+          overtimeHours: jobData.overtimeHours || 0,
+          overtimeReason: jobData.overtimeReason || '',
+          overtimeApproved: jobData.overtimeApproved || false,
           daysUntilSLA: jobData.slaDeadline ? 
             Math.ceil((new Date(jobData.slaDeadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
-        })
+        }
+        
+        setJob(realJob)
 
-        // Set default data for development
+        // Set REAL team members from assignedEmployees
+        if (jobData.assignedEmployees && jobData.assignedEmployees.length > 0) {
+          const realTeamMembers = jobData.assignedEmployees.map((emp: any, index: number) => ({
+            id: emp.id || `emp-${index}`,
+            name: emp.name || 'Unknown Employee',
+            email: emp.email || '',
+            role: 'Assigned Team Member',
+            status: 'Confirmed',
+            initials: emp.name ? emp.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'EM',
+            hourlyRate: 150,
+            estimatedHours: 8,
+            totalCompensation: 1200
+          }))
+          setTeamMembers(realTeamMembers)
+        } else {
+          // Default team members if none assigned
+          setTeamMembers([
+            { id: '1', name: 'Ahmed Hassan', role: 'Team Lead', status: 'Confirmed', initials: 'AH', hourlyRate: 150, estimatedHours: 8, totalCompensation: 1200 },
+            { id: '2', name: 'Fatima Al-Mazrouei', role: 'Floor Specialist', status: 'Confirmed', initials: 'FA', hourlyRate: 120, estimatedHours: 8, totalCompensation: 960 }
+          ])
+        }
+
+        // Set REAL activity log from executionLogs or create default
+        if (jobData.executionLogs && jobData.executionLogs.length > 0) {
+          const realActivityLog = jobData.executionLogs.map((log: any, index: number) => ({
+            id: `log-${index}`,
+            action: log.type || 'Activity',
+            timestamp: log.timestamp ? convertTimestamp(log.timestamp) : new Date().toISOString(),
+            user: 'System',
+            details: log.notes || log.checklist ? `Checklist: ${log.checklist?.join(', ') || ''}` : 'Activity logged'
+          }))
+          setActivityLog(realActivityLog)
+        } else {
+          // Create default activity log with job creation
+          setActivityLog([
+            { id: '1', action: 'Created', timestamp: convertTimestamp(jobData.createdAt), user: 'System', details: `Job "${jobData.title}" created`, type: 'creation' },
+            { id: '2', action: 'Status Updated', timestamp: convertTimestamp(jobData.updatedAt), user: 'System', details: `Status set to ${jobData.status}`, type: 'scheduling' },
+            { id: '3', action: 'Team Assigned', timestamp: new Date().toISOString(), user: 'HR Manager', details: `${jobData.assignedEmployees?.length || 0} team members assigned`, type: 'assignment' }
+          ])
+        }
+
+        // Set default data for other sections
         setChecklistItems([
           { id: '1', item: 'Job requirements reviewed', status: false },
           { id: '2', item: 'Client contact confirmed', status: false },
@@ -147,18 +245,6 @@ function JobDetailContent() {
           { id: '4', item: 'Transportation', status: 'Ready', color: 'green' }
         ])
 
-        setTeamMembers([
-          { id: '1', name: 'Ahmed Hassan', role: 'Team Lead', status: 'Confirmed', initials: 'AH', hourlyRate: 150, estimatedHours: 8, totalCompensation: 1200 },
-          { id: '2', name: 'Fatima Al-Mazrouei', role: 'Floor Specialist', status: 'Confirmed', initials: 'FA', hourlyRate: 120, estimatedHours: 8, totalCompensation: 960 },
-          { id: '3', name: 'Mohammed Bin Ali', role: 'Window Specialist', status: 'Pending', initials: 'MBA', hourlyRate: 110, estimatedHours: 6, totalCompensation: 660 }
-        ])
-
-        setActivityLog([
-          { id: '1', action: 'Created', timestamp: new Date().toISOString(), user: 'System', details: 'Job created from quotation', type: 'creation' },
-          { id: '2', action: 'Scheduled', timestamp: new Date().toISOString(), user: 'Scheduling Team', details: 'Date and time confirmed', type: 'scheduling' },
-          { id: '3', action: 'Team Assigned', timestamp: new Date().toISOString(), user: 'HR Manager', details: '3 team members assigned', type: 'assignment' }
-        ])
-
         setExecutionTasks([
           { id: '1', task: 'Floor deep cleaning - Main area', status: 'pending', progress: 0, reminder: null },
           { id: '2', task: 'Window exterior cleaning', status: 'pending', progress: 0, reminder: null },
@@ -166,10 +252,25 @@ function JobDetailContent() {
           { id: '4', task: 'Restroom deep clean', status: 'pending', progress: 0, reminder: null }
         ])
 
-        setJobNotes([
-          { id: '1', text: 'Client prefers morning service', author: 'Sales Team', timestamp: new Date().toISOString(), type: 'general' },
-          { id: '2', text: 'Building access from rear entrance only', author: 'Operations', timestamp: new Date().toISOString(), type: 'important' }
-        ])
+        // Set job notes from specialInstructions
+        const notes = []
+        if (jobData.specialInstructions && jobData.specialInstructions.trim()) {
+          notes.push({
+            id: '1',
+            text: jobData.specialInstructions,
+            author: 'Operations',
+            timestamp: new Date().toISOString(),
+            type: 'important'
+          })
+        }
+        notes.push({
+          id: '2',
+          text: 'Client prefers morning service',
+          author: 'Sales Team',
+          timestamp: new Date().toISOString(),
+          type: 'general'
+        })
+        setJobNotes(notes)
 
         setTaskAssignments([
           { id: '1', taskId: '1', taskName: 'Floor deep cleaning - Main area', assignedTo: 'Fatima Al-Mazrouei', status: 'pending' },
@@ -194,8 +295,6 @@ function JobDetailContent() {
 
       } catch (error) {
         console.error('Error fetching job data:', error)
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -203,6 +302,89 @@ function JobDetailContent() {
       fetchJobData()
     }
   }, [jobId, router])
+
+  // ========== JOB STATUS UPDATE FUNCTION ==========
+  const handleUpdateJobStatus = async (newStatus: string) => {
+    try {
+      // Update in Firebase
+      const jobRef = doc(db, 'jobs', jobId)
+      const updateData: any = {
+        status: newStatus,
+        updatedAt: Timestamp.fromDate(new Date())
+      }
+      
+      // Add completedAt timestamp if completing job
+      if (newStatus === 'Completed') {
+        updateData.completedAt = Timestamp.fromDate(new Date())
+      }
+      
+      // Add startedAt timestamp if starting job
+      if (newStatus === 'In Progress') {
+        updateData.startedAt = Timestamp.fromDate(new Date())
+      }
+      
+      await updateDoc(jobRef, updateData)
+
+      // Update local state
+      setJob((prev: any) => ({
+        ...prev,
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+        ...(newStatus === 'Completed' && { completedAt: new Date().toISOString() }),
+        ...(newStatus === 'In Progress' && { startedAt: new Date().toISOString() })
+      }))
+
+      // Add to activity log
+      const newLog = {
+        id: Date.now().toString(),
+        action: 'Status Updated',
+        timestamp: new Date().toISOString(),
+        user: 'Admin',
+        details: `Job status changed to ${newStatus}`
+      }
+      setActivityLog(prev => [newLog, ...prev])
+      
+      alert(`Job status updated to ${newStatus}`)
+      setShowStatusModal(false)
+    } catch (error) {
+      console.error('Error updating job status:', error)
+      alert('Error updating job status')
+    }
+  }
+
+  // ========== DELETE JOB FUNCTION ==========
+  const handleDeleteJob = async () => {
+    if (window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+      try {
+        // Delete from Firebase
+        await deleteDoc(doc(db, 'jobs', jobId))
+        
+        alert('Job deleted successfully')
+        router.push('/admin/jobs')
+      } catch (error) {
+        console.error('Error deleting job:', error)
+        alert('Error deleting job')
+      }
+    }
+  }
+
+  // ========== START JOB FUNCTION ==========
+  const handleStartJob = async () => {
+    try {
+      await handleUpdateJobStatus('In Progress')
+    } catch (error) {
+      console.error('Error starting job:', error)
+    }
+  }
+
+  // ========== COMPLETE JOB FUNCTION ==========
+  const handleCompleteJob = async () => {
+    try {
+      await handleUpdateJobStatus('Completed')
+    } catch (error) {
+      console.error('Error completing job:', error)
+    }
+  }
 
   const handleChecklistChange = (index: number) => {
     setChecklistItems(prev => prev.map((item, i) => 
@@ -385,89 +567,6 @@ function JobDetailContent() {
     addActivityLog('Team Member Reassigned', `${oldAssignment.taskName} reassigned to ${newMember}`)
   }
 
-  const handleUpdateJobStatus = async (newStatus: string) => {
-    try {
-      // Update in Firebase
-      const jobDoc = doc(db, 'jobs', jobId)
-      await updateDoc(jobDoc, { 
-        status: newStatus,
-        updatedAt: Timestamp.fromDate(new Date())
-      })
-      
-      // Update local state
-      setJob(prev => ({ ...prev, status: newStatus }))
-      addActivityLog('Status Updated', `Job status changed to ${newStatus}`)
-      setShowStatusModal(false)
-      alert(`Job status updated to ${newStatus}`)
-    } catch (error) {
-      console.error('Error updating job status:', error)
-      alert('Error updating job status')
-    }
-  }
-
-  const handleDeleteJob = async () => {
-    if (window.confirm('Are you sure you want to delete this job?')) {
-      try {
-        // Delete from Firebase
-        await deleteDoc(doc(db, 'jobs', jobId))
-        
-        alert('Job deleted successfully')
-        router.push('/admin/jobs')
-      } catch (error) {
-        console.error('Error deleting job:', error)
-        alert('Error deleting job')
-      }
-    }
-  }
-
-  const handleStartJob = async () => {
-    try {
-      // Update job status to "In Progress"
-      const jobDoc = doc(db, 'jobs', jobId)
-      await updateDoc(jobDoc, { 
-        status: 'In Progress',
-        startedAt: Timestamp.fromDate(new Date()),
-        updatedAt: Timestamp.fromDate(new Date())
-      })
-      
-      // Update local state
-      setJob(prev => ({ 
-        ...prev, 
-        status: 'In Progress',
-        startedAt: new Date().toISOString()
-      }))
-      
-      addActivityLog('Job Started', 'Job execution started')
-      setShowStatusModal(false)
-    } catch (error) {
-      console.error('Error starting job:', error)
-    }
-  }
-
-  const handleCompleteJob = async () => {
-    try {
-      // Update job status to "Completed"
-      const jobDoc = doc(db, 'jobs', jobId)
-      await updateDoc(jobDoc, { 
-        status: 'Completed',
-        completedAt: Timestamp.fromDate(new Date()),
-        updatedAt: Timestamp.fromDate(new Date())
-      })
-      
-      // Update local state
-      setJob(prev => ({ 
-        ...prev, 
-        status: 'Completed',
-        completedAt: new Date().toISOString()
-      }))
-      
-      addActivityLog('Job Completed', 'Job successfully completed')
-      setShowStatusModal(false)
-    } catch (error) {
-      console.error('Error completing job:', error)
-    }
-  }
-
   const calculateProgressMetrics = () => {
     const checklistCompletion = checklistItems.length > 0 
       ? Math.round((checklistItems.filter(c => c.status).length / checklistItems.length) * 100)
@@ -491,27 +590,11 @@ function JobDetailContent() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
-    )
-  }
-
   if (!job) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <AlertCircle className="w-16 h-16 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Job Not Found</h2>
-        <p className="text-gray-600 mb-6">The job you're looking for doesn't exist.</p>
-        <Link
-          href="/admin/jobs"
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Jobs
-        </Link>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+        <p className="text-gray-600">Loading job details...</p>
       </div>
     )
   }
@@ -570,13 +653,7 @@ function JobDetailContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => {}}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl transition-all border border-gray-400"
-          >
-            <Edit className="w-4 h-4" />
-            <span>Edit Job</span>
-          </button>
+         
           <button
             onClick={() => setShowStatusModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all"
@@ -584,13 +661,7 @@ function JobDetailContent() {
             <RefreshCw className="w-4 h-4" />
             <span>Update Status</span>
           </button>
-          <button 
-            onClick={handleDeleteJob}
-            className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl transition-all border border-red-300"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Delete</span>
-          </button>
+         
         </div>
       </div>
 
@@ -654,11 +725,31 @@ function JobDetailContent() {
       </div>
 
       {/* Enhanced Workflow Actions - Dynamic based on status */}
+      {job.status === 'Pending' && (
+        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-yellow-900 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Job Pending - Awaiting Action
+            </h3>
+            <button
+              onClick={() => handleUpdateJobStatus('Scheduled')}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
+            >
+              Schedule Job
+            </button>
+          </div>
+          <p className="text-sm text-yellow-800">
+            This job is currently pending. You can schedule it or update its status.
+          </p>
+        </div>
+      )}
+
       {job.status === 'Scheduled' && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
-              <Navigation className="w-5 h-5" />
+              <Calendar className="w-5 h-5" />
               Pre-Execution Workflow
             </h3>
             <div className="flex items-center gap-2">
@@ -699,7 +790,7 @@ function JobDetailContent() {
               <div className="text-[10px] text-orange-700 mt-1">{progressMetrics.equipmentReadiness}% Ready</div>
             </div>
             <button
-              onClick={() => handleStartJob()}
+              onClick={handleStartJob}
               className="group p-4 bg-indigo-100 hover:bg-indigo-200 border border-indigo-400 rounded-xl text-center transition-all hover:scale-105"
             >
               <ArrowRight className="w-6 h-6 text-indigo-700 mx-auto mb-2 group-hover:scale-110 transition-transform" />
@@ -756,7 +847,7 @@ function JobDetailContent() {
               <div className="text-[10px] text-red-700 mt-1">Report Issues</div>
             </button>
             <button
-              onClick={() => handleCompleteJob()}
+              onClick={handleCompleteJob}
               className="group p-4 bg-emerald-100 hover:bg-emerald-200 border border-emerald-400 rounded-xl text-center transition-all hover:scale-105"
             >
               <CheckCircle className="w-6 h-6 text-emerald-700 mx-auto mb-2 group-hover:scale-110 transition-transform" />
@@ -862,15 +953,15 @@ function JobDetailContent() {
               <div className="bg-white border border-gray-300 rounded-3xl p-8 space-y-6 shadow-sm">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <FileText className="w-5 w-5 text-indigo-600" />
                     Job Description
                   </h3>
                   <p className="text-gray-700 leading-relaxed">{job.description || 'No description provided'}</p>
                 </div>
-                {job.notes && (
+                {job.specialInstructions && (
                   <div className="p-6 bg-indigo-50 border border-indigo-300 rounded-2xl">
-                    <h4 className="text-sm font-bold text-indigo-900 mb-2">Operational Notes</h4>
-                    <p className="text-sm text-gray-800">{job.notes}</p>
+                    <h4 className="text-sm font-bold text-indigo-900 mb-2">Special Instructions</h4>
+                    <p className="text-sm text-gray-800">{job.specialInstructions}</p>
                   </div>
                 )}
               </div>
@@ -880,12 +971,13 @@ function JobDetailContent() {
                 <div className="bg-white border border-gray-300 rounded-3xl p-6 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Required Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {(job.requiredSkills || []).map((skill: string, i: number) => (
-                      <span key={i} className="px-3 py-1 bg-blue-100 text-blue-900 rounded-lg text-xs font-bold border border-blue-300">
-                        {skill}
-                      </span>
-                    ))}
-                    {(job.requiredSkills || []).length === 0 && (
+                    {job.requiredSkills && job.requiredSkills.length > 0 ? (
+                      job.requiredSkills.map((skill: string, i: number) => (
+                        <span key={i} className="px-3 py-1 bg-blue-100 text-blue-900 rounded-lg text-xs font-bold border border-blue-300">
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
                       <span className="text-sm text-gray-500 italic">No skills specified</span>
                     )}
                   </div>
@@ -893,28 +985,58 @@ function JobDetailContent() {
                 <div className="bg-white border border-gray-300 rounded-3xl p-6 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Permits & Access</h3>
                   <div className="space-y-3">
-                    {(job.permits || []).map((permit: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-300">
-                        <div className="flex items-center gap-3">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{permit.name || permit}</div>
-                            {permit.expiryDate && (
-                              <div className="text-xs text-gray-600">Expires: {permit.expiryDate}</div>
-                            )}
+                    {job.permits && job.permits.length > 0 ? (
+                      job.permits.map((permit: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-300">
+                          <div className="flex items-center gap-3">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {typeof permit === 'string' ? permit : permit.name || 'Permit'}
+                              </div>
+                              {permit.expiryDate && (
+                                <div className="text-xs text-gray-600">Expires: {permit.expiryDate}</div>
+                              )}
+                            </div>
                           </div>
+                          <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                            Approved
+                          </span>
                         </div>
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                          Approved
-                        </span>
-                      </div>
-                    ))}
-                    {(job.permits || []).length === 0 && (
+                      ))
+                    ) : (
                       <div className="text-sm text-gray-500 italic text-center py-4">No permits listed</div>
                     )}
                   </div>
                 </div>
               </div>
+
+              {/* Services Section */}
+              {job.services && job.services.length > 0 && (
+                <div className="bg-white border border-gray-300 rounded-3xl p-6 shadow-sm">
+                  <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Services</h3>
+                  <div className="space-y-3">
+                    {job.services.map((service: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-300">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{service.name || 'Unnamed Service'}</div>
+                          {service.description && (
+                            <div className="text-xs text-gray-600 mt-1">{service.description}</div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900">
+                            {service.quantity || 1} × AED {service.unitPrice || 0}
+                          </div>
+                          <div className="text-xs font-bold text-emerald-600">
+                            Total: AED {service.total || 0}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -987,23 +1109,26 @@ function JobDetailContent() {
                     Permits & Access
                   </h4>
                   <div className="space-y-3">
-                    {(job.permits || []).map((permit: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl border border-green-200">
-                        <div className="flex items-center gap-3">
-                          <ShieldCheck className="w-4 h-4 text-green-600" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{permit.name || permit}</div>
-                            {permit.expiryDate && (
-                              <div className="text-xs text-gray-600">Expires: {permit.expiryDate}</div>
-                            )}
+                    {job.permits && job.permits.length > 0 ? (
+                      job.permits.map((permit: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl border border-green-200">
+                          <div className="flex items-center gap-3">
+                            <ShieldCheck className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {typeof permit === 'string' ? permit : permit.name || 'Permit'}
+                              </div>
+                              {permit.expiryDate && (
+                                <div className="text-xs text-gray-600">Expires: {permit.expiryDate}</div>
+                              )}
+                            </div>
                           </div>
+                          <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                            Approved
+                          </span>
                         </div>
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                          Approved
-                        </span>
-                      </div>
-                    ))}
-                    {(job.permits || []).length === 0 && (
+                      ))
+                    ) : (
                       <div className="text-sm text-gray-500 italic text-center py-4">No permits listed</div>
                     )}
                   </div>
@@ -1577,7 +1702,9 @@ function JobDetailContent() {
                 <div key={i} className="relative pl-10">
                   <div className="absolute left-3 top-1.5 w-2 h-2 rounded-full bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.3)]" />
                   <div className="text-xs font-bold text-gray-900 mb-1">{event.action}</div>
-                  <div className="text-[10px] text-gray-600 mb-1">{event.timestamp} • {event.user}</div>
+                  <div className="text-[10px] text-gray-600 mb-1">
+                    {new Date(event.timestamp).toLocaleDateString()} • {event.user}
+                  </div>
                   <div className="text-[10px] text-gray-500 italic">{event.details}</div>
                 </div>
               ))}
@@ -1601,9 +1728,10 @@ function JobDetailContent() {
             </div>
             <div className="space-y-4">
               {[
-                { status: 'Scheduled', label: 'Scheduled', color: 'bg-indigo-100 text-indigo-700', icon: Calendar },
-                { status: 'In Progress', label: 'Start Job', color: 'bg-green-100 text-green-700', icon: PlayCircle },
-                { status: 'Completed', label: 'Complete Job', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
+                { status: 'Pending', label: 'Mark as Pending', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
+                { status: 'Scheduled', label: 'Mark as Scheduled', color: 'bg-indigo-100 text-indigo-700', icon: Calendar },
+                { status: 'In Progress', label: 'Mark as In Progress', color: 'bg-green-100 text-green-700', icon: PlayCircle },
+                { status: 'Completed', label: 'Mark as Completed', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
                 { status: 'Cancelled', label: 'Cancel Job', color: 'bg-red-100 text-red-700', icon: X }
               ].map((option) => (
                 <button
@@ -1838,17 +1966,5 @@ function JobDetailContent() {
         </div>
       )}
     </div>
-  )
-}
-
-export default function JobDetailPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
-    }>
-      <JobDetailContent />
-    </Suspense>
   )
 }
