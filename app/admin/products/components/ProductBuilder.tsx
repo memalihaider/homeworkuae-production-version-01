@@ -33,11 +33,12 @@ import {
   getDownloadURL,
   deleteObject 
 } from 'firebase/storage'
- import { ProductItem, Category } from '../lib/types'
+ import { ProductItem, Category } from '@/lib/types'
 
+// ProductBuilder.tsx - interface update karein
 interface ProductBuilderProps {
   product?: ProductItem | null
-  onSave: () => void
+  onSave: (data: Partial<ProductItem>) => void  // Parameter add karein
   onCancel: () => void
 }
 
@@ -85,7 +86,9 @@ export default function ProductBuilder({ product, onSave, onCancel }: ProductBui
           color: data.color || '#000000',
           itemCount: data.itemCount || 0,
           createdAt: data.createdAt || '',
-          updatedAt: data.updatedAt || ''
+          updatedAt: data.updatedAt || '',
+          slug: '',
+          isActive: false
         })
       })
       setCategories(categoriesList)
@@ -237,94 +240,67 @@ export default function ProductBuilder({ product, onSave, onCancel }: ProductBui
   }
 
   // Main form submit handler
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  
+  try {
+    if (!formData.categoryId || !formData.categoryName) {
+      alert('Please select a category')
+      setLoading(false)
+      return
+    }
+
+    const now = new Date().toISOString()
     
-    try {
-      if (!formData.categoryId || !formData.categoryName) {
-        alert('Please select a category')
+    // If new image is selected, upload it first
+    let finalImageUrl = formData.imageUrl || ''
+    
+    // Check if we have a selected image and the current imageUrl is not a Firebase URL
+    if (selectedImage && (!formData.imageUrl || !formData.imageUrl.startsWith('https://'))) {
+      try {
+        finalImageUrl = await uploadImageToFirebase(selectedImage)
+      } catch (error) {
+        alert('Failed to upload image. Please try again.')
         setLoading(false)
         return
       }
-
-      const now = new Date().toISOString()
-      const collectionName = formData.type === 'PRODUCT' ? 'products' : 'services'
-      
-      // If new image is selected, upload it first
-      let finalImageUrl = formData.imageUrl || ''
-      
-      // Check if we have a selected image and the current imageUrl is not a Firebase URL
-      if (selectedImage && (!formData.imageUrl || !formData.imageUrl.startsWith('https://'))) {
-        try {
-          finalImageUrl = await uploadImageToFirebase(selectedImage)
-        } catch (error) {
-          alert('Failed to upload image. Please try again.')
-          setLoading(false)
-          return
-        }
-      }
-
-      // Prepare item data
-      const itemData: any = {
-        name: formData.name?.trim() || '',
-        sku: formData.sku?.trim() || '',
-        description: formData.description?.trim() || '',
-        type: formData.type || 'PRODUCT',
-        price: Number(formData.price) || 0,
-        cost: Number(formData.cost) || 0,
-        unit: formData.unit || 'Unit',
-        stock: Number(formData.stock) || 0,
-        minStock: Number(formData.minStock) || 0,
-        categoryId: formData.categoryId || '',
-        categoryName: formData.categoryName || '',
-        status: formData.status || 'ACTIVE',
-        updatedAt: now,
-        ...(product ? {} : { createdAt: now })
-      }
-
-      // Add image URL if available
-      if (finalImageUrl) {
-        itemData.imageUrl = finalImageUrl
-      }
-
-      if (product && product.id) {
-        // Update existing product
-        const itemDoc = doc(db, collectionName, product.id)
-        await updateDoc(itemDoc, itemData)
-      } else {
-        // Add new product
-        await addDoc(collection(db, collectionName), itemData)
-        
-        // Update category item count only if category exists
-        if (formData.categoryId) {
-          try {
-            const categoryDoc = doc(db, 'categories', formData.categoryId)
-            const categorySnapshot = await getDoc(categoryDoc)
-            
-            if (categorySnapshot.exists()) {
-              const currentCount = categorySnapshot.data().itemCount || 0
-              await updateDoc(categoryDoc, {
-                itemCount: currentCount + 1,
-                updatedAt: now
-              })
-            }
-          } catch (error) {
-            console.log('Category not found or already deleted, skipping item count update')
-          }
-        }
-      }
-      
-      alert(product ? 'Item updated successfully!' : 'Item added successfully!')
-      onSave()
-    } catch (error) {
-      console.error('Error saving item:', error)
-      alert('Error saving item. Please try again.')
-    } finally {
-      setLoading(false)
     }
-  }
 
+    // Prepare item data to pass to parent
+    const itemData: Partial<ProductItem> = {
+      id: product?.id,
+      name: formData.name?.trim() || '',
+      sku: formData.sku?.trim() || '',
+      description: formData.description?.trim() || '',
+      type: formData.type || 'PRODUCT',
+      price: Number(formData.price) || 0,
+      cost: Number(formData.cost) || 0,
+      unit: formData.unit || 'Unit',
+      stock: Number(formData.stock) || 0,
+      minStock: Number(formData.minStock) || 0,
+      categoryId: formData.categoryId || '',
+      categoryName: formData.categoryName || '',
+      status: formData.status || 'ACTIVE',
+      imageUrl: finalImageUrl || '',
+      slug: '', // Default value
+      isActive: true, // Default value
+      profitMargin: 0, // Default value
+      createdAt: product?.createdAt || now,
+      updatedAt: now
+    }
+
+    // Pass data to parent component
+    onSave(itemData)
+    
+    // Alert should be handled by parent component
+  } catch (error) {
+    console.error('Error saving item:', error)
+    alert('Error saving item. Please try again.')
+  } finally {
+    setLoading(false)
+  }
+}
   // Handle type change
   const handleTypeChange = (type: 'PRODUCT' | 'SERVICE') => {
     setFormData((prev: any) => ({ ...prev, type }))

@@ -26,6 +26,10 @@ interface QuotationData {
   paymentMethods: string[];
   services: any[];
   products: any[];
+  // Add missing properties from pdfGenerator's QuotationData
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  createdBy?: string;
 }
 
 // Format phone number for WhatsApp
@@ -113,6 +117,17 @@ export const openWhatsAppWithMessage = (
   window.open(whatsappUrl, '_blank');
 };
 
+// Prepare quotation data for PDF generation
+const prepareQuotationData = (quotation: QuotationData): any => {
+  return {
+    ...quotation,
+    // Add missing properties with default values
+    createdAt: quotation.createdAt || new Date(),
+    updatedAt: quotation.updatedAt || new Date(),
+    createdBy: quotation.createdBy || 'system'
+  };
+};
+
 // Share PDF via WhatsApp Web
 export const sharePDFViaWhatsApp = async (
   quotation: QuotationData,
@@ -120,35 +135,38 @@ export const sharePDFViaWhatsApp = async (
   onError?: (error: string) => void
 ): Promise<void> => {
   try {
-    // Step 1: Generate PDF
-    const pdfBlob = getPDFAsBlob(quotation);
+    // Step 1: Prepare quotation data with all required properties
+    const preparedQuotation = prepareQuotationData(quotation);
+    
+    // Step 2: Generate PDF
+    const pdfBlob = getPDFAsBlob(preparedQuotation);
     const pdfFile = new File(
       [pdfBlob],
       `Quotation_${quotation.quoteNumber.replace('#', '')}_${quotation.client.replace(/\s+/g, '_')}.pdf`,
       { type: 'application/pdf' }
     );
     
-    // Step 2: Format phone number
+    // Step 3: Format phone number
     const formattedPhone = formatPhoneForWhatsApp(quotation.phone);
     if (!formattedPhone) {
       throw new Error('Invalid phone number');
     }
     
-    // Step 3: Generate WhatsApp message
+    // Step 4: Generate WhatsApp message
     const message = generateWhatsAppMessage(quotation);
     
-    // Step 4: Create WhatsApp share URL
+    // Step 5: Create WhatsApp share URL
     const whatsappUrl = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${message}`;
     
-    // Step 5: Open WhatsApp Web
+    // Step 6: Open WhatsApp Web
     window.open(whatsappUrl, '_blank', 'width=800,height=600');
     
-    // Step 6: Guide user to attach PDF
+    // Step 7: Guide user to attach PDF
     setTimeout(() => {
       alert(`📱 WhatsApp opened!\n\nPlease follow these steps:\n\n1. Wait for WhatsApp Web to load\n2. Click the paperclip icon (📎)\n3. Select "Document"\n4. Choose the PDF file:\n   "Quotation_${quotation.quoteNumber.replace('#', '')}.pdf"\n5. Click send\n\nNote: You need to have WhatsApp Web already connected.`);
     }, 1500);
     
-    // Step 7: Download PDF for user to attach
+    // Step 8: Download PDF for user to attach
     const downloadUrl = URL.createObjectURL(pdfBlob);
     const downloadLink = document.createElement('a');
     downloadLink.href = downloadUrl;

@@ -49,23 +49,69 @@ import {
   Area
 } from 'recharts';
 
+// Define SessionData type to match ManagerSidebar expectations
+type SessionData = {
+  id: string;
+  userId: string;
+  userName: string;
+  email: string;
+  role: string;
+  roleId: string;
+  roleName: string;
+  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
+  permissions: string[];
+  department: string;
+  loginTime: string;
+  expiresAt: string;
+  user: {
+    uid: string;
+    email: string | null;
+    name: string | null;
+  };
+  allowedPages: string[];
+};
+
 // Temporary function to replace getStoredSession
-const getSessionData = () => {
+const getSessionData = (): SessionData | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const session = localStorage.getItem('manager_session');
-    return session ? JSON.parse(session) : null;
+    const sessionStr = localStorage.getItem('session');
+    if (!sessionStr) return null;
+    
+    const storedSession = JSON.parse(sessionStr);
+    if (!storedSession) return null;
+    
+    // Transform stored session to SessionData format
+    return {
+      id: storedSession.id || `sess_${Date.now()}`,
+      userId: storedSession.userId || storedSession.user?.uid || 'unknown',
+      userName: storedSession.userName || storedSession.user?.name || 'Manager',
+      email: storedSession.email || storedSession.user?.email || '',
+      role: storedSession.role || 'manager',
+      roleId: storedSession.roleId || 'role_manager',
+      roleName: storedSession.roleName || storedSession.role || 'Manager',
+      portal: 'manager',
+      permissions: storedSession.permissions || ['view_dashboard', 'view_team', 'view_jobs', 'view_clients'],
+      department: storedSession.department || 'Management',
+      loginTime: storedSession.loginTime || new Date().toISOString(),
+      expiresAt: storedSession.expiresAt || new Date(Date.now() + 3600000).toISOString(),
+      user: storedSession.user || {
+        uid: storedSession.userId || 'unknown',
+        email: storedSession.email || null,
+        name: storedSession.userName || null
+      },
+      allowedPages: storedSession.allowedPages || [
+        '/manager/dashboard',
+        '/manager/team',
+        '/manager/jobs',
+        '/manager/clients',
+        '/manager/approvals',
+        '/manager/reports'
+      ]
+    };
   } catch {
     return null;
   }
-};
-
-type UserSession = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
 };
 
 // Mock data for manager dashboard
@@ -114,7 +160,7 @@ const initialPendingApprovals = [
 
 export default function ManagerDashboard() {
   const router = useRouter();
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<SessionData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [pendingApprovals, setPendingApprovals] = useState(initialPendingApprovals);
@@ -128,12 +174,12 @@ export default function ManagerDashboard() {
   ]);
 
   useEffect(() => {
-    const storedSession = getSessionData();
-    if (!storedSession || storedSession.portal !== 'manager') {
+    const sessionData = getSessionData();
+    if (!sessionData || sessionData.portal !== 'manager') {
       router.push('/login/manager');
       return;
     }
-    setSession(storedSession);
+    setSession(sessionData);
   }, [router]);
 
   const handleExportData = useCallback(() => {

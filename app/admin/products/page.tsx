@@ -6,9 +6,65 @@ import ProductDashboard from './components/ProductDashboard'
 import ProductList from './components/ProductList'
 import ProductBuilder from './components/ProductBuilder'
 import CategoryManager from './components/CategoryManager'
-import { MOCK_PRODUCTS, PRODUCT_CATEGORIES, STORAGE_KEYS, ProductItem, Category } from './lib/products-data'
+import { ProductItem, Category } from '@/lib/types' // Changed to use lib/types
 
 type TabType = 'DASHBOARD' | 'INVENTORY' | 'CATEGORIES';
+
+// Mock data - you can remove or move this to a separate file
+const MOCK_PRODUCTS: ProductItem[] = [
+  {
+    id: 'prod_1',
+    name: 'Professional Cleaning Solution',
+    sku: 'HW-CLN-001',
+    description: 'Heavy-duty cleaning solution for industrial use',
+    type: 'PRODUCT',
+    price: 120,
+    cost: 60,
+    unit: 'Litre',
+    stock: 150,
+    minStock: 20,
+    categoryId: 'cat1',
+    categoryName: 'Cleaning Supplies',
+    status: 'ACTIVE',
+    imageUrl: '',
+    slug: 'professional-cleaning-solution',
+    isActive: true,
+    profitMargin: 50,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+  // Add more mock products as needed
+];
+
+const PRODUCT_CATEGORIES: Category[] = [
+  {
+    id: 'cat1',
+    name: 'Cleaning Supplies',
+    slug: 'cleaning-supplies',
+    description: 'All cleaning materials and solutions',
+    color: '#3B82F6',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    itemCount: 12
+  },
+  {
+    id: 'cat2',
+    name: 'Hygiene Products',
+    slug: 'hygiene-products',
+    description: 'Personal and public hygiene products',
+    color: '#10B981',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    itemCount: 8
+  }
+];
+
+const STORAGE_KEYS = {
+  PRODUCTS: 'homeware_products',
+  CATEGORIES: 'homeware_categories'
+};
 
 export default function ProductsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('DASHBOARD')
@@ -50,13 +106,34 @@ export default function ProductsPage() {
 
   const handleSaveProduct = (data: Partial<ProductItem>) => {
     if (editingItem) {
-      setProducts(prev => prev.map(p => p.id === editingItem.id ? { ...p, ...data } as ProductItem : p))
+      setProducts(prev => prev.map(p => p.id === editingItem.id ? { 
+        ...p, 
+        ...data,
+        updatedAt: new Date().toISOString()
+      } as ProductItem : p))
     } else {
       const newItem: ProductItem = {
         ...data,
         id: `prod_${Date.now()}`,
-        lastUpdated: new Date().toISOString(),
-      } as ProductItem
+        name: data.name || '',
+        sku: data.sku || '',
+        description: data.description || '',
+        type: data.type || 'PRODUCT',
+        price: data.price || 0,
+        cost: data.cost || 0,
+        unit: data.unit || 'Unit',
+        stock: data.stock || 0,
+        minStock: data.minStock || 0,
+        categoryId: data.categoryId || '',
+        categoryName: data.categoryName || '',
+        status: data.status || 'ACTIVE',
+        imageUrl: data.imageUrl || '',
+        slug: data.slug || '',
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        profitMargin: data.profitMargin || 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
       setProducts(prev => [newItem, ...prev])
     }
     setShowBuilder(false)
@@ -71,13 +148,24 @@ export default function ProductsPage() {
 
   const handleSaveCategory = (data: Partial<Category>) => {
     if (data.id) {
-      setCategories(prev => prev.map(c => c.id === data.id ? { ...c, ...data } as Category : c))
+      setCategories(prev => prev.map(c => c.id === data.id ? { 
+        ...c, 
+        ...data,
+        updatedAt: new Date().toISOString()
+      } as Category : c))
     } else {
       const newCat: Category = {
         ...data,
         id: `cat_${Date.now()}`,
-        itemCount: 0
-      } as Category
+        name: data.name || '',
+        slug: data.slug || '',
+        description: data.description || '',
+        color: data.color || '#000000',
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        itemCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
       setCategories(prev => [...prev, newCat])
     }
   }
@@ -111,7 +199,33 @@ export default function ProductsPage() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-6 py-3 border border-gray-200 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">
+              <button 
+                onClick={() => {
+                  const csvContent = [
+                    ['ID', 'Name', 'SKU', 'Category', 'Type', 'Price', 'Cost', 'Stock', 'Unit', 'Status'],
+                    ...products.map(p => [
+                      p.id, 
+                      p.name, 
+                      p.sku, 
+                      p.categoryName, 
+                      p.type, 
+                      p.price, 
+                      p.cost, 
+                      p.stock, 
+                      p.unit, 
+                      p.status
+                    ])
+                  ].map(row => row.join(',')).join('\n')
+                  
+                  const blob = new Blob([csvContent], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `products_export_${new Date().toISOString().split('T')[0]}.csv`
+                  a.click()
+                }}
+                className="flex items-center gap-2 px-6 py-3 border border-gray-200 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all"
+              >
                 <Download className="h-4 w-4" />
                 Export Data
               </button>
@@ -161,7 +275,6 @@ export default function ProductsPage() {
         {showBuilder ? (
           <ProductBuilder 
             product={editingItem} 
-            categories={categories}
             onSave={handleSaveProduct}
             onCancel={() => {
               setShowBuilder(false)
@@ -171,18 +284,18 @@ export default function ProductsPage() {
         ) : (
           <div className="animate-in fade-in duration-500">
             {activeTab === 'DASHBOARD' && (
-              <ProductDashboard products={products} categories={categories} />
+              <ProductDashboard />
             )}
             
             {activeTab === 'INVENTORY' && (
               <ProductList 
-                products={products} 
+               
                 categories={categories}
                 onEdit={(item) => {
                   setEditingItem(item)
                   setShowBuilder(true)
                 }}
-                onDelete={handleDeleteProduct}
+               
               />
             )}
             

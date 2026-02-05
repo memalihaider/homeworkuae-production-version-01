@@ -17,6 +17,9 @@ export interface QuotationProduct {
 }
 
 export interface Quotation {
+  total: any
+  discountAmount: number
+  subtotal: any
   id: number
   quoteNumber: string
   clientId: number
@@ -111,7 +114,10 @@ export const MOCK_QUOTATIONS: Quotation[] = [
     lastModified: '2025-01-10',
     approvalStatus: 'Approved',
     sentVia: ['email'],
-    reminderSent: false
+    reminderSent: false,
+    total: undefined,
+    discountAmount: 0,
+    subtotal: undefined
   },
   {
     id: 2,
@@ -144,7 +150,10 @@ export const MOCK_QUOTATIONS: Quotation[] = [
     approvalStatus: 'Approved',
     sentVia: ['email', 'whatsapp'],
     reminderSent: true,
-    reminderSentDate: '2025-01-14'
+    reminderSentDate: '2025-01-14',
+    total: undefined,
+    discountAmount: 0,
+    subtotal: undefined
   }
 ]
 

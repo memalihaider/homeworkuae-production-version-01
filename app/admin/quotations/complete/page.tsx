@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { 
-  Plus, FileText, Settings, TrendingUp, Bell, CheckSquare, 
-  Search, Filter, Download, ArrowLeft, History
+  Plus, FileText, TrendingUp, Bell, CheckSquare, 
+  Download, History
 } from 'lucide-react'
-import { MOCK_QUOTATIONS, MOCK_HISTORY, MOCK_REMINDERS, Quotation } from './lib/quotations-data'
 
 import QuotationDashboard from './components/QuotationDashboard'
 import QuotationList from './components/QuotationList'
@@ -13,31 +12,74 @@ import QuotationBuilder from './components/QuotationBuilder'
 import QuotationApproval from './components/QuotationApproval'
 import QuotationReminders from './components/QuotationReminders'
 
+// Common interface for all components
+interface BaseQuotation {
+  id: string;
+  quoteNumber: string;
+  client: string;
+  company: string;
+  email: string;
+  phone: string;
+  total: number;
+  currency: string;
+  status: string;
+  date: string;
+  validUntil: string;
+}
+
+// For QuotationBuilder and local state
+export interface LocalQuotation extends BaseQuotation {
+  services: any[];
+  products: any[];
+  notes: string;
+  terms: string;
+  subtotal: number;
+  taxAmount: number;
+  taxRate: number;
+  discountAmount: number;
+  discount: number;
+  discountType: string;
+  location: string;
+  amount?: number;
+  version?: number;
+  lastModified?: string;
+}
+
 export default function QuotationsPage() {
-  const [quotations, setQuotations] = useState<Quotation[]>(MOCK_QUOTATIONS)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'list' | 'builder' | 'approval' | 'reminders'>('dashboard')
-  const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null)
+  const [editingQuotation, setEditingQuotation] = useState<LocalQuotation | null>(null)
 
-  const handleEdit = (q: Quotation) => {
-    setEditingQuotation(q)
+  const handleEdit = (quotation: any) => {
+    // Convert any quotation format to LocalQuotation
+    const editedQuotation: LocalQuotation = {
+      id: quotation.id?.toString() || '',
+      quoteNumber: quotation.quoteNumber || `QUOTE-${Date.now()}`,
+      client: quotation.client || 'No Client',
+      company: quotation.company || 'No Company',
+      email: quotation.email || '',
+      phone: quotation.phone || '',
+      total: quotation.total || quotation.amount || 0,
+      currency: quotation.currency || 'AED',
+      status: quotation.status || 'Draft',
+      date: quotation.date || new Date().toISOString().split('T')[0],
+      validUntil: quotation.validUntil || '',
+      services: quotation.services || [],
+      products: quotation.products || [],
+      notes: quotation.notes || '',
+      terms: quotation.terms || '',
+      subtotal: quotation.subtotal || quotation.total || 0,
+      taxAmount: quotation.taxAmount || 0,
+      taxRate: quotation.taxRate || 0,
+      discountAmount: quotation.discountAmount || 0,
+      discount: quotation.discount || 0,
+      discountType: quotation.discountType || 'percentage',
+      location: quotation.location || '',
+      amount: quotation.amount || quotation.total || 0,
+      version: quotation.version || 1,
+      lastModified: quotation.lastModified || new Date().toISOString()
+    }
+    setEditingQuotation(editedQuotation)
     setActiveTab('builder')
-  }
-
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this quotation?')) {
-      setQuotations(quotations.filter(q => q.id !== id))
-    }
-  }
-
-  const handleSave = (data: any) => {
-    if (editingQuotation) {
-      setQuotations(quotations.map(q => q.id === editingQuotation.id ? { ...q, ...data } : q))
-    } else {
-      const newId = Math.max(...quotations.map(q => q.id), 0) + 1
-      setQuotations([{ ...data, id: newId }, ...quotations])
-    }
-    setEditingQuotation(null)
-    setActiveTab('list')
   }
 
   const tabs = [
@@ -94,38 +136,27 @@ export default function QuotationsPage() {
 
       {/* Content Area */}
       <div className="min-h-[600px]">
-        {activeTab === 'dashboard' && <QuotationDashboard quotations={quotations} />}
+        {activeTab === 'dashboard' && <QuotationDashboard />}
         {activeTab === 'list' && (
           <QuotationList 
-            quotations={quotations} 
             onEdit={handleEdit}
-            onDelete={handleDelete}
           />
         )}
         {activeTab === 'builder' && (
           <QuotationBuilder 
             initialData={editingQuotation}
-            onSave={handleSave}
+            onSave={() => {
+              setEditingQuotation(null)
+              setActiveTab('list')
+            }}
             onCancel={() => {
               setEditingQuotation(null)
               setActiveTab('list')
             }}
           />
         )}
-        {activeTab === 'approval' && (
-          <QuotationApproval 
-            quotations={quotations}
-            onApprove={(id) => {
-              setQuotations(quotations.map(q => q.id === id ? { ...q, status: 'Accepted', approvalStatus: 'Approved' } : q))
-              alert('Quotation approved successfully!')
-            }}
-            onReject={(id) => {
-              setQuotations(quotations.map(q => q.id === id ? { ...q, status: 'Rejected', approvalStatus: 'Rejected' } : q))
-              alert('Quotation rejected.')
-            }}
-          />
-        )}
-        {activeTab === 'reminders' && <QuotationReminders reminders={MOCK_REMINDERS} />}
+        {activeTab === 'approval' && <QuotationApproval />}
+        {activeTab === 'reminders' && <QuotationReminders />}
       </div>
     </div>
   )

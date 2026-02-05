@@ -1,32 +1,115 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { CheckCircle, AlertCircle, Clock, Users, Briefcase, TrendingUp, Filter, Search, Archive, Zap, Plus, Link as LinkIcon, Eye, Edit2, Trash2, ArrowRight, X, Calendar, FileText, ClipboardList, Target } from 'lucide-react'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase' // Aapka Firebase config file
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { 
+  CheckCircle, AlertCircle, Clock, Users, Briefcase, TrendingUp, 
+  Filter, Search, Archive, Zap, Plus, Link as LinkIcon, Eye, 
+  Edit2, Trash2, ArrowRight, X, Calendar, FileText, ClipboardList, Target 
+} from 'lucide-react'
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+
+// Type definitions
+type StatusType = 'pending' | 'in-progress' | 'completed' | 'scheduled' | 'implemented'
+type PriorityType = 'High' | 'Medium' | 'Low'
+type ItemType = 'meeting' | 'note' | 'decision' | 'action'
+type TabType = 'active' | 'timeline' | 'accountability'
+
+interface MeetingData {
+  id: string;
+  title?: string;
+  summary?: string;
+  agendaAI?: string;
+  organizer?: string;
+  createdByName?: string;
+  date?: string;
+  time?: string;
+  status?: string;
+  priority?: string;
+  location?: string;
+  duration?: string;
+  attendeeNames?: string[];
+  cost?: number;
+  linkedClient?: string;
+  linkedJob?: string;
+}
+
+interface NoteData {
+  id: string;
+  meetingTitle?: string;
+  notes?: string;
+  createdByName?: string;
+  meetingDate?: string;
+  meetingTime?: string;
+  meetingId?: string;
+}
+
+interface DecisionData {
+  id: string;
+  title?: string;
+  description?: string;
+  createdByName?: string;
+  dueDate?: string;
+  status?: string;
+  priority?: string;
+  linkedItems?: string[];
+}
+
+interface ActionItemData {
+  id: string;
+  title?: string;
+  description?: string;
+  createdByName?: string;
+  owner?: string;
+  dueDate?: string;
+  status?: StatusType;
+  priority?: string;
+  linkedJob?: string;
+}
+
+interface FollowUpItem {
+  id: string;
+  type: ItemType;
+  title: string;
+  description: string;
+  owner: string;
+  date: string;
+  time?: string;
+  status: string;
+  priority: string;
+  location?: string;
+  duration?: string;
+  attendees?: string[];
+  cost?: number;
+  linkedClient?: string;
+  linkedJob?: string;
+  meetingId?: string;
+  linkedItems?: string[];
+  progressPercent?: number;
+}
 
 export default function FollowUpTracker() {
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterOwner, setFilterOwner] = useState('all')
-  const [filterPriority, setFilterPriority] = useState('all')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedTab, setSelectedTab] = useState<'active' | 'timeline' | 'accountability'>('active')
-  const [showForm, setShowForm] = useState(false)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterOwner, setFilterOwner] = useState<string>('all')
+  const [filterPriority, setFilterPriority] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [selectedTab, setSelectedTab] = useState<TabType>('active')
+  const [showForm, setShowForm] = useState<boolean>(false)
   
   // Real data states
-  const [meetings, setMeetings] = useState<any[]>([])
-  const [notes, setNotes] = useState<any[]>([])
-  const [decisions, setDecisions] = useState<any[]>([])
-  const [actionItems, setActionItems] = useState<any[]>([])
-  const [todayDate] = useState(new Date().toISOString().split('T')[0]) // YYYY-MM-DD format
+  const [meetings, setMeetings] = useState<MeetingData[]>([])
+  const [notes, setNotes] = useState<NoteData[]>([])
+  const [decisions, setDecisions] = useState<DecisionData[]>([])
+  const [actionItems, setActionItems] = useState<ActionItemData[]>([])
+  const [todayDate] = useState<string>(new Date().toISOString().split('T')[0])
 
   const [newItem, setNewItem] = useState({
     item: '',
     owner: '',
     dueDate: '',
-    status: 'pending' as const,
+    status: 'pending' as StatusType,
     linkedJob: '',
-    priority: 'Medium',
+    priority: 'Medium' as PriorityType,
     notes: ''
   })
 
@@ -43,7 +126,7 @@ export default function FollowUpTracker() {
         const todayMeetings = meetingsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }))
+        })) as MeetingData[]
         setMeetings(todayMeetings)
 
         // Get today's notes
@@ -55,33 +138,47 @@ export default function FollowUpTracker() {
         const todayNotes = notesSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }))
+        })) as NoteData[]
         setNotes(todayNotes)
 
         // Get today's decisions
         const decisionsQuery = query(
-          collection(db, 'decisions'),
-          where('createdAt', '>=', `${todayDate}T00:00:00.000Z`),
-          where('createdAt', '<=', `${todayDate}T23:59:59.999Z`)
+          collection(db, 'decisions')
         )
         const decisionsSnapshot = await getDocs(decisionsQuery)
-        const todayDecisions = decisionsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
+        const todayDecisions = decisionsSnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(decision => {
+            const decisionDate = (decision as any).createdAt
+            if (decisionDate && decisionDate.toDate) {
+              const date = decisionDate.toDate().toISOString().split('T')[0]
+              return date === todayDate
+            }
+            return false
+          }) as DecisionData[]
         setDecisions(todayDecisions)
 
         // Get today's action items
         const actionsQuery = query(
-          collection(db, 'actionItems'),
-          where('createdAt', '>=', `${todayDate}T00:00:00.000Z`),
-          where('createdAt', '<=', `${todayDate}T23:59:59.999Z`)
+          collection(db, 'actionItems')
         )
         const actionsSnapshot = await getDocs(actionsQuery)
-        const todayActions = actionsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
+        const todayActions = actionsSnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(action => {
+            const actionDate = (action as any).createdAt
+            if (actionDate && actionDate.toDate) {
+              const date = actionDate.toDate().toISOString().split('T')[0]
+              return date === todayDate
+            }
+            return false
+          }) as ActionItemData[]
         setActionItems(todayActions)
 
       } catch (error) {
@@ -93,12 +190,12 @@ export default function FollowUpTracker() {
   }, [todayDate])
 
   // Combine all data for display
-  const allFollowUps = useMemo(() => {
-    const combined = [
+  const allFollowUps = useMemo<FollowUpItem[]>(() => {
+    const combined: FollowUpItem[] = [
       // Convert meetings to follow-up format
       ...meetings.map(meeting => ({
         id: `meeting_${meeting.id}`,
-        type: 'meeting',
+        type: 'meeting' as ItemType,
         title: meeting.title || 'Meeting',
         description: meeting.summary || meeting.agendaAI || 'Auto-generated meeting',
         owner: meeting.organizer || meeting.createdByName || 'Unknown',
@@ -117,7 +214,7 @@ export default function FollowUpTracker() {
       // Convert notes to follow-up format
       ...notes.map(note => ({
         id: `note_${note.id}`,
-        type: 'note',
+        type: 'note' as ItemType,
         title: note.meetingTitle || 'Meeting Notes',
         description: note.notes || 'No notes content',
         owner: note.createdByName || 'Unknown',
@@ -131,7 +228,7 @@ export default function FollowUpTracker() {
       // Convert decisions to follow-up format
       ...decisions.map(decision => ({
         id: `decision_${decision.id}`,
-        type: 'decision',
+        type: 'decision' as ItemType,
         title: decision.title || 'Decision',
         description: decision.description || 'No description',
         owner: decision.createdByName || 'Unknown',
@@ -144,7 +241,7 @@ export default function FollowUpTracker() {
       // Convert action items to follow-up format
       ...actionItems.map(action => ({
         id: `action_${action.id}`,
-        type: 'action',
+        type: 'action' as ItemType,
         title: action.title || 'Action Item',
         description: action.description || 'No description',
         owner: action.createdByName || action.owner || 'Unknown',
@@ -161,7 +258,7 @@ export default function FollowUpTracker() {
   }, [meetings, notes, decisions, actionItems, todayDate])
 
   // Filtering logic
-  const filteredItems = useMemo(() => {
+  const filteredItems = useMemo<FollowUpItem[]>(() => {
     return allFollowUps.filter(item => {
       const statusMatch = filterStatus === 'all' || item.status.toLowerCase() === filterStatus.toLowerCase()
       const ownerMatch = filterOwner === 'all' || item.owner === filterOwner
@@ -176,7 +273,9 @@ export default function FollowUpTracker() {
   // Statistics
   const stats = useMemo(() => {
     const total = allFollowUps.length
-    const completed = allFollowUps.filter(i => i.status.toLowerCase() === 'completed' || i.status.toLowerCase() === 'implemented').length
+    const completed = allFollowUps.filter(i => 
+      i.status.toLowerCase() === 'completed' || i.status.toLowerCase() === 'implemented'
+    ).length
     const inProgress = allFollowUps.filter(i => i.status.toLowerCase() === 'in-progress').length
     const pending = allFollowUps.filter(i => i.status.toLowerCase() === 'pending').length
     
@@ -194,12 +293,16 @@ export default function FollowUpTracker() {
   }, [allFollowUps, meetings, notes, decisions, actionItems])
 
   // Get unique owners for filter
-  const owners = ['all', ...Array.from(new Set(allFollowUps.map(i => i.owner))).filter(Boolean)]
+  const owners = useMemo(() => 
+    ['all', ...Array.from(new Set(allFollowUps.map(i => i.owner))).filter(Boolean) as string[]], 
+    [allFollowUps]
+  )
+  
   const statuses = ['all', 'pending', 'in-progress', 'completed', 'scheduled', 'implemented']
   const priorities = ['all', 'High', 'Medium', 'Low']
 
   // Helper functions
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string): string => {
     const statusLower = status.toLowerCase()
     switch (statusLower) {
       case 'completed':
@@ -214,18 +317,18 @@ export default function FollowUpTracker() {
       default:
         return 'bg-gray-100 text-gray-700'
     }
-  }
+  }, [])
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = useCallback((priority: string): string => {
     switch (priority) {
       case 'High': return 'bg-red-100 text-red-700'
       case 'Medium': return 'bg-orange-100 text-orange-700'
       case 'Low': return 'bg-green-100 text-green-700'
       default: return 'bg-gray-100 text-gray-700'
     }
-  }
+  }, [])
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = useCallback((type: ItemType) => {
     switch (type) {
       case 'meeting': return <Calendar className="h-4 w-4" />
       case 'note': return <FileText className="h-4 w-4" />
@@ -233,9 +336,9 @@ export default function FollowUpTracker() {
       case 'action': return <Target className="h-4 w-4" />
       default: return <AlertCircle className="h-4 w-4" />
     }
-  }
+  }, [])
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = useCallback((type: ItemType): string => {
     switch (type) {
       case 'meeting': return 'bg-blue-50 text-blue-600 border-blue-200'
       case 'note': return 'bg-green-50 text-green-600 border-green-200'
@@ -243,7 +346,27 @@ export default function FollowUpTracker() {
       case 'action': return 'bg-orange-50 text-orange-600 border-orange-200'
       default: return 'bg-gray-50 text-gray-600 border-gray-200'
     }
-  }
+  }, [])
+
+  // Handle status filter change
+  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterStatus(e.target.value)
+  }, [])
+
+  // Handle owner filter change
+  const handleOwnerChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterOwner(e.target.value)
+  }, [])
+
+  // Handle priority filter change
+  const handlePriorityChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilterPriority(e.target.value)
+  }, [])
+
+  // Handle search input change
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -293,7 +416,7 @@ export default function FollowUpTracker() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 border-b">
-        {(['active', 'timeline', 'accountability'] as const).map(tab => (
+        {(['active', 'timeline', 'accountability'] as TabType[]).map(tab => (
           <button
             key={tab}
             onClick={() => setSelectedTab(tab)}
@@ -320,7 +443,7 @@ export default function FollowUpTracker() {
               type="text"
               placeholder="Search items, descriptions, jobs..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -330,7 +453,7 @@ export default function FollowUpTracker() {
             <label className="text-xs font-bold text-muted-foreground mb-2 block">Status</label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              onChange={handleStatusChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               {statuses.map(status => (
@@ -344,7 +467,7 @@ export default function FollowUpTracker() {
             <label className="text-xs font-bold text-muted-foreground mb-2 block">Priority</label>
             <select
               value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
+              onChange={handlePriorityChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               {priorities.map(priority => (
@@ -358,7 +481,7 @@ export default function FollowUpTracker() {
             <label className="text-xs font-bold text-muted-foreground mb-2 block">Owner</label>
             <select
               value={filterOwner}
-              onChange={(e) => setFilterOwner(e.target.value)}
+              onChange={handleOwnerChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               {owners.map(owner => (
@@ -534,7 +657,7 @@ export default function FollowUpTracker() {
             <div className="border rounded-lg p-4">
               <h4 className="font-bold mb-3">By Type Summary</h4>
               <div className="space-y-2">
-                {['meeting', 'note', 'decision', 'action'].map(type => {
+                {(['meeting', 'note', 'decision', 'action'] as ItemType[]).map(type => {
                   const count = filteredItems.filter(item => item.type === type).length
                   if (count === 0) return null
                   return (

@@ -20,7 +20,7 @@ import {
   getDoc,
   updateDoc
 } from 'firebase/firestore'
-import { ProductItem, Category } from '../lib/types'
+import { ProductItem, Category } from '@/lib/types'
 
 interface ProductListProps {
   categories: Category[]
@@ -58,7 +58,10 @@ export default function ProductList({ categories, onEdit }: ProductListProps) {
           categoryName: data.categoryName || '',
           status: data.status || 'ACTIVE',
           createdAt: data.createdAt || '',
-          updatedAt: data.updatedAt || ''
+          updatedAt: data.updatedAt || '',
+          slug: '',
+          isActive: false,
+          profitMargin: 0
         })
       })
       setProducts(productsList)
@@ -93,7 +96,10 @@ export default function ProductList({ categories, onEdit }: ProductListProps) {
           categoryName: data.categoryName || '',
           status: data.status || 'ACTIVE',
           createdAt: data.createdAt || '',
-          updatedAt: data.updatedAt || ''
+          updatedAt: data.updatedAt || '',
+          slug: '',
+          isActive: false,
+          profitMargin: 0
         })
       })
       setServices(servicesList)

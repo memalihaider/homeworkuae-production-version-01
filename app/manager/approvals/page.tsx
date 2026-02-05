@@ -9,19 +9,33 @@ import { CheckCircle, Clock, AlertCircle, Menu, X, Calendar, DollarSign, User } 
 const getSessionData = () => {
   if (typeof window === 'undefined') return null;
   try {
-    const session = localStorage.getItem('manager_session');
+    const session = localStorage.getItem('session');
     return session ? JSON.parse(session) : null;
   } catch {
     return null;
   }
 };
 
-type UserSession = {
+// Define SessionData type to match ManagerSidebar expectations
+type SessionData = {
   id: string;
-  name: string;
+  userId: string;
+  userName: string;
   email: string;
   role: string;
+  roleId: string;
+  roleName: string;
   portal: 'manager' | 'guest' | 'employee';
+  permissions: string[];
+  department: string;
+  loginTime: string;
+  expiresAt: string;
+  user: {
+    uid: string;
+    email: string | null;
+    name: string | null;
+  };
+  allowedPages: string[];
 };
 
 const approvals = [
@@ -40,7 +54,7 @@ const statusColors = {
 
 export default function Approvals() {
   const router = useRouter();
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<SessionData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<typeof approvals[0] | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -51,7 +65,30 @@ export default function Approvals() {
       router.push('/login/manager');
       return;
     }
-    setSession(storedSession);
+    
+    // Transform stored session to SessionData format
+    const sessionData: SessionData = {
+      id: storedSession.id || `sess_${Date.now()}`,
+      userId: storedSession.userId || storedSession.user?.uid || 'unknown',
+      userName: storedSession.userName || storedSession.user?.name || 'Manager',
+      email: storedSession.email || storedSession.user?.email || '',
+      role: storedSession.role || 'manager',
+      roleId: storedSession.roleId || 'role_manager',
+      roleName: storedSession.roleName || storedSession.role || 'Manager',
+      portal: 'manager',
+      permissions: storedSession.permissions || ['view_dashboard', 'view_approvals'],
+      department: storedSession.department || 'Management',
+      loginTime: storedSession.loginTime || new Date().toISOString(),
+      expiresAt: storedSession.expiresAt || new Date(Date.now() + 3600000).toISOString(),
+      user: storedSession.user || {
+        uid: storedSession.userId || 'unknown',
+        email: storedSession.email || null,
+        name: storedSession.userName || null
+      },
+      allowedPages: storedSession.allowedPages || ['/manager/dashboard', '/manager/approvals']
+    };
+    
+    setSession(sessionData);
   }, [router]);
 
   const filteredApprovals = approvals.filter(a => filterStatus === 'all' || a.status === filterStatus);

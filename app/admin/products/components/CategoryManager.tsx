@@ -21,19 +21,21 @@ import {
   orderBy,
   onSnapshot
 } from 'firebase/firestore'
+import { Category } from '@/lib/types'
 
-interface Category {
-  id: string
-  name: string
-  description: string
-  color: string
-  itemCount: number
-  createdAt: string
-  updatedAt: string
+// Define props interface
+interface CategoryManagerProps {
+  categories?: Category[];  // Optional: can be passed or fetched from Firebase
+  onSave?: (data: Partial<Category>) => void;  // Optional: for parent component handling
+  onDelete?: (id: string) => void;  // Optional: for parent component handling
 }
 
-export default function CategoryManager() {
-  const [categories, setCategories] = useState<Category[]>([])
+export default function CategoryManager({ 
+  categories: propCategories, 
+  onSave: propOnSave, 
+  onDelete: propOnDelete 
+}: CategoryManagerProps) {
+  const [categories, setCategories] = useState<Category[]>(propCategories || [])
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<Partial<Category>>({
@@ -42,8 +44,15 @@ export default function CategoryManager() {
     color: '#000000'
   })
 
-  // Fetch categories from Firebase
+  // Fetch categories from Firebase if not provided via props
   useEffect(() => {
+    // If categories are provided via props, use them
+    if (propCategories && propCategories.length > 0) {
+      setCategories(propCategories)
+      return
+    }
+
+    // Otherwise fetch from Firebase
     const categoriesRef = collection(db, 'categories')
     const q = query(categoriesRef, orderBy('createdAt', 'desc'))
     
@@ -58,40 +67,48 @@ export default function CategoryManager() {
           color: data.color || '#000000',
           itemCount: data.itemCount || 0,
           createdAt: data.createdAt || '',
-          updatedAt: data.updatedAt || ''
+          updatedAt: data.updatedAt || '',
+          slug: '',
+          isActive: false
         })
       })
       setCategories(categoriesList)
     })
     
     return () => unsubscribe()
-  }, [])
+  }, [propCategories])
 
-  // Save category to Firebase
+  // Save category to Firebase or call parent's onSave
   const handleSave = async (categoryData: Partial<Category>) => {
     try {
-      const categoriesRef = collection(db, 'categories')
-      const now = new Date().toISOString()
-      
-      if (editingId && categoryData.id) {
-        // Update existing category
-        const categoryDoc = doc(db, 'categories', editingId)
-        await updateDoc(categoryDoc, {
-          name: categoryData.name,
-          description: categoryData.description,
-          color: categoryData.color || '#000000',
-          updatedAt: now
-        })
+      // If parent provided onSave prop, use it
+      if (propOnSave) {
+        propOnSave(categoryData)
       } else {
-        // Add new category
-        await addDoc(categoriesRef, {
-          name: categoryData.name,
-          description: categoryData.description,
-          color: categoryData.color || '#000000',
-          itemCount: 0,
-          createdAt: now,
-          updatedAt: now
-        })
+        // Otherwise save directly to Firebase
+        const categoriesRef = collection(db, 'categories')
+        const now = new Date().toISOString()
+        
+        if (editingId && categoryData.id) {
+          // Update existing category
+          const categoryDoc = doc(db, 'categories', editingId)
+          await updateDoc(categoryDoc, {
+            name: categoryData.name,
+            description: categoryData.description,
+            color: categoryData.color || '#000000',
+            updatedAt: now
+          })
+        } else {
+          // Add new category
+          await addDoc(categoriesRef, {
+            name: categoryData.name,
+            description: categoryData.description,
+            color: categoryData.color || '#000000',
+            itemCount: 0,
+            createdAt: now,
+            updatedAt: now
+          })
+        }
       }
       
       resetForm()
@@ -101,20 +118,26 @@ export default function CategoryManager() {
     }
   }
 
-  // Delete category from Firebase
+  // Delete category from Firebase or call parent's onDelete
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return
     
     try {
-      // First check if this category has any items
-      const category = categories.find(cat => cat.id === id)
-      if (category && category.itemCount > 0) {
-        alert('Cannot delete category with items. Please remove items first.')
-        return
+      // If parent provided onDelete prop, use it
+      if (propOnDelete) {
+        propOnDelete(id)
+      } else {
+        // Otherwise delete directly from Firebase
+        // First check if this category has any items
+        const category = categories.find(cat => cat.id === id)
+        if (category && (category.itemCount || 0) > 0) {
+          alert('Cannot delete category with items. Please remove items first.')
+          return
+        }
+        
+        await deleteDoc(doc(db, 'categories', id))
+        alert('Category deleted successfully!')
       }
-      
-      await deleteDoc(doc(db, 'categories', id))
-      alert('Category deleted successfully!')
     } catch (error) {
       console.error('Error deleting category:', error)
       alert('Error deleting category. Please try again.')
@@ -330,25 +353,25 @@ export default function CategoryManager() {
                           </span>
                         </div>
                       </td>
-                     <td className="px-6 py-4 text-right">
-  <div className="flex justify-end gap-2">
-    <button
-      onClick={() => handleEdit(cat)}
-      className="p-2 border border-gray-200"
-      title="Edit category"
-    >
-      <Edit2 className="h-3 w-3" />
-    </button>
-    <button
-      onClick={() => handleDelete(cat.id)}
-      className="p-2 border border-gray-200"
-      disabled={cat.itemCount > 0}
-      title={cat.itemCount > 0 ? "Cannot delete category with items" : "Delete category"}
-    >
-      <Trash2 className="h-3 w-3" />
-    </button>
-  </div>
-</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(cat)}
+                            className="p-2 border border-gray-200 hover:border-black hover:bg-black hover:text-white transition-all"
+                            title="Edit category"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cat.id)}
+                            className="p-2 border border-gray-200 hover:border-red-600 hover:bg-red-600 hover:text-white transition-all"
+                            disabled={(cat.itemCount || 0) > 0}
+                            title={(cat.itemCount || 0) > 0 ? "Cannot delete category with items" : "Delete category"}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -14,23 +14,62 @@ import {
   X
 } from 'lucide-react';
 
+// Define SessionData type to match SupervisorSidebar expectations
+type SessionData = {
+  id: string;
+  userId: string;
+  userName: string;
+  email: string;
+  role: string;
+  roleId: string;
+  roleName: string;
+  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
+  permissions: string[];
+  department: string;
+  loginTime: string;
+  expiresAt: string;
+  user: {
+    uid: string;
+    email: string | null;
+    name: string | null;
+  };
+  allowedPages: string[];
+};
+
 // Temporary function to replace getStoredSession
-const getSessionData = () => {
+const getSessionData = (): SessionData | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const session = localStorage.getItem('supervisor_session');
-    return session ? JSON.parse(session) : null;
+    const sessionStr = localStorage.getItem('session');
+    if (!sessionStr) return null;
+    
+    const storedSession = JSON.parse(sessionStr);
+    if (!storedSession) return null;
+    
+    // Transform stored session to SessionData format
+    return {
+      id: storedSession.id || `sess_${Date.now()}`,
+      userId: storedSession.userId || storedSession.user?.uid || 'unknown',
+      userName: storedSession.userName || storedSession.user?.name || 'Supervisor',
+      email: storedSession.email || storedSession.user?.email || '',
+      role: storedSession.role || 'supervisor',
+      roleId: storedSession.roleId || 'role_supervisor',
+      roleName: storedSession.roleName || storedSession.role || 'Supervisor',
+      portal: 'supervisor',
+      permissions: storedSession.permissions || ['view_dashboard', 'approve_requests'],
+      department: storedSession.department || 'Supervision',
+      loginTime: storedSession.loginTime || new Date().toISOString(),
+      expiresAt: storedSession.expiresAt || new Date(Date.now() + 3600000).toISOString(),
+      user: storedSession.user || {
+        uid: storedSession.userId || 'unknown',
+        email: storedSession.email || null,
+        name: storedSession.userName || null
+      },
+      allowedPages: storedSession.allowedPages || ['/supervisor/dashboard', '/supervisor/approvals']
+    };
   } catch {
     return null;
   }
-};
-
-type UserSession = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
 };
 
 const initialApprovals = [
@@ -41,7 +80,7 @@ const initialApprovals = [
 
 export default function ApprovalsPage() {
   const router = useRouter();
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<SessionData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [approvals, setApprovals] = useState(initialApprovals);
   const [processingApproval, setProcessingApproval] = useState<string | null>(null);
@@ -49,12 +88,12 @@ export default function ApprovalsPage() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedSession = getSessionData();
-    if (!storedSession || storedSession.portal !== 'supervisor') {
+    const sessionData = getSessionData();
+    if (!sessionData || sessionData.portal !== 'supervisor') {
       router.push('/login/supervisor');
       return;
     }
-    setSession(storedSession);
+    setSession(sessionData);
   }, [router]);
 
   const showToast = (message: string, type: 'success' | 'error') => {

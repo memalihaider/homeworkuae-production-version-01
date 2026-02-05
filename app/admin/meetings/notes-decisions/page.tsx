@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { 
   FileText, Plus, Archive, Zap, Check, AlertCircle, Trash2, Search, 
   Link as LinkIcon, Clock, Users, BarChart3, Briefcase, Eye, Edit2, History,
-  Save, X, Calendar, Target, Activity, CheckCircle, Filter
+  Save, X, Calendar, Target, Activity, CheckCircle, Filter,
+  ArrowRight
 } from 'lucide-react'
 import { 
   collection, 
@@ -20,6 +21,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { div } from 'framer-motion/client'
 
 interface Note {
   id: string;
@@ -84,11 +86,13 @@ interface Meeting {
   status: string;
 }
 
+type TabType = 'notes' | 'decisions' | 'actions' | 'history';
+
 export default function NotesDecisions() {
-  const [selectedMeeting, setSelectedMeeting] = useState('all')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedDate, setSelectedDate] = useState('')
-  const [activeTab, setActiveTab] = useState<'notes' | 'decisions' | 'actions' | 'history'>('notes')
+  const [selectedMeeting, setSelectedMeeting] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<TabType>('notes')
   
   // Editing states
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
@@ -96,7 +100,7 @@ export default function NotesDecisions() {
   const [editingActionId, setEditingActionId] = useState<string | null>(null)
   
   // Form text states
-  const [editedNoteText, setEditedNoteText] = useState('')
+  const [editedNoteText, setEditedNoteText] = useState<string>('')
   const [editedDecision, setEditedDecision] = useState({
     title: '',
     description: '',
@@ -117,9 +121,9 @@ export default function NotesDecisions() {
   })
   
   // Show form states
-  const [showDecisionForm, setShowDecisionForm] = useState(false)
-  const [showNoteForm, setShowNoteForm] = useState(false)
-  const [showActionForm, setShowActionForm] = useState(false)
+  const [showDecisionForm, setShowDecisionForm] = useState<boolean>(false)
+  const [showNoteForm, setShowNoteForm] = useState<boolean>(false)
+  const [showActionForm, setShowActionForm] = useState<boolean>(false)
   
   // New item states
   const [newDecision, setNewDecision] = useState({
@@ -431,41 +435,61 @@ export default function NotesDecisions() {
     }
   }
 
-  const handleUpdateDecision = async (decisionId: string) => {
-    if (!editedDecision.title.trim() || !editedDecision.description.trim()) {
-      alert('Please enter decision title and description')
-      return
-    }
+  // FIXED FUNCTION: Now handles both status update and full edit
+  const handleUpdateDecision = async (decisionId: string, newStatus?: Decision['status']) => {
+    if (newStatus) {
+      // Update only status from dropdown
+      try {
+        const decisionRef = doc(db, 'decisions', decisionId)
+        await updateDoc(decisionRef, {
+          status: newStatus,
+          updatedAt: new Date().toISOString(),
+          ...(newStatus === 'Implemented' ? { completedDate: new Date().toISOString() } : {})
+        })
+        
+        fetchDecisions()
+      } catch (error) {
+        console.error('Error updating decision status:', error)
+        alert('Error updating decision status')
+      }
+    } else {
+      // Full update from edit form
+      if (!editedDecision.title.trim() || !editedDecision.description.trim()) {
+        alert('Please enter decision title and description')
+        return
+      }
 
-    try {
-      const decisionRef = doc(db, 'decisions', decisionId)
-      await updateDoc(decisionRef, {
-        title: editedDecision.title,
-        description: editedDecision.description,
-        owner: editedDecision.owner,
-        priority: editedDecision.priority,
-        status: editedDecision.status,
-        dueDate: editedDecision.dueDate,
-        linkedItems: editedDecision.linkedItems 
-          ? editedDecision.linkedItems.split(',').map(item => item.trim()).filter(item => item)
-          : [],
-        updatedAt: new Date().toISOString()
-      })
-      
-      fetchDecisions()
-      setEditingDecisionId(null)
-      setEditedDecision({
-        title: '',
-        description: '',
-        owner: '',
-        priority: 'Medium',
-        status: 'Pending',
-        dueDate: '',
-        linkedItems: ''
-      })
-    } catch (error) {
-      console.error('Error updating decision:', error)
-      alert('Error updating decision')
+      try {
+        const decisionRef = doc(db, 'decisions', decisionId)
+        await updateDoc(decisionRef, {
+          title: editedDecision.title,
+          description: editedDecision.description,
+          owner: editedDecision.owner,
+          priority: editedDecision.priority,
+          status: editedDecision.status,
+          dueDate: editedDecision.dueDate,
+          linkedItems: editedDecision.linkedItems 
+            ? editedDecision.linkedItems.split(',').map(item => item.trim()).filter(item => item)
+            : [],
+          updatedAt: new Date().toISOString(),
+          ...(editedDecision.status === 'Implemented' ? { completedDate: new Date().toISOString() } : {})
+        })
+        
+        fetchDecisions()
+        setEditingDecisionId(null)
+        setEditedDecision({
+          title: '',
+          description: '',
+          owner: '',
+          priority: 'Medium',
+          status: 'Pending',
+          dueDate: '',
+          linkedItems: ''
+        })
+      } catch (error) {
+        console.error('Error updating decision:', error)
+        alert('Error updating decision')
+      }
     }
   }
 
@@ -529,40 +553,58 @@ export default function NotesDecisions() {
     }
   }
 
-  const handleUpdateAction = async (actionId: string) => {
-    if (!editedAction.title.trim() || !editedAction.description.trim()) {
-      alert('Please enter action title and description')
-      return
-    }
+  const handleUpdateAction = async (actionId: string, newStatus?: ActionItem['status']) => {
+    if (newStatus) {
+      // Update only status from dropdown
+      try {
+        const actionRef = doc(db, 'actionItems', actionId)
+        await updateDoc(actionRef, {
+          status: newStatus,
+          updatedAt: new Date().toISOString(),
+          ...(newStatus === 'completed' ? { completedDate: new Date().toISOString() } : {})
+        })
+        
+        fetchActionItems()
+      } catch (error) {
+        console.error('Error updating action item:', error)
+        alert('Error updating action item')
+      }
+    } else {
+      // Full update from edit form
+      if (!editedAction.title.trim() || !editedAction.description.trim()) {
+        alert('Please enter action title and description')
+        return
+      }
 
-    try {
-      const actionRef = doc(db, 'actionItems', actionId)
-      await updateDoc(actionRef, {
-        title: editedAction.title,
-        description: editedAction.description,
-        owner: editedAction.owner,
-        priority: editedAction.priority,
-        status: editedAction.status,
-        dueDate: editedAction.dueDate,
-        linkedJob: editedAction.linkedJob,
-        updatedAt: new Date().toISOString(),
-        ...(editedAction.status === 'completed' ? { completedDate: new Date().toISOString() } : {})
-      })
-      
-      fetchActionItems()
-      setEditingActionId(null)
-      setEditedAction({
-        title: '',
-        description: '',
-        owner: '',
-        priority: 'Medium',
-        status: 'pending',
-        dueDate: '',
-        linkedJob: ''
-      })
-    } catch (error) {
-      console.error('Error updating action:', error)
-      alert('Error updating action')
+      try {
+        const actionRef = doc(db, 'actionItems', actionId)
+        await updateDoc(actionRef, {
+          title: editedAction.title,
+          description: editedAction.description,
+          owner: editedAction.owner,
+          priority: editedAction.priority,
+          status: editedAction.status,
+          dueDate: editedAction.dueDate,
+          linkedJob: editedAction.linkedJob,
+          updatedAt: new Date().toISOString(),
+          ...(editedAction.status === 'completed' ? { completedDate: new Date().toISOString() } : {})
+        })
+        
+        fetchActionItems()
+        setEditingActionId(null)
+        setEditedAction({
+          title: '',
+          description: '',
+          owner: '',
+          priority: 'Medium',
+          status: 'pending',
+          dueDate: '',
+          linkedJob: ''
+        })
+      } catch (error) {
+        console.error('Error updating action:', error)
+        alert('Error updating action')
+      }
     }
   }
 
@@ -578,6 +620,7 @@ export default function NotesDecisions() {
     }
   }
 
+  // This function is no longer needed - integrated into handleUpdateAction
   const handleUpdateActionStatus = async (actionId: string, newStatus: ActionItem['status']) => {
     try {
       const actionRef = doc(db, 'actionItems', actionId)
@@ -715,6 +758,19 @@ export default function NotesDecisions() {
     setSelectedDate('')
   }
 
+  // ========== HANDLER FUNCTIONS ==========
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
+  }
+
+  const handleMeetingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMeeting(e.target.value)
+  }
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDate(e.target.value)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -769,7 +825,7 @@ export default function NotesDecisions() {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={handleDateChange}
                 className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
               <div className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm flex items-center gap-2">
@@ -890,7 +946,7 @@ export default function NotesDecisions() {
             
             <select
               value={newDecision.priority}
-              onChange={(e) => setNewDecision({...newDecision, priority: e.target.value as any})}
+              onChange={(e) => setNewDecision({...newDecision, priority: e.target.value as 'Low' | 'Medium' | 'High'})}
               className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="Low">Low Priority</option>
@@ -960,7 +1016,7 @@ export default function NotesDecisions() {
             
             <select
               value={newAction.priority}
-              onChange={(e) => setNewAction({...newAction, priority: e.target.value as any})}
+              onChange={(e) => setNewAction({...newAction, priority: e.target.value as 'Low' | 'Medium' | 'High'})}
               className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="Low">Low Priority</option>
@@ -1012,37 +1068,37 @@ export default function NotesDecisions() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <div className="bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Notes</p>
           <p className="text-3xl font-black text-blue-700">{stats.totalNotes}</p>
           <p className="text-xs text-blue-600 mt-1">{stats.recentNotes} this week</p>
         </div>
         
-        <div className="bg-linear-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Decisions</p>
           <p className="text-3xl font-black text-green-700">{stats.totalDecisions}</p>
           <p className="text-xs text-green-600 mt-1">{stats.approvedDecisions} approved</p>
         </div>
         
-        <div className="bg-linear-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Implemented</p>
           <p className="text-3xl font-black text-purple-700">{stats.implementedDecisions}</p>
           <p className="text-xs text-purple-600 mt-1">Decisions</p>
         </div>
         
-        <div className="bg-linear-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Action Items</p>
           <p className="text-3xl font-black text-orange-700">{stats.totalActions}</p>
           <p className="text-xs text-orange-600 mt-1">Total tasks</p>
         </div>
         
-        <div className="bg-linear-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">In Progress</p>
           <p className="text-3xl font-black text-yellow-700">{stats.inProgressActions}</p>
           <p className="text-xs text-yellow-600 mt-1">Action items</p>
         </div>
         
-        <div className="bg-linear-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Pending</p>
           <p className="text-3xl font-black text-red-700">{stats.pendingActions}</p>
           <p className="text-xs text-red-600 mt-1">Awaiting action</p>
@@ -1051,7 +1107,7 @@ export default function NotesDecisions() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 border-b">
-        {(['notes', 'decisions', 'actions', 'history'] as const).map(tab => (
+        {(['notes', 'decisions', 'actions', 'history'] as TabType[]).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -1082,14 +1138,14 @@ export default function NotesDecisions() {
               type="text"
               placeholder="Search notes, decisions, action items..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           
           <select
             value={selectedMeeting}
-            onChange={(e) => setSelectedMeeting(e.target.value)}
+            onChange={handleMeetingChange}
             className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Meetings</option>
@@ -1322,7 +1378,7 @@ export default function NotesDecisions() {
                           <div className="grid grid-cols-2 gap-2">
                             <select
                               value={editedDecision.priority}
-                              onChange={(e) => setEditedDecision({...editedDecision, priority: e.target.value as any})}
+                              onChange={(e) => setEditedDecision({...editedDecision, priority: e.target.value as 'Low' | 'Medium' | 'High'})}
                               className="px-2 py-1 border rounded text-sm"
                             >
                               <option value="Low">Low</option>
@@ -1331,7 +1387,7 @@ export default function NotesDecisions() {
                             </select>
                             <select
                               value={editedDecision.status}
-                              onChange={(e) => setEditedDecision({...editedDecision, status: e.target.value as any})}
+                              onChange={(e) => setEditedDecision({...editedDecision, status: e.target.value as 'Pending' | 'Approved' | 'Rejected' | 'Implemented'})}
                               className="px-2 py-1 border rounded text-sm"
                             >
                               <option value="Pending">Pending</option>
@@ -1349,7 +1405,7 @@ export default function NotesDecisions() {
                           />
                           <div className="flex gap-2">
                             <button 
-                              onClick={() => handleUpdateDecision(decision.id)}
+                              onClick={() => handleUpdateDecision(decision.id)} // No second argument for full edit
                               className="px-3 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700"
                             >
                               Save
@@ -1400,7 +1456,7 @@ export default function NotesDecisions() {
                       <div className="flex flex-col gap-2">
                         <select
                           value={decision.status}
-                          onChange={(e) => handleUpdateDecision(decision.id, e.target.value as Decision['status'])}
+                          onChange={(e) => handleUpdateDecision(decision.id, e.target.value as Decision['status'])} // Fixed: 2 arguments
                           className={`text-xs px-2 py-1 rounded font-semibold border ${getStatusColor(decision.status)}`}
                         >
                           <option value="Pending">Pending</option>
@@ -1530,7 +1586,7 @@ export default function NotesDecisions() {
                           <div className="grid grid-cols-2 gap-2">
                             <select
                               value={editedAction.priority}
-                              onChange={(e) => setEditedAction({...editedAction, priority: e.target.value as any})}
+                              onChange={(e) => setEditedAction({...editedAction, priority: e.target.value as 'Low' | 'Medium' | 'High'})}
                               className="px-2 py-1 border rounded text-sm"
                             >
                               <option value="Low">Low</option>
@@ -1539,7 +1595,7 @@ export default function NotesDecisions() {
                             </select>
                             <select
                               value={editedAction.status}
-                              onChange={(e) => setEditedAction({...editedAction, status: e.target.value as any})}
+                              onChange={(e) => setEditedAction({...editedAction, status: e.target.value as 'pending' | 'in-progress' | 'completed' | 'cancelled'})}
                               className="px-2 py-1 border rounded text-sm"
                             >
                               <option value="pending">Pending</option>
@@ -1557,7 +1613,7 @@ export default function NotesDecisions() {
                           />
                           <div className="flex gap-2">
                             <button 
-                              onClick={() => handleUpdateAction(item.id)}
+                              onClick={() => handleUpdateAction(item.id)} // No second argument for full edit
                               className="px-3 py-1 bg-purple-600 text-white rounded text-xs font-bold hover:bg-purple-700"
                             >
                               Save
@@ -1609,7 +1665,7 @@ export default function NotesDecisions() {
                       <div className="flex flex-col gap-2">
                         <select
                           value={item.status}
-                          onChange={(e) => handleUpdateActionStatus(item.id, e.target.value as ActionItem['status'])}
+                          onChange={(e) => handleUpdateAction(item.id, e.target.value as ActionItem['status'])} // Fixed: 2 arguments
                           className={`text-xs px-2 py-1 rounded font-semibold border ${getStatusColor(item.status)}`}
                         >
                           <option value="pending">Pending</option>
@@ -1780,7 +1836,38 @@ export default function NotesDecisions() {
       )}
 
       {/* AI Extraction Info */}
-      
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+        <div className="flex items-start gap-4">
+          <Zap className="h-6 w-6 text-blue-600 mt-1 shrink-0" />
+          <div>
+            <h3 className="font-bold text-blue-900 mb-2">AI-Powered Decision Tracking</h3>
+            <p className="text-sm text-blue-800 mb-3">
+              This system automatically extracts decisions from meeting notes and creates actionable items. 
+              All decisions are tracked with status, owners, and due dates for complete accountability.
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-black text-blue-700">{stats.totalNotes}</p>
+                <p className="text-xs text-blue-600">Meeting Notes</p>
+              </div>
+              <div className="h-6 w-6 flex items-center justify-center">
+                <ArrowRight className="h-4 w-4 text-blue-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-black text-green-700">{stats.totalDecisions}</p>
+                <p className="text-xs text-green-600">Decisions</p>
+              </div>
+              <div className="h-6 w-6 flex items-center justify-center">
+                <ArrowRight className="h-4 w-4 text-green-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-black text-purple-700">{stats.totalActions}</p>
+                <p className="text-xs text-purple-600">Action Items</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Mail, File,Send, CheckCircle, AlertCircle, RefreshCw, User, Building2, Phone, Calendar, FileText, Loader2, MessageSquare, Smartphone } from 'lucide-react'
+import { Bell, Mail, File, Send, CheckCircle, AlertCircle, RefreshCw, User, Building2, Phone, Calendar, FileText, Loader2, MessageSquare, Smartphone } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
@@ -31,6 +31,46 @@ interface TodayQuotation {
   discount: number;
   discountType: string;
   location: string;
+  // Missing properties from QuotationData
+  dueDate?: string;
+  paymentMethods?: any[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  createdBy?: string;
+}
+
+// Helper function to convert TodayQuotation to QuotationData format
+const convertToQuotationData = (quotation: TodayQuotation): any => {
+  return {
+    id: quotation.id,
+    quoteNumber: quotation.quoteNumber,
+    client: quotation.client,
+    company: quotation.company,
+    email: quotation.email,
+    phone: quotation.phone,
+    total: quotation.total,
+    currency: quotation.currency,
+    status: quotation.status,
+    date: quotation.date,
+    validUntil: quotation.validUntil,
+    services: quotation.services,
+    products: quotation.products,
+    notes: quotation.notes,
+    terms: quotation.terms,
+    subtotal: quotation.subtotal,
+    taxAmount: quotation.taxAmount,
+    taxRate: quotation.taxRate,
+    discountAmount: quotation.discountAmount,
+    discount: quotation.discount,
+    discountType: quotation.discountType,
+    location: quotation.location,
+    // Required properties for QuotationData
+    dueDate: quotation.dueDate || quotation.validUntil || quotation.date,
+    paymentMethods: quotation.paymentMethods || [],
+    createdAt: quotation.createdAt || quotation.date || new Date(),
+    updatedAt: quotation.updatedAt || new Date(),
+    createdBy: quotation.createdBy || 'admin'
+  }
 }
 
 export default function QuotationReminders() {
@@ -77,7 +117,13 @@ export default function QuotationReminders() {
           discountAmount: data.discountAmount || 0,
           discount: data.discount || 0,
           discountType: data.discountType || 'percentage',
-          location: data.location || ''
+          location: data.location || '',
+          // Adding missing properties with fallback values
+          dueDate: data.dueDate || data.validUntil || quoteDate,
+          paymentMethods: data.paymentMethods || [],
+          createdAt: data.createdAt || data.date || new Date(),
+          updatedAt: data.updatedAt || new Date(),
+          createdBy: data.createdBy || 'admin'
         }
       })
       
@@ -108,10 +154,12 @@ export default function QuotationReminders() {
       setSendingEmail(quotation.id)
       setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], email: 'sending' } }))
 
-      const pdfBlob = getPDFAsBlob(quotation)
+      // Convert to QuotationData before passing to getPDFAsBlob and sendEmailWithAttachment
+      const quotationData = convertToQuotationData(quotation)
+      const pdfBlob = getPDFAsBlob(quotationData)
       
       await sendEmailWithAttachment(
-        quotation,
+        quotationData, // Pass converted data instead of original quotation
         pdfBlob,
         // Success callback
         () => {
@@ -156,8 +204,11 @@ export default function QuotationReminders() {
       setSendingWhatsApp(quotation.id)
       setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], whatsapp: 'sending' } }))
 
+      // Convert to QuotationData before passing to sharePDFViaWhatsApp
+      const quotationData = convertToQuotationData(quotation)
+      
       await sharePDFViaWhatsApp(
-        quotation,
+        quotationData,
         // Success callback
         () => {
           setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], whatsapp: 'sent' } }))

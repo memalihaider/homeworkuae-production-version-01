@@ -63,7 +63,14 @@ export default function GuestLoginPage() {
       permissions: ['view_announcements', 'view_catalog'],
       department: 'External',
       loginTime: new Date(),
-      expiresAt: new Date(Date.now() + 3600000) // 1 hour
+      expiresAt: new Date(Date.now() + 3600000), // 1 hour
+      // Adding missing properties for SessionData type
+      user: {
+        uid: 'guest-temp', // uid is required
+        email: 'guest@homeware.ae',
+        name: 'Guest User'
+      },
+      allowedPages: ['/guest/dashboard', '/guest/announcements', '/guest/catalog']
     };
     
     storeSession(session);

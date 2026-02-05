@@ -3,25 +3,64 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ManagerSidebar } from '../_components/sidebar';
-import { Calendar, Clock, Users, MapPin, Plus, Menu, X, Video, MapPinIcon } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, Plus, Menu, X, Video } from 'lucide-react';
+
+// Define SessionData type to match ManagerSidebar expectations
+type SessionData = {
+  id: string;
+  userId: string;
+  userName: string;
+  email: string;
+  role: string;
+  roleId: string;
+  roleName: string;
+  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
+  permissions: string[];
+  department: string;
+  loginTime: string;
+  expiresAt: string;
+  user: {
+    uid: string;
+    email: string | null;
+    name: string | null;
+  };
+  allowedPages: string[];
+};
 
 // Temporary function to replace getStoredSession
-const getSessionData = () => {
+const getSessionData = (): SessionData | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const session = localStorage.getItem('manager_session');
-    return session ? JSON.parse(session) : null;
+    const sessionStr = localStorage.getItem('session');
+    if (!sessionStr) return null;
+    
+    const storedSession = JSON.parse(sessionStr);
+    if (!storedSession) return null;
+    
+    // Transform stored session to SessionData format
+    return {
+      id: storedSession.id || `sess_${Date.now()}`,
+      userId: storedSession.userId || storedSession.user?.uid || 'unknown',
+      userName: storedSession.userName || storedSession.user?.name || 'Manager',
+      email: storedSession.email || storedSession.user?.email || '',
+      role: storedSession.role || 'manager',
+      roleId: storedSession.roleId || 'role_manager',
+      roleName: storedSession.roleName || storedSession.role || 'Manager',
+      portal: 'manager',
+      permissions: storedSession.permissions || ['view_dashboard', 'view_meetings'],
+      department: storedSession.department || 'Management',
+      loginTime: storedSession.loginTime || new Date().toISOString(),
+      expiresAt: storedSession.expiresAt || new Date(Date.now() + 3600000).toISOString(),
+      user: storedSession.user || {
+        uid: storedSession.userId || 'unknown',
+        email: storedSession.email || null,
+        name: storedSession.userName || null
+      },
+      allowedPages: storedSession.allowedPages || ['/manager/dashboard', '/manager/meetings']
+    };
   } catch {
     return null;
   }
-};
-
-type UserSession = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
 };
 
 const meetings = [
@@ -34,18 +73,18 @@ const meetings = [
 
 export default function Meetings() {
   const router = useRouter();
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<SessionData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<typeof meetings[0] | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'in-person' | 'virtual'>('all');
 
   useEffect(() => {
-    const storedSession = getSessionData();
-    if (!storedSession || storedSession.portal !== 'manager') {
+    const sessionData = getSessionData();
+    if (!sessionData || sessionData.portal !== 'manager') {
       router.push('/login/manager');
       return;
     }
-    setSession(storedSession);
+    setSession(sessionData);
   }, [router]);
 
   const filteredMeetings = meetings.filter(m => filterType === 'all' || m.type === filterType);
@@ -177,7 +216,7 @@ export default function Meetings() {
                     <p className="text-white">{meeting.time}</p>
                   </div>
                   <div className="text-sm">
-                    <p className="text-slate-400 flex items-center gap-1"><MapPinIcon className="w-4 h-4" />Location</p>
+                    <p className="text-slate-400 flex items-center gap-1"><MapPin className="w-4 h-4" />Location</p>
                     <p className="text-white truncate">{meeting.location}</p>
                   </div>
                   <div className="text-sm">

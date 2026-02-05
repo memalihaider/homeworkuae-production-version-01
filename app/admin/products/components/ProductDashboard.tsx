@@ -22,7 +22,17 @@ import {
   query, 
   onSnapshot 
 } from 'firebase/firestore'
-import { ProductItem, Category } from '../lib/types'
+import { ProductItem, Category } from '@/lib/types'
+
+interface DashboardStat {
+  label: string;
+  value: string;
+  subValue: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bgColor: string;
+  up: boolean;
+}
 
 export default function ProductDashboard() {
   const [products, setProducts] = useState<ProductItem[]>([])
@@ -55,7 +65,10 @@ export default function ProductDashboard() {
           status: data.status || 'ACTIVE',
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || '',
-          imageUrl: data.imageUrl || ''
+          imageUrl: data.imageUrl || '',
+          slug: '',
+          isActive: true,
+          profitMargin: 0
         })
       })
       setProducts(productsList)
@@ -90,7 +103,10 @@ export default function ProductDashboard() {
           status: data.status || 'ACTIVE',
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || '',
-          imageUrl: data.imageUrl || ''
+          imageUrl: data.imageUrl || '',
+          slug: '',
+          isActive: true,
+          profitMargin: 0
         })
       })
       setServices(servicesList)
@@ -115,7 +131,9 @@ export default function ProductDashboard() {
           color: data.color || '#000000',
           itemCount: data.itemCount || 0,
           createdAt: data.createdAt || '',
-          updatedAt: data.updatedAt || ''
+          updatedAt: data.updatedAt || '',
+          slug: '',
+          isActive: false
         })
       })
       setCategories(categoriesList)
@@ -175,7 +193,8 @@ export default function ProductDashboard() {
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      ...calculateTrend(totalProducts)
+      trend: calculateTrend(totalProducts).value,
+      up: calculateTrend(totalProducts).up
     },
     {
       label: 'Total Services',
@@ -184,7 +203,8 @@ export default function ProductDashboard() {
       icon: Zap,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      ...calculateTrend(totalServices)
+      trend: calculateTrend(totalServices).value,
+      up: calculateTrend(totalServices).up
     },
     {
       label: 'Categories',
@@ -193,7 +213,8 @@ export default function ProductDashboard() {
       icon: Layers,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      ...calculateTrend(categories.length)
+      trend: calculateTrend(categories.length).value,
+      up: calculateTrend(categories.length).up
     },
     {
       label: 'Critical Stock',
@@ -202,7 +223,8 @@ export default function ProductDashboard() {
       icon: AlertTriangle,
       color: lowStockProducts.length > 0 ? 'text-red-600' : 'text-green-600',
       bgColor: lowStockProducts.length > 0 ? 'bg-red-50' : 'bg-green-50',
-      ...calculateTrend(lowStockProducts.length, Math.max(0, lowStockProducts.length - 2))
+      trend: calculateTrend(lowStockProducts.length, Math.max(0, lowStockProducts.length - 2)).value,
+      up: calculateTrend(lowStockProducts.length, Math.max(0, lowStockProducts.length - 2)).up
     },
     {
       label: 'Inventory Value',
@@ -211,7 +233,8 @@ export default function ProductDashboard() {
       icon: DollarSign,
       color: 'text-amber-600',
       bgColor: 'bg-amber-50',
-      ...calculateTrend(totalValue)
+      trend: calculateTrend(totalValue).value,
+      up: calculateTrend(totalValue).up
     },
     {
       label: 'Avg Margin',
@@ -220,14 +243,15 @@ export default function ProductDashboard() {
       icon: TrendingUp,
       color: avgMargin > 20 ? 'text-green-600' : avgMargin > 10 ? 'text-amber-600' : 'text-red-600',
       bgColor: avgMargin > 20 ? 'bg-green-50' : avgMargin > 10 ? 'bg-amber-50' : 'bg-red-50',
-      ...calculateTrend(avgMargin)
+      trend: calculateTrend(avgMargin).value,
+      up: calculateTrend(avgMargin).up
     }
   ]
 
   // Get recent activity (last 5 items)
   const recentItems = [...products, ...services]
     .filter(item => item.status === 'ACTIVE')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
     .slice(0, 5)
 
   if (loading) {
@@ -267,7 +291,7 @@ export default function ProductDashboard() {
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
               <div className={`flex items-center text-xs font-bold ${stat.up ? 'text-green-600' : 'text-red-600'}`}>
-                {stat.value}
+                {stat.trend}
                 {stat.up ? <ArrowUpRight className="h-3 w-3 ml-0.5" /> : <ArrowDownRight className="h-3 w-3 ml-0.5" />}
               </div>
             </div>

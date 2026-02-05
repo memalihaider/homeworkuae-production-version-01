@@ -17,10 +17,10 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useState } from 'react';
-import { clearSession, type UserSession } from '@/lib/auth';
+import { clearSession, type SessionData } from '@/lib/auth';
 
 interface ManagerSidebarProps {
-  session: UserSession | null;
+  session: SessionData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -43,6 +43,43 @@ export function ManagerSidebar({ session, open, onOpenChange }: ManagerSidebarPr
   const handleLogout = () => {
     clearSession();
     router.push('/login');
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (!session?.user?.name) return 'M';
+    const nameParts = session.user.name.split(' ');
+    const initials = nameParts.map((n: string) => n[0]).join('');
+    return initials || 'M';
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    return session?.user?.name || 'Manager';
+  };
+
+  // Get user role - Fixed version
+  const getUserRole = () => {
+    // Check multiple possible locations for role
+    if (!session) return 'Manager';
+    
+    // Option 1: Direct role property (if exists in some session formats)
+    if ((session as any)?.role) {
+      return (session as any).role;
+    }
+    
+    // Option 2: roleName property (if exists in some session formats)
+    if ((session as any)?.roleName) {
+      return (session as any).roleName;
+    }
+    
+    // Option 3: role in user object
+    if ((session.user as any)?.role) {
+      return (session.user as any).role;
+    }
+    
+    // Default fallback
+    return 'Manager';
   };
 
   return (
@@ -98,11 +135,15 @@ export function ManagerSidebar({ session, open, onOpenChange }: ManagerSidebarPr
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                  {session?.userName?.split(' ').map(n => n[0]).join('') || 'M'}
+                  {getUserInitials()}
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-white">{session?.userName || 'Manager'}</p>
-                  <p className="text-xs text-slate-400">{session?.roleName || 'Manager'}</p>
+                  <p className="text-sm font-medium text-white">
+                    {getUserDisplayName()}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {getUserRole()}
+                  </p>
                 </div>
               </div>
               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />

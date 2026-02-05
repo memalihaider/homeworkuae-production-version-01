@@ -14,10 +14,10 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useState } from 'react';
-import { clearSession, type UserSession } from '@/lib/auth';
+import { clearSession, type SessionData } from '@/lib/auth';
 
 interface SupervisorSidebarProps {
-  session: UserSession | null;
+  session: SessionData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -38,6 +38,37 @@ export function SupervisorSidebar({ session, open, onOpenChange }: SupervisorSid
   const handleLogout = () => {
     clearSession();
     router.push('/login');
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (!session?.user?.name) return 'S';
+    const nameParts = session.user.name.split(' ');
+    const initials = nameParts.map((n: string) => n[0]).join('');
+    return initials || 'S';
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    return session?.user?.name || 'Supervisor';
+  };
+
+  // Get user role - Fixed version
+  const getUserRole = () => {
+    if (!session) return 'Supervisor';
+    
+    // Check multiple possible locations for role
+    if (session.roleName) {
+      return session.roleName;
+    }
+    
+    // Check if role exists in user object
+    if ((session.user as any)?.role) {
+      return (session.user as any).role;
+    }
+    
+    // Default fallback
+    return 'Supervisor';
   };
 
   return (
@@ -93,11 +124,15 @@ export function SupervisorSidebar({ session, open, onOpenChange }: SupervisorSid
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                  {session?.userName?.split(' ').map(n => n[0]).join('') || 'S'}
+                  {getUserInitials()}
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-white">{session?.userName || 'Supervisor'}</p>
-                  <p className="text-xs text-emerald-200">{session?.roleName || 'Supervisor'}</p>
+                  <p className="text-sm font-medium text-white">
+                    {getUserDisplayName()}
+                  </p>
+                  <p className="text-xs text-emerald-200">
+                    {getUserRole()}
+                  </p>
                 </div>
               </div>
               <ChevronDown className={`w-4 h-4 text-emerald-200 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
