@@ -634,7 +634,7 @@ export default function MarketingDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading real-time data from Firebase...</p>
+          <p className="text-gray-600">Loading data....</p>
         </div>
       </div>
     )
@@ -740,9 +740,9 @@ export default function MarketingDashboard() {
         {[
           { id: 'leads', label: 'Lead Management', icon: Users },
           { id: 'campaigns', label: 'Campaigns', icon: Target },
-          { id: 'emails', label: 'Email Scheduler', icon: Mail },
+         
           { id: 'followup', label: 'Follow-up System', icon: MessageSquare },
-          { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+          
         ].map((tab) => (
           <button
             key={tab.id}
@@ -797,19 +797,7 @@ export default function MarketingDashboard() {
                 </select>
               </div>
             </div>
-            <button
-              onClick={() => {
-                if (selectedLeads.length === 0) {
-                  alert('Please select at least one lead')
-                  return
-                }
-                setShowNewEmailModal(true)
-              }}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Mail className="h-4 w-4 inline mr-2" />
-              Send Email to Selected
-            </button>
+           
           </div>
 
           {/* Leads Table */}
@@ -819,23 +807,11 @@ export default function MarketingDashboard() {
                 <thead>
                   <tr className="border-b border-gray-300 bg-gray-50">
                     <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">
-                      <input
-                        type="checkbox"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedLeads(filteredLeads.map(lead => lead.id))
-                          } else {
-                            setSelectedLeads([])
-                          }
-                        }}
-                        className="rounded border-gray-300"
-                      />
+                     
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">Lead</th>
                     <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">Interest</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">Budget</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">Next Follow-up</th>
+                   
                     <th className="px-6 py-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">Actions</th>
                   </tr>
                 </thead>
@@ -843,18 +819,7 @@ export default function MarketingDashboard() {
                   {filteredLeads.map((lead) => (
                     <tr key={lead.id} className="group hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedLeads.includes(lead.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedLeads([...selectedLeads, lead.id])
-                            } else {
-                              setSelectedLeads(selectedLeads.filter(id => id !== lead.id))
-                            }
-                          }}
-                          className="rounded border-gray-300"
-                        />
+                        
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
@@ -873,15 +838,7 @@ export default function MarketingDashboard() {
                           {lead.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-black">{lead.interest}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-black">{lead.budget}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-black">{lead.nextFollowUp}</p>
-                      </td>
+                      
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <button 
@@ -1028,98 +985,7 @@ export default function MarketingDashboard() {
         </div>
       )}
 
-      {/* Email Scheduler */}
-      {activeTab === 'emails' && (
-        <div className="space-y-6">
-          <div className="bg-white p-8 rounded-[32px] border border-gray-300 shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-black">Email Scheduler</h2>
-                <p className="text-gray-600 font-medium">Schedule automated emails and reminders</p>
-              </div>
-              <button 
-                onClick={() => {
-                  resetEmailForm()
-                  setShowNewEmailModal(true)
-                }}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Plus className="h-4 w-4 inline mr-2" />
-                Schedule Email
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {scheduledEmails.map((email) => (
-                <div key={email.id} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-200">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-300">
-                      <Mail className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-black text-black">{email.subject}</h4>
-                      <p className="text-gray-600 text-sm">To: {email.recipient}</p>
-                      <p className="text-gray-500 text-xs">Scheduled: {email.scheduledTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                      email.status === 'sent' ? 'bg-emerald-100 text-emerald-800' :
-                      email.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {email.status}
-                    </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                      email.type === 'reminder' ? 'bg-amber-100 text-amber-800' :
-                      email.type === 'promotional' ? 'bg-purple-100 text-purple-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {email.type}
-                    </span>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => {
-                          setCurrentEmail(email)
-                          setEmailForm({
-                            subject: email.subject,
-                            recipient: email.recipient,
-                            recipientEmail: email.recipientEmail,
-                            scheduledTime: email.scheduledTime,
-                            type: email.type,
-                            message: email.message
-                          })
-                          setShowNewEmailModal(true)
-                        }}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="Edit Email"
-                      >
-                        <Edit className="h-4 w-4 text-gray-600" />
-                      </button>
-                      {email.status === 'scheduled' && (
-                        <button 
-                          onClick={() => handleSendEmailNow(email.id)}
-                          className="p-2 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Send Now"
-                        >
-                          <Send className="h-4 w-4 text-green-600" />
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => handleDeleteEmail(email.id)}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Email"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+     
 
       {/* Follow-up System */}
       {activeTab === 'followup' && (

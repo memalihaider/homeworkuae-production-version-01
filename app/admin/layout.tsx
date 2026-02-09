@@ -1052,7 +1052,7 @@ const MENU_STRUCTURE = [
       { label: 'Attendance', key: 'Attendance' },
       { label: 'Leave Management', key: 'Leave Management' },
       { label: 'Payroll', key: 'Payroll' },
-      { label: 'Performance Dashboard', key: 'Performance Dashboard' },
+     
       { label: 'Feedback & Complaints', key: 'Feedback & Complaints' }
     ]
   },
@@ -1728,7 +1728,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2.5 rounded-xl hover:bg-accent relative transition-colors group"
             >
-              <Bell className="h-5 w-5 text-muted-foreground group-hover:text-foreground" />
+              <Bell className="h-7 w-7 text-muted-foreground group-hover:text-foreground" />
               {unreadCount > 0 && (
                 <span className="absolute top-2 right-2 h-5 w-5 bg-red-600 rounded-full border-2 border-card flex items-center justify-center text-[10px] font-black text-white">
                   {unreadCount}

@@ -77,7 +77,7 @@ type PrivacyPolicy = {
 }
 
 export default function CMS() {
-  const [activeTab, setActiveTab] = useState('pages')
+  const [activeTab, setActiveTab] = useState('blog')
   const [showModal, setShowModal] = useState(false)
   const [showTestimonialModal, setShowTestimonialModal] = useState(false)
   const [showFAQModal, setShowFAQModal] = useState(false)
@@ -751,7 +751,7 @@ You have the right to request access to the personal data we hold about you, to 
       {/* Tabs - Updated with FAQ and Privacy */}
       <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl w-fit flex-wrap">
         {[
-          { id: 'pages', label: 'Pages', icon: Layout },
+          
           { id: 'blog', label: 'Blog Posts', icon: FileText },
           { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
           { id: 'faq', label: 'FAQs', icon: HelpCircle },
