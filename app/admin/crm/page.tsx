@@ -412,7 +412,7 @@ export default function UnifiedCRMDashboard() {
 
   
   const handleAddNewLead = async () => {
-  if (!formData.name || !formData.company || !formData.value) {
+  if (!formData.name ) {
     alert('Please fill in all required fields!')
     return
   }
@@ -1919,7 +1919,7 @@ export default function UnifiedCRMDashboard() {
               </button>
               <button
                 onClick={handleAddNewLead}
-                disabled={!formData.name || !formData.company || !formData.value}
+                // disabled={!formData.name || !formData.company || !formData.value}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg font-bold text-sm uppercase transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />

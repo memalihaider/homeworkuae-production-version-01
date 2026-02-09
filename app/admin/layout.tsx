@@ -1,4 +1,3 @@
-
 // 'use client'
 
 // import { ReactNode, useState, useEffect } from 'react'
@@ -47,7 +46,8 @@
 //   Package,
 //   X,
 //   ExternalLink,
-//   Sparkles
+//   Sparkles,
+//   Inbox // New icon for Process Inquiry
 // } from 'lucide-react'
 // import { getSession, logout } from '@/lib/auth'
 
@@ -61,7 +61,7 @@
 //   link?: string
 // }
 
-// // Define all possible pages with their labels and icons
+// // Define all possible pages with their labels and icons - ADDED PROCESS INQUIRY
 // const ALL_PAGES_CONFIG = {
 //   'Dashboard': { icon: LayoutDashboard, href: '/admin/dashboard' },
 //   'CRM': { icon: Users, href: '/admin/crm' },
@@ -75,6 +75,7 @@
 //   'Equipment & Permits': { icon: Wrench, href: '/admin/equipment-permits' },
 //   'Job Profitability': { icon: TrendingUp, href: '/admin/job-profitability' },
 //   'Bookings': { icon: Calendar, href: '/admin/bookings' },
+//   'Process Inquiry': { icon: Inbox, href: '/admin/process-inquiry' }, // NEW ENTRY - ADDED HERE
 //   'HR Management': { icon: UserCircle, href: '/admin/hr' },
 //   'Employee Directory': { icon: Users, href: '/admin/hr/employee-directory' },
 //   'Attendance': { icon: Clock, href: '/admin/hr/attendance' },
@@ -100,7 +101,7 @@
 //   'Settings': { icon: SettingsIcon, href: '/admin/settings' }
 // }
 
-// // Define menu structure with parent-child relationships
+// // Define menu structure with parent-child relationships - ADDED PROCESS INQUIRY
 // const MENU_STRUCTURE = [
 //   { 
 //     type: 'single',
@@ -122,7 +123,6 @@
 //     label: 'Surveys',
 //     key: 'Surveys'
 //   },
-
 //   { 
 //     type: 'single',
 //     label: 'Quotations',
@@ -152,6 +152,11 @@
 //     type: 'single',
 //     label: 'Bookings',
 //     key: 'Bookings'
+//   },
+//   { 
+//     type: 'single',
+//     label: 'Process Inquiry', // NEW ENTRY - ADDED HERE (Position 10)
+//     key: 'Process Inquiry'
 //   },
 //   { 
 //     type: 'group',
@@ -194,7 +199,6 @@
 //     submenu: [
 //       { label: 'Role Manager', key: 'Role Manager' },
 //       { label: 'Permission Matrix', key: 'Permission Matrix' },
-     
 //       { label: 'Audit Logs', key: 'Audit Logs' }
 //     ]
 //   },
@@ -257,10 +261,19 @@
 //   useEffect(() => {
 //     const session = getSession()
 //     if (session) {
+//       // TEMPORARY FIX: Add 'Process Inquiry' to allowedPages for testing
+//       const allowedPages = session.allowedPages || []
+//       const allAllowedPages = [...allowedPages]
+      
+//       // If Process Inquiry is not already in allowedPages, add it for testing
+//       if (!allAllowedPages.includes('Process Inquiry')) {
+//         allAllowedPages.push('Process Inquiry')
+//       }
+      
 //       setUserSession({
 //         name: session.user.name || 'User',
 //         email: session.user.email || '',
-//         allowedPages: session.allowedPages || [],
+//         allowedPages: allAllowedPages, // Use updated allowedPages
 //         roleName: session.roleName || 'User'
 //       })
       
@@ -274,11 +287,16 @@
 //       if (currentMenu) {
 //         setOpenMenus(prev => ({ ...prev, [currentMenu.key]: true }))
 //       }
+      
+//       // Also check if current path is Process Inquiry page
+//       if (pathname === '/admin/process-inquiry') {
+//         console.log('Currently on Process Inquiry page')
+//       }
 //     } else {
 //       // No session found, redirect to login
 //       router.push('/login')
 //     }
-//   }, [router])
+//   }, [router, pathname])
 
 //   const handleSignOut = async () => {
 //     setIsSigningOut(true)
@@ -300,6 +318,7 @@
 //     setNotifications(notifications.map(n => ({ ...n, read: true })))
 //   }
 
+//   // FIXED: Correct arrow function syntax
 //   const handleDeleteNotification = (id: string) => {
 //     setNotifications(notifications.filter(n => n.id !== id))
 //   }
@@ -349,6 +368,13 @@
 
 //   // Get filtered menu items
 //   const filteredMenuItems = getFilteredMenuItems()
+
+//   // Log for debugging
+//   useEffect(() => {
+//     console.log('User Session:', userSession)
+//     console.log('Filtered Menu Items:', filteredMenuItems.map(item => item.label))
+//     console.log('Current Path:', pathname)
+//   }, [userSession, filteredMenuItems, pathname])
 
 //   // If no user session or no allowed pages, show minimal sidebar
 //   if (!userSession) {
@@ -790,7 +816,7 @@
 // new codee
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {  
@@ -837,9 +863,19 @@ import {
   X,
   ExternalLink,
   Sparkles,
-  Inbox // New icon for Process Inquiry
+  Inbox
 } from 'lucide-react'
 import { getSession, logout } from '@/lib/auth'
+import { db } from '@/lib/firebase'
+import { 
+  collection, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  limit,
+  doc,
+  updateDoc
+} from 'firebase/firestore'
 
 type Notification = {
   id: string
@@ -849,9 +885,69 @@ type Notification = {
   time: string
   read: boolean
   link?: string
+  bookingId?: string
+  firestoreId?: string
 }
 
-// Define all possible pages with their labels and icons - ADDED PROCESS INQUIRY
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+    
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("New Booking Received", {
+        body: "A new booking has been added",
+        icon: "/favicon.ico"
+      });
+    }
+  } catch (error) {
+    console.log("Sound play failed, using fallback");
+    const fallbackSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
+    fallbackSound.volume = 0.3;
+    fallbackSound.play().catch(e => console.log("Fallback sound failed"));
+  }
+};
+
+const formatTime = (timestamp: any): string => {
+  if (!timestamp) return 'Just now';
+  
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    return 'Recently';
+  }
+};
+
 const ALL_PAGES_CONFIG = {
   'Dashboard': { icon: LayoutDashboard, href: '/admin/dashboard' },
   'CRM': { icon: Users, href: '/admin/crm' },
@@ -865,7 +961,7 @@ const ALL_PAGES_CONFIG = {
   'Equipment & Permits': { icon: Wrench, href: '/admin/equipment-permits' },
   'Job Profitability': { icon: TrendingUp, href: '/admin/job-profitability' },
   'Bookings': { icon: Calendar, href: '/admin/bookings' },
-  'Process Inquiry': { icon: Inbox, href: '/admin/process-inquiry' }, // NEW ENTRY - ADDED HERE
+  'Process Inquiry': { icon: Inbox, href: '/admin/process-inquiry' },
   'HR Management': { icon: UserCircle, href: '/admin/hr' },
   'Employee Directory': { icon: Users, href: '/admin/hr/employee-directory' },
   'Attendance': { icon: Clock, href: '/admin/hr/attendance' },
@@ -891,7 +987,6 @@ const ALL_PAGES_CONFIG = {
   'Settings': { icon: SettingsIcon, href: '/admin/settings' }
 }
 
-// Define menu structure with parent-child relationships - ADDED PROCESS INQUIRY
 const MENU_STRUCTURE = [
   { 
     type: 'single',
@@ -945,7 +1040,7 @@ const MENU_STRUCTURE = [
   },
   { 
     type: 'single',
-    label: 'Process Inquiry', // NEW ENTRY - ADDED HERE (Position 10)
+    label: 'Process Inquiry',
     key: 'Process Inquiry'
   },
   { 
@@ -1015,31 +1110,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 'n1',
-      type: 'reminder',
-      title: 'Equipment Maintenance Due',
-      message: 'High-Pressure Washer maintenance is due on 2025-01-15',
-      time: '5 min ago',
-      read: false,
-      link: '/admin/equipment-permits'
-    },
-    {
-      id: 'n2',
-      type: 'alert',
-      title: 'Permit Expiring Soon',
-      message: 'Safety Compliance Certificate expires in 3 days',
-      time: '1 hour ago',
-      read: false,
-      link: '/admin/equipment-permits'
+  
+  // Initialize notifications with localStorage
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedNotifications = localStorage.getItem('notifications');
+      return savedNotifications ? JSON.parse(savedNotifications) : [];
     }
-  ])
+    return [];
+  });
   
-  // State for open submenus
+  const [isListening, setIsListening] = useState(false)
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({})
-  
-  // User session state
   const [userSession, setUserSession] = useState<{
     name: string;
     email: string;
@@ -1047,15 +1129,158 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     roleName: string;
   } | null>(null)
 
-  // Initialize on mount
+  // Initialize as Set
+  const processedBookingIds = useRef<Set<string>>(new Set());
+  const readNotificationIds = useRef<Set<string>>(new Set());
+
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Load processed booking IDs
+      const savedProcessedIds = localStorage.getItem('processedBookingIds');
+      if (savedProcessedIds) {
+        const idsArray = JSON.parse(savedProcessedIds);
+        processedBookingIds.current = new Set(idsArray);
+      }
+
+      // Load read notification IDs
+      const savedReadIds = localStorage.getItem('readNotificationIds');
+      if (savedReadIds) {
+        const idsArray = JSON.parse(savedReadIds);
+        readNotificationIds.current = new Set(idsArray);
+      }
+    }
+  }, []);
+
+  // Save notifications to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notifications', JSON.stringify(notifications));
+    }
+  }, [notifications]);
+
+  // Save processed booking IDs to localStorage
+  const saveProcessedBookingIds = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('processedBookingIds', 
+        JSON.stringify(Array.from(processedBookingIds.current))
+      );
+    }
+  }, []);
+
+  // Save read notification IDs to localStorage
+  const saveReadNotificationIds = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('readNotificationIds',
+        JSON.stringify(Array.from(readNotificationIds.current))
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userSession) {
+      return
+    }
+    
+    console.log('Setting up Firebase real-time listener for bookings...')
+    
+    let unsubscribe: (() => void) | undefined
+    
+    const setupListener = async () => {
+      try {
+        const bookingsQuery = query(
+          collection(db, 'bookings'),
+          orderBy('createdAt', 'desc'),
+          limit(50)
+        )
+        
+        unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+              const bookingData = change.doc.data()
+              const bookingId = bookingData.bookingId || change.doc.id
+              
+              // Check if already processed (in memory or localStorage)
+              if (processedBookingIds.current.has(bookingId)) {
+                return
+              }
+              
+              // Check if this booking's notification was previously read
+              const notificationId = `booking-${bookingId}`
+              if (readNotificationIds.current.has(notificationId)) {
+                // Mark as processed but don't show notification
+                processedBookingIds.current.add(bookingId)
+                saveProcessedBookingIds()
+                return
+              }
+              
+              processedBookingIds.current.add(bookingId)
+              saveProcessedBookingIds()
+              
+              playNotificationSound()
+              
+              const newNotification: Notification = {
+                id: notificationId,
+                type: 'success',
+                title: 'New Booking Received! 🎉',
+                message: `${bookingData.name || 'A customer'} booked ${bookingData.service || 'a service'} for ${bookingData.date || 'scheduled date'} at ${bookingData.time || 'scheduled time'}`,
+                time: formatTime(bookingData.createdAt),
+                read: false,
+                link: '/admin/bookings',
+                bookingId: bookingId,
+                firestoreId: change.doc.id
+              }
+              
+              setNotifications(prev => {
+                // Don't add if notification already exists
+                if (prev.some(n => n.id === notificationId)) {
+                  return prev
+                }
+                
+                const updatedNotifications = [newNotification, ...prev]
+                
+                // Keep only latest 20 notifications
+                if (updatedNotifications.length > 20) {
+                  return updatedNotifications.slice(0, 20)
+                }
+                
+                return updatedNotifications
+              })
+              
+              if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission()
+              }
+            }
+          })
+        }, (error) => {
+          console.error('Firebase listener error:', error)
+        })
+        
+        setIsListening(true)
+        
+      } catch (error) {
+        console.error('Error setting up Firebase listener:', error)
+        setIsListening(false)
+      }
+    }
+    
+    setupListener()
+    
+    return () => {
+      console.log('Cleaning up Firebase listener')
+      if (unsubscribe) {
+        unsubscribe()
+      }
+      setIsListening(false)
+    }
+  }, [userSession, saveProcessedBookingIds])
+
   useEffect(() => {
     const session = getSession()
     if (session) {
-      // TEMPORARY FIX: Add 'Process Inquiry' to allowedPages for testing
       const allowedPages = session.allowedPages || []
       const allAllowedPages = [...allowedPages]
       
-      // If Process Inquiry is not already in allowedPages, add it for testing
       if (!allAllowedPages.includes('Process Inquiry')) {
         allAllowedPages.push('Process Inquiry')
       }
@@ -1063,11 +1288,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       setUserSession({
         name: session.user.name || 'User',
         email: session.user.email || '',
-        allowedPages: allAllowedPages, // Use updated allowedPages
+        allowedPages: allAllowedPages,
         roleName: session.roleName || 'User'
       })
       
-      // Set initially open menus based on current path
       const currentMenu = MENU_STRUCTURE.find(menu => 
         menu.type === 'group' && 
         menu.submenu?.some(sub => 
@@ -1078,12 +1302,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         setOpenMenus(prev => ({ ...prev, [currentMenu.key]: true }))
       }
       
-      // Also check if current path is Process Inquiry page
-      if (pathname === '/admin/process-inquiry') {
-        console.log('Currently on Process Inquiry page')
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().then(permission => {
+          console.log('Notification permission:', permission);
+        })
       }
     } else {
-      // No session found, redirect to login
       router.push('/login')
     }
   }, [router, pathname])
@@ -1100,18 +1324,66 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n))
-  }
+  // MARK AS READ FUNCTION - COMPLETELY REMOVES NOTIFICATION
+  const handleMarkAsRead = useCallback(async (id: string) => {
+    try {
+      // Add to read notification IDs
+      readNotificationIds.current.add(id)
+      saveReadNotificationIds()
+      
+      // Remove from local state
+      setNotifications(prev => prev.filter(n => n.id !== id))
+      
+      // Update in Firestore if available
+      const notification = notifications.find(n => n.id === id);
+      if (notification?.firestoreId) {
+        try {
+          const bookingRef = doc(db, 'bookings', notification.firestoreId);
+          await updateDoc(bookingRef, { 
+            notificationRead: true,
+            notificationReadAt: new Date().toISOString()
+          });
+        } catch (firestoreError) {
+          console.log('Firestore update optional, not required for functionality');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }, [notifications, saveReadNotificationIds])
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })))
-  }
+  // MARK ALL AS READ FUNCTION
+  const handleMarkAllAsRead = useCallback(async () => {
+    try {
+      // Add all current notification IDs to read IDs
+      notifications.forEach(notification => {
+        readNotificationIds.current.add(notification.id)
+      })
+      saveReadNotificationIds()
+      
+      // Clear all notifications
+      setNotifications([])
+      
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  }, [notifications, saveReadNotificationIds])
 
-  // FIXED: Correct arrow function syntax
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id))
-  }
+  // DELETE NOTIFICATION FUNCTION
+  const handleDeleteNotification = useCallback(async (id: string) => {
+    try {
+      // Add to read notification IDs (so it doesn't come back)
+      readNotificationIds.current.add(id)
+      saveReadNotificationIds()
+      
+      // Remove from local state
+      setNotifications(prev => prev.filter(n => n.id !== id))
+      
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  }, [saveReadNotificationIds])
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -1133,16 +1405,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }
 
-  // Filter menu items based on user's allowed pages
   const getFilteredMenuItems = () => {
     if (!userSession) return []
     
     return MENU_STRUCTURE.filter(menuItem => {
       if (menuItem.type === 'single') {
-        // Check if user has access to this page
         return userSession.allowedPages.includes(menuItem.key)
       } else if (menuItem.type === 'group') {
-        // Check if user has access to any submenu item
         const hasAccessToAnySubmenu = menuItem.submenu?.some(sub => 
           userSession.allowedPages.includes(sub.key)
         )
@@ -1152,21 +1421,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     })
   }
 
-  const toggleMenu = (menuKey: string) => {
+  const toggleMenu = useCallback((menuKey: string) => {
     setOpenMenus(prev => ({ ...prev, [menuKey]: !prev[menuKey] }))
-  }
+  }, [])
 
-  // Get filtered menu items
   const filteredMenuItems = getFilteredMenuItems()
 
-  // Log for debugging
-  useEffect(() => {
-    console.log('User Session:', userSession)
-    console.log('Filtered Menu Items:', filteredMenuItems.map(item => item.label))
-    console.log('Current Path:', pathname)
-  }, [userSession, filteredMenuItems, pathname])
-
-  // If no user session or no allowed pages, show minimal sidebar
   if (!userSession) {
     return (
       <div className="min-h-screen bg-background text-foreground flex">
@@ -1181,7 +1441,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 lg:hidden z-30"
@@ -1189,7 +1448,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Desktop Only */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} border-r bg-card hidden lg:flex flex-col sticky top-0 h-screen shadow-sm overflow-hidden transition-all duration-300`}>
         <div className={`p-4 border-b flex items-center ${!sidebarOpen && 'justify-center'} ${sidebarOpen && 'justify-between'}`}>
           {sidebarOpen && (
@@ -1221,7 +1479,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             const isGroup = menuItem.type === 'group'
             const isOpen = openMenus[menuItem.key] || false
             
-            // For groups, check if any submenu item is active
             const isGroupActive = isGroup && menuItem.submenu?.some(sub => {
               const subConfig = ALL_PAGES_CONFIG[sub.key as keyof typeof ALL_PAGES_CONFIG]
               return pathname === subConfig?.href
@@ -1260,7 +1517,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     {sidebarOpen && isOpen && menuItem.submenu && (
                       <div className="ml-2 mt-1 space-y-1 border-l-2 border-muted pl-2">
                         {menuItem.submenu
-                          .filter(sub => userSession.allowedPages.includes(sub.key)) // Filter based on user access
+                          .filter(sub => userSession.allowedPages.includes(sub.key))
                           .map((sub) => {
                             const subConfig = ALL_PAGES_CONFIG[sub.key as keyof typeof ALL_PAGES_CONFIG]
                             const isSubActive = pathname === subConfig?.href
@@ -1342,7 +1599,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile Sidebar - Slide-out menu */}
       {sidebarOpen && (
         <div className="fixed top-20 left-0 w-64 h-screen bg-card border-r border-slate-200 z-40 overflow-y-auto lg:hidden">
           <div className="p-4 space-y-1.5">
@@ -1439,7 +1695,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-20 border-b bg-card/80 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-8">
           <div className="flex items-center gap-6 flex-1">
@@ -1466,6 +1721,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <div className="hidden md:block text-sm text-muted-foreground">
               Logged in as: <span className="font-bold text-blue-600">{userSession.name}</span>
+             
             </div>
             
             <button 
@@ -1481,7 +1737,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
 
-          {/* Notification Panel */}
           {showNotifications && (
             <>
               <div 
@@ -1493,6 +1748,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   <div>
                     <h3 className="font-black text-foreground">Notifications</h3>
                     <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
+                   
                   </div>
                   <div className="flex gap-2">
                     {unreadCount > 0 && (
@@ -1524,7 +1780,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                       {notifications.map((notification) => (
                         <div 
                           key={notification.id}
-                          className={`p-4 hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-blue-50/50' : ''}`}
+                          className={`p-4 hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-blue-50/50' : ''} ${
+                            notification.bookingId ? 'border-l-4 border-l-green-500' : ''
+                          }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className={`p-2 rounded-lg ${getNotificationColor(notification.type)}`}>
@@ -1553,20 +1811,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                       View <ExternalLink className="w-3 h-3" />
                                     </Link>
                                   )}
-                                  {!notification.read && (
-                                    <button
-                                      onClick={() => handleMarkAsRead(notification.id)}
-                                      className="text-xs font-bold text-gray-600 hover:text-gray-700"
-                                    >
-                                      Mark read
-                                    </button>
-                                  )}
                                   <button
-                                    onClick={() => handleDeleteNotification(notification.id)}
-                                    className="text-xs font-bold text-red-600 hover:text-red-700"
+                                    onClick={() => handleMarkAsRead(notification.id)}
+                                    className="text-xs font-bold text-gray-600 hover:text-gray-700"
                                   >
-                                    Delete
+                                    Mark read
                                   </button>
+                                 
                                 </div>
                               </div>
                             </div>
@@ -1578,15 +1829,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 </div>
 
                 <div className="p-3 border-t bg-muted/50">
-                  <button 
-                    onClick={() => {
-                      setShowNotifications(false)
-                      router.push('/admin/equipment-permits')
-                    }}
-                    className="w-full text-sm font-bold text-blue-600 hover:text-blue-700 py-2"
-                  >
-                    View All Notifications
-                  </button>
+                
                 </div>
               </div>
             </>
