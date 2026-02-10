@@ -102,7 +102,8 @@ export default function RoleManager() {
           allowedPages: data.allowedPages || [],
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || '',
-          roleName: data.roleName || ''
+          roleName: data.roleName || '',
+         
         })
       })
       
@@ -139,7 +140,8 @@ export default function RoleManager() {
         newUser.password,
         newUser.name,
         newUser.allowedPages,
-        newUser.roleName
+        newUser.roleName,
+        
       )
 
       if (result.success) {
