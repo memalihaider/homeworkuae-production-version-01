@@ -27,14 +27,14 @@ interface SidebarProps {
 
 export const sidebarItems = [
   { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, href: '/employee/dashboard' },
-  { id: 'profile', name: 'My Profile', icon: User, href: '/employee/profile' },
+  { id: 'Salary', name: 'My Salary', icon: User, href: '/employee/payslips' },
   { id: 'attendance', name: 'Attendance', icon: Clock, href: '/employee/attendance' },
   { id: 'leave', name: 'Leave', icon: Calendar, href: '/employee/leave' },
-  { id: 'payslips', name: 'Payslips', icon: CreditCard, href: '/employee/payslips' },
+  
   { id: 'jobs', name: 'My Jobs', icon: Briefcase, href: '/employee/jobs' },
   { id: 'tasks', name: 'My Tasks', icon: CheckSquare, href: '/employee/tasks' },
   { id: 'requests', name: 'Requests', icon: Send, href: '/employee/requests' },
-  { id: 'announcements', name: 'Announcements', icon: Bell, href: '/employee/announcements' },
+  
 ];
 
 export function EmployeeSidebar({ session, open, onOpenChange }: SidebarProps) {

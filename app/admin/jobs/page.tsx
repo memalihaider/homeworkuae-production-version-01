@@ -1224,13 +1224,7 @@ export default function JobsPage() {
 
                     {job.status === 'In Progress' && (
                       <>
-                        <button
-                          onClick={() => handleStartExecution(job)}
-                          className="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium flex items-center gap-1"
-                        >
-                          <Camera className="h-3 w-3" />
-                          On Site
-                        </button>
+                        
                         <button
                           onClick={() => handleUpdateJobStatus(job.id, 'Completed')}
                           className="text-xs px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-medium flex items-center gap-1"
@@ -2163,3 +2157,5 @@ export default function JobsPage() {
     </div>
   )
 }
+
+

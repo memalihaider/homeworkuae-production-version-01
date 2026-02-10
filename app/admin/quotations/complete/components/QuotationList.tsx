@@ -345,13 +345,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button 
-                          onClick={() => onView?.(q)}
-                          title="View Preview" 
-                          className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                       
                         <button 
                           onClick={() => onEdit(q)}
                           title="Edit" 
@@ -359,13 +353,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => onSend?.(q)}
-                          className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors" 
-                          title="Send Quotation"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </button>
+                        
                         <div className="w-px h-4 bg-gray-200 mx-1"></div>
                         <button 
                           onClick={() => handleDelete(q.id)}

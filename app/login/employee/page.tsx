@@ -56,13 +56,7 @@ export default function EmployeeLoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Back button */}
-        <Link
-          href="/login"
-          className="inline-flex items-center text-slate-400 hover:text-white mb-8 transition-colors duration-200"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Portal Selection
-        </Link>
+       
 
         {/* Login Card */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-8 shadow-2xl">
@@ -137,20 +131,7 @@ export default function EmployeeLoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-violet-500 focus:ring-violet-500"
-                />
-                <span className="text-sm text-slate-400">Remember me</span>
-              </label>
-              <Link href="/forgot-password" className="text-sm text-violet-400 hover:text-violet-300">
-                Forgot password?
-              </Link>
-            </div>
+            
 
             <button
               type="submit"
@@ -169,22 +150,7 @@ export default function EmployeeLoginPage() {
           </form>
 
           {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg">
-            <p className="text-xs text-slate-400 mb-2 text-center">Demo Credentials</p>
-            <div className="flex justify-between items-center text-sm">
-              <div>
-                <p className="text-slate-300 font-mono text-xs">employee@homeware.ae</p>
-                <p className="text-slate-400 font-mono text-xs">Demo@123</p>
-              </div>
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="text-xs text-violet-400 hover:text-violet-300 font-medium"
-              >
-                Use Demo
-              </button>
-            </div>
-          </div>
+         
         </div>
 
         {/* Footer */}

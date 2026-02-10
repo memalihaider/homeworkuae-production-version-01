@@ -6,10 +6,11 @@ import {
   Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, 
   Wind, Grid3X3, Warehouse, CookingPot, HardHat, Building, Truck, Brush,
   Fan, Pipette, Utensils, Waves, Dumbbell, PanelTop, ThermometerSnowflake,
-  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight
+  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, User
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
+import Link from 'next/link'
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const [profileData, setProfileData] = useState({
@@ -256,6 +257,14 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-4">
+
+           <Link 
+  href="/route" 
+  className="group flex items-center justify-center w-10 h-10 rounded-full bg-pink-600 hover:bg-pink-500 transition-all duration-300 shadow-md hover:shadow-lg"
+>
+  <User className="w-5 h-5 text-white group-hover:scale-110 transition-transform duration-200" />
+</Link>
+            
             <a 
               href="/book-service" 
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-pink-700 px-8 text-sm font-black text-white shadow-xl shadow-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 active:scale-95 tracking-wider border-2 border-white/20"
