@@ -724,7 +724,7 @@ export default function SimpleEmployeeChatPage() {
     <div className="bg-white border-b border-gray-200/80 px-6 py-5 shrink-0">
       <div className="flex items-start gap-5">
         <Avatar className="w-14 h-14 rounded-2xl border-4 border-white shadow-xl">
-          <AvatarFallback className="bg-gradient-to-br from-[#FA9DB7] to-[#B84A68] text-white text-2xl font-serif">
+          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-serif">
             {employee.name?.charAt(0) || 'E'}
           </AvatarFallback>
         </Avatar>
@@ -746,41 +746,41 @@ export default function SimpleEmployeeChatPage() {
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
             <div className="flex items-center gap-2 text-gray-600">
-              <Mail className="w-4 h-4 text-[#FA9DB7]" />
+              <Mail className="w-4 h-4 text-blue-500" />
               <span className="truncate">{employee.email}</span>
             </div>
             
             {employee.phone && (
               <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="w-4 h-4 text-[#FA9DB7]" />
+                <Phone className="w-4 h-4 text-blue-500" />
                 <span>{employee.phone}</span>
               </div>
             )}
             
             {employee.position && (
               <div className="flex items-center gap-2 text-gray-600">
-                <Award className="w-4 h-4 text-[#FA9DB7]" />
+                <Award className="w-4 h-4 text-blue-500" />
                 <span>{employee.position}</span>
               </div>
             )}
             
             {employee.department && (
               <div className="flex items-center gap-2 text-gray-600">
-                <Building className="w-4 h-4 text-[#FA9DB7]" />
+                <Building className="w-4 h-4 text-blue-500" />
                 <span>{employee.department}</span>
               </div>
             )}
             
             {employee.salary && (
               <div className="flex items-center gap-2 text-gray-600">
-                <DollarSign className="w-4 h-4 text-[#FA9DB7]" />
+                <DollarSign className="w-4 h-4 text-blue-500" />
                 <span>{employee.salary} {employee.salaryStructure}</span>
               </div>
             )}
             
             {employee.joinDate && (
               <div className="flex items-center gap-2 text-gray-600">
-                <Calendar className="w-4 h-4 text-[#FA9DB7]" />
+                <Calendar className="w-4 h-4 text-blue-500" />
                 <span>Joined: {employee.joinDate}</span>
               </div>
             )}
@@ -825,7 +825,7 @@ export default function SimpleEmployeeChatPage() {
                   placeholder="Search by name, email, department..."
                   value={chatSearchQuery}
                   onChange={(e) => setChatSearchQuery(e.target.value)}
-                  className="pl-9 h-10 rounded-xl bg-gray-100 border-0 focus:ring-2 focus:ring-[#FA9DB7]/30"
+                  className="pl-9 h-10 rounded-xl bg-gray-100 border-0 focus:ring-2 focus:ring-blue-500/30"
                 />
               </div>
             </div>
@@ -846,7 +846,7 @@ export default function SimpleEmployeeChatPage() {
                         className={cn(
                           "w-full flex items-start gap-3 p-3 rounded-xl transition-all",
                           selectedEmployeeId === chat.employeeId
-                            ? "bg-[#FA9DB7]/10 border border-[#FA9DB7]/30"
+                            ? "bg-blue-500/10 border border-blue-500/30"
                             : "hover:bg-gray-50"
                         )}
                       >
@@ -854,7 +854,7 @@ export default function SimpleEmployeeChatPage() {
                           <AvatarFallback className={cn(
                             "text-white text-lg font-serif",
                             selectedEmployeeId === chat.employeeId
-                              ? "bg-gradient-to-br from-[#FA9DB7] to-[#B84A68]"
+                              ? "bg-gradient-to-br from-blue-500 to-blue-700"
                               : "bg-gradient-to-br from-gray-400 to-gray-600"
                           )}>
                             {chat.employeeName?.charAt(0) || 'E'}
@@ -891,7 +891,7 @@ export default function SimpleEmployeeChatPage() {
                             </p>
                             
                             {chat.unreadCount > 0 && (
-                              <Badge className="bg-[#FA9DB7] text-white border-0 rounded-full ml-2">
+                              <Badge className="bg-blue-500 text-white border-0 rounded-full ml-2">
                                 {chat.unreadCount}
                               </Badge>
                             )}
@@ -936,7 +936,7 @@ export default function SimpleEmployeeChatPage() {
               
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FA9DB7] to-[#B84A68] flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
                     <Briefcase className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -949,7 +949,7 @@ export default function SimpleEmployeeChatPage() {
               </div>
             </div>
             
-            <Badge variant="outline" className="px-4 py-2 border-[#FA9DB7]/30 text-[#B84A68] bg-white rounded-full">
+            <Badge variant="outline" className="px-4 py-2 border-blue-500/30 text-blue-600 bg-white rounded-full">
               <Users className="w-3.5 h-3.5 mr-2" />
               {employees.length} Employees
             </Badge>
@@ -971,10 +971,10 @@ export default function SimpleEmployeeChatPage() {
                       value={selectedEmployeeId} 
                       onValueChange={setSelectedEmployeeId}
                     >
-                      <SelectTrigger className="w-full md:w-[400px] h-14 border-2 border-gray-200/80 hover:border-[#FA9DB7]/50 focus:ring-2 focus:ring-[#FA9DB7]/30 rounded-2xl bg-white/80">
+                      <SelectTrigger className="w-full md:w-[400px] h-14 border-2 border-gray-200/80 hover:border-blue-500/50 focus:ring-2 focus:ring-blue-500/30 rounded-2xl bg-white/80">
                         <SelectValue placeholder={
                           <div className="flex items-center gap-3 text-gray-500">
-                            <User className="w-5 h-5 text-[#FA9DB7]" />
+                            <User className="w-5 h-5 text-blue-500" />
                             <span>Choose an employee</span>
                           </div>
                         } />
@@ -987,7 +987,7 @@ export default function SimpleEmployeeChatPage() {
                               placeholder="Search by name, email, department..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-9 h-11 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-[#FA9DB7]/30"
+                              className="pl-9 h-11 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-blue-500/30"
                             />
                           </div>
                         </div>
@@ -997,11 +997,11 @@ export default function SimpleEmployeeChatPage() {
                               <SelectItem 
                                 key={emp.id} 
                                 value={emp.id}
-                                className="rounded-xl py-3 px-3 cursor-pointer hover:bg-[#FA9DB7]/5"
+                                className="rounded-xl py-3 px-3 cursor-pointer hover:bg-blue-500/5"
                               >
                                 <div className="flex items-start gap-3">
                                   <Avatar className="w-8 h-8 mt-1">
-                                    <AvatarFallback className="bg-gradient-to-br from-[#FA9DB7]/20 to-[#B84A68]/10 text-[#B84A68] text-xs">
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500/20 to-blue-700/10 text-blue-600 text-xs">
                                       {emp.name?.charAt(0) || 'E'}
                                     </AvatarFallback>
                                   </Avatar>
@@ -1028,7 +1028,7 @@ export default function SimpleEmployeeChatPage() {
                   </div>
                   
                   {selectedEmployeeDetails && (
-                    <div className="flex items-center gap-4 px-4 py-2 bg-[#FA9DB7]/5 rounded-2xl border border-[#FA9DB7]/20 shrink-0">
+                    <div className="flex items-center gap-4 px-4 py-2 bg-blue-500/5 rounded-2xl border border-blue-500/20 shrink-0">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                         <span className="text-xs font-medium text-gray-600">Online</span>
@@ -1053,8 +1053,8 @@ export default function SimpleEmployeeChatPage() {
                       <div className="px-6 py-6">
                         {visibleMessages.length === 0 ? (
                           <div className="flex flex-col items-center justify-center h-[300px]">
-                            <div className="w-24 h-24 bg-gradient-to-br from-[#FA9DB7]/20 to-[#B84A68]/10 rounded-3xl flex items-center justify-center mb-4">
-                              <MessageCircle className="w-12 h-12 text-[#B84A68]" />
+                            <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-blue-700/10 rounded-3xl flex items-center justify-center mb-4">
+                              <MessageCircle className="w-12 h-12 text-blue-600" />
                             </div>
                             <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">No messages yet</h3>
                             <p className="text-gray-500 text-center">
@@ -1080,7 +1080,7 @@ export default function SimpleEmployeeChatPage() {
                                         
                                         {!isMe && (
                                           <Avatar className="w-8 h-8 ring-2 ring-white shadow-md">
-                                            <AvatarFallback className="bg-gradient-to-br from-[#FA9DB7] to-[#B84A68] text-white text-xs">
+                                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs">
                                               {msg.senderName?.charAt(0) || 'E'}
                                             </AvatarFallback>
                                           </Avatar>
@@ -1094,7 +1094,7 @@ export default function SimpleEmployeeChatPage() {
                                               : "bg-white text-gray-800 rounded-bl-none border border-gray-100"
                                           )}>
                                             {!isMe && (
-                                              <p className="text-xs font-semibold text-[#B84A68] mb-1">
+                                              <p className="text-xs font-semibold text-blue-600 mb-1">
                                                 {msg.senderName}
                                               </p>
                                             )}
@@ -1105,8 +1105,8 @@ export default function SimpleEmployeeChatPage() {
                                             )}
                                             
                                             {msg.replyToId && (
-                                              <div className="mb-2 pl-2 border-l-3 border-[#FA9DB7] bg-gray-50 p-2 rounded-lg text-xs">
-                                                <p className="text-[#B84A68] font-semibold">
+                                              <div className="mb-2 pl-2 border-l-3 border-blue-500 bg-gray-50 p-2 rounded-lg text-xs">
+                                                <p className="text-blue-600 font-semibold">
                                                   Replying to {msg.replyToSender}
                                                 </p>
                                                 <p className="text-gray-600 line-clamp-2">
@@ -1277,7 +1277,7 @@ export default function SimpleEmployeeChatPage() {
                       <Button 
                         onClick={handleSendMessage} 
                         disabled={!newMessage.trim() && !selectedImage || isSending}
-                        className="h-12 px-6 bg-gradient-to-r from-blue-700 to-blue-800 rounded-2xl shadow-lg"
+                        className="h-12 px-6 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-2xl shadow-lg"
                       >
                         <Send className="w-4 h-4 mr-2" />
                         {isSending ? 'Sending...' : 'Send'}
@@ -1288,8 +1288,8 @@ export default function SimpleEmployeeChatPage() {
               ) : (
                 <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
                   <div className="text-center max-w-md px-6">
-                    <div className="w-28 h-28 bg-gradient-to-br from-[#FA9DB7]/20 to-[#B84A68]/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                      <Briefcase className="w-14 h-14 text-[#B84A68]/40" />
+                    <div className="w-28 h-28 bg-gradient-to-br from-blue-500/20 to-blue-700/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                      <Briefcase className="w-14 h-14 text-blue-600/40" />
                     </div>
                     <h3 className="text-2xl font-serif font-bold text-gray-900 mb-3">
                       Employee Chat
@@ -1297,7 +1297,7 @@ export default function SimpleEmployeeChatPage() {
                     <p className="text-gray-500 mb-8">
                       Select an employee from the dropdown above to start messaging.
                     </p>
-                    <div className="flex items-center justify-center gap-2 text-sm text-[#B84A68] bg-[#FA9DB7]/10 px-6 py-3 rounded-2xl">
+                    <div className="flex items-center justify-center gap-2 text-sm text-blue-600 bg-blue-500/10 px-6 py-3 rounded-2xl">
                       <Sparkles className="w-4 h-4" />
                       <span>{employees.length} employees available</span>
                     </div>
