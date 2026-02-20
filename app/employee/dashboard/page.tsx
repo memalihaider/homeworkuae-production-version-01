@@ -15,10 +15,14 @@ import {
   CheckSquare,
   Users,
   FileText,
-  Calendar
+  Calendar,
+  User,
+  Mail,
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
-import { getSession, type SessionData } from '@/lib/auth';
+import { getSession, type SessionData, logout } from '@/lib/auth';
 import { EmployeeSidebar } from '../_components/sidebar';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { db } from '@/lib/firebase';
@@ -65,6 +69,7 @@ export default function EmployeeDashboard() {
   const [exportLoading, setExportLoading] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   
   // Real Data States
   const [jobs, setJobs] = useState<FirebaseJob[]>([]);
@@ -86,6 +91,16 @@ export default function EmployeeDashboard() {
       fetchRealTimeData();
     }
   }, [session]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login/employee');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const fetchRealTimeData = async () => {
     try {
@@ -300,6 +315,12 @@ export default function EmployeeDashboard() {
   const totalBudget = jobs.reduce((sum, job) => sum + (job.budget || 0), 0);
   const totalTeamRequired = jobs.reduce((sum, job) => sum + (job.teamRequired || 0), 0);
 
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!session?.user?.name) return 'E';
+    return session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   if (!session) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -330,7 +351,7 @@ export default function EmployeeDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        {/* Header */}
+        {/* Header with User Info */}
         <div className="sticky top-0 z-40 bg-slate-800/95 backdrop-blur border-b border-slate-700">
           <div className="flex items-center justify-between p-6 max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-4">
@@ -346,19 +367,85 @@ export default function EmployeeDashboard() {
                 <p className="text-xs text-slate-500 mt-1">Total Jobs: {jobs.length} | Total Tasks: {tasks.length}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-             
+            
+            {/* User Info Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-3 p-2 hover:bg-slate-700 rounded-xl transition-colors"
+              >
+                {/* User Avatar */}
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
+                  {getUserInitials()}
+                </div>
+                
+                {/* User Details */}
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-semibold text-white">{session.user.name}</p>
+                  <p className="text-xs text-slate-400">{session.user.email}</p>
+                </div>
+                
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {userMenuOpen && (
+                <>
+                  {/* Backdrop to close dropdown when clicking outside */}
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setUserMenuOpen(false)}
+                  />
+                  
+                  {/* Dropdown Content */}
+                  <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-40 overflow-hidden">
+                    <div className="p-4 border-b border-slate-700">
+                      <p className="text-sm font-semibold text-white">{session.user.name}</p>
+                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        {session.user.email}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 bg-emerald-900/20 text-emerald-400 rounded-full border border-emerald-800">
+                          Employee Portal
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2">
+                      <Link
+                        href="/employee/profile"
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 rounded-lg transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        My Profile
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Toast Notification */}
         {toast && (
-          <div className={`fixed top-4 right-4 p-4 rounded-lg ${
+          <div className={`fixed top-20 right-4 p-4 rounded-lg ${
             toast.type === 'success' ? 'bg-green-900 text-green-200' :
             toast.type === 'error' ? 'bg-red-900 text-red-200' :
             'bg-blue-900 text-blue-200'
-          } z-50 animate-fade-in max-w-md`}>
+          } z-50 animate-fade-in max-w-md shadow-xl`}>
             {toast.message}
           </div>
         )}

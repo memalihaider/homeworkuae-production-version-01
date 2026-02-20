@@ -21,7 +21,9 @@ import {
   FileText,
   ArrowRight,
   Menu,
-  X as XIcon
+  X as XIcon,
+  Briefcase,
+  Mail
 } from 'lucide-react'
 import { 
   collection, 
@@ -36,7 +38,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { EmployeeSidebar } from '../_components/sidebar'
-import { getSession } from '@/lib/auth'
+import { getSession, type SessionData } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 
 interface FirebaseEmployee {
@@ -92,7 +94,7 @@ const formatLongDate = (dateString: string) => {
 
 export default function LeaveManagementPage() {
   const router = useRouter()
-  const [session, setSession] = useState<any>(null)
+  const [session, setSession] = useState<SessionData | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [leaveApplications, setLeaveApplications] = useState<LeaveApplication[]>([])
   const [employees, setEmployees] = useState<FirebaseEmployee[]>([])
@@ -103,6 +105,7 @@ export default function LeaveManagementPage() {
   const [selectedApplication, setSelectedApplication] = useState<LeaveApplication | null>(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [modalMode, setModalMode] = useState<'add' | 'process'>('add')
+  const [loggedInEmployee, setLoggedInEmployee] = useState<FirebaseEmployee | null>(null)
 
   const [newLeaveForm, setNewLeaveForm] = useState({
     employeeId: '',
@@ -119,7 +122,7 @@ export default function LeaveManagementPage() {
     comments: ''
   })
 
-  // Session check
+  // Session check and fetch logged-in employee
   useEffect(() => {
     const storedSession = getSession()
     if (!storedSession) {
@@ -127,7 +130,77 @@ export default function LeaveManagementPage() {
       return
     }
     setSession(storedSession)
+    
+    // Fetch logged-in employee
+    fetchLoggedInEmployee(storedSession)
   }, [router])
+
+  // Fetch logged-in employee from Firebase
+  const fetchLoggedInEmployee = async (sessionData: SessionData) => {
+    try {
+      console.log('🔍 Fetching logged-in employee...')
+      
+      let employeeData: FirebaseEmployee | null = null
+      
+      // Try by employeeId first
+      if (sessionData.employeeId) {
+        const employeeRef = doc(db, 'employees', sessionData.employeeId)
+        const employeeDoc = await getDocs(query(collection(db, 'employees'), where('__name__', '==', sessionData.employeeId)))
+        
+        if (!employeeDoc.empty) {
+          const data = employeeDoc.docs[0].data()
+          employeeData = {
+            id: employeeDoc.docs[0].id,
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            department: data.department || '',
+            position: data.position || '',
+            role: data.role || '',
+            status: data.status || 'Active',
+            supervisor: data.supervisor || ''
+          }
+          console.log('✅ Found employee by ID:', employeeData.name)
+        }
+      }
+      
+      // If not found by ID, try by email
+      if (!employeeData && sessionData.user.email) {
+        const employeesRef = collection(db, 'employees')
+        const q = query(employeesRef, where('email', '==', sessionData.user.email))
+        const snapshot = await getDocs(q)
+        
+        if (!snapshot.empty) {
+          const data = snapshot.docs[0].data()
+          employeeData = {
+            id: snapshot.docs[0].id,
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            department: data.department || '',
+            position: data.position || '',
+            role: data.role || '',
+            status: data.status || 'Active',
+            supervisor: data.supervisor || ''
+          }
+          console.log('✅ Found employee by email:', employeeData.name)
+        }
+      }
+      
+      setLoggedInEmployee(employeeData)
+      
+      // If employee found, set as default in new leave form
+      if (employeeData) {
+        setNewLeaveForm(prev => ({
+          ...prev,
+          employeeId: employeeData.id
+        }))
+      }
+      
+    } catch (error) {
+      console.error('Error fetching logged-in employee:', error)
+    }
+  }
 
   // Firebase se employees aur leave applications fetch karein
   useEffect(() => {
@@ -242,62 +315,81 @@ export default function LeaveManagementPage() {
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
   }
 
-  // Filter applications
+  // ✅ Filter applications - ONLY show logged-in employee's leaves
   const filteredApplications = useMemo(() => {
+    if (!loggedInEmployee) return []
+    
     return leaveApplications.filter(app => {
+      // First filter by logged-in employee
+      if (app.employeeId !== loggedInEmployee.id) return false
+      
+      // Then apply search and filters
       const matchesSearch =
-        app.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.reason.toLowerCase().includes(searchTerm.toLowerCase())
+        app.leaveType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.status.toLowerCase().includes(searchTerm.toLowerCase())
+      
       const matchesStatus = filterStatus === 'all' || app.status === filterStatus
       const matchesType = filterLeaveType === 'all' || app.leaveType === filterLeaveType
 
       return matchesSearch && matchesStatus && matchesType
     })
-  }, [leaveApplications, searchTerm, filterStatus, filterLeaveType])
+  }, [leaveApplications, searchTerm, filterStatus, filterLeaveType, loggedInEmployee])
 
-  // Calculate statistics
+  // Calculate statistics - ONLY for logged-in employee
   const stats = useMemo(() => {
+    const employeeLeaves = loggedInEmployee 
+      ? leaveApplications.filter(app => app.employeeId === loggedInEmployee.id)
+      : []
+
     return {
-      total: leaveApplications.length,
-      pending: leaveApplications.filter(app => app.status === 'Pending').length,
-      approved: leaveApplications.filter(app => app.status === 'Approved').length,
-      rejected: leaveApplications.filter(app => app.status === 'Rejected').length,
-      totalDaysApproved: leaveApplications
+      total: employeeLeaves.length,
+      pending: employeeLeaves.filter(app => app.status === 'Pending').length,
+      approved: employeeLeaves.filter(app => app.status === 'Approved').length,
+      rejected: employeeLeaves.filter(app => app.status === 'Rejected').length,
+      totalDaysApproved: employeeLeaves
         .filter(app => app.status === 'Approved')
         .reduce((sum, app) => sum + app.daysRequested, 0)
     }
-  }, [leaveApplications])
+  }, [leaveApplications, loggedInEmployee])
 
-  // Pending applications for dropdown
-  const pendingApplications = useMemo(() => {
-    return leaveApplications.filter(app => app.status === 'Pending')
-  }, [leaveApplications])
+  // Leave balances for logged-in employee
+  const leaveBalances = useMemo(() => {
+    if (!loggedInEmployee) return []
+    
+    return LEAVE_TYPES.map(type => ({
+      ...type,
+      balance: getLeaveBalance(loggedInEmployee.id, type.id)
+    }))
+  }, [loggedInEmployee, leaveApplications])
 
   // Handle add leave application - Firebase mein save karein with PENDING status
   const handleAddLeaveApplication = async () => {
-    if (!newLeaveForm.employeeId || !newLeaveForm.startDate || !newLeaveForm.endDate) {
-      alert('Please fill in required fields')
+    if (!loggedInEmployee) {
+      alert('Employee profile not found')
       return
     }
 
-    const employee = employees.find(e => e.id === newLeaveForm.employeeId)
-    if (!employee) return
+    if (!newLeaveForm.startDate || !newLeaveForm.endDate) {
+      alert('Please fill in required fields')
+      return
+    }
 
     const daysRequested = calculateDays(newLeaveForm.startDate, newLeaveForm.endDate)
 
     try {
       const newApplicationData = cleanFirebaseData({
-        employeeId: newLeaveForm.employeeId,
-        employeeName: employee.name,
-        employeeDepartment: employee.department,
+        employeeId: loggedInEmployee.id,
+        employeeName: loggedInEmployee.name,
+        employeeDepartment: loggedInEmployee.department,
         leaveType: newLeaveForm.leaveType,
         startDate: newLeaveForm.startDate,
         endDate: newLeaveForm.endDate,
         daysRequested: daysRequested,
         reason: newLeaveForm.reason,
-        status: 'Pending', // Status PENDING rahega
+        status: 'Pending',
         appliedDate: new Date().toISOString().split('T')[0],
-        appliedBy: 'Admin',
+        appliedBy: loggedInEmployee.name,
         approverComments: '',
         approverName: '',
         approvalDate: '',
@@ -305,10 +397,8 @@ export default function LeaveManagementPage() {
         updatedAt: new Date().toISOString()
       })
 
-      // Firebase mein save karein
       const docRef = await addDoc(collection(db, 'leave-management'), newApplicationData)
       
-      // Local state update karein
       const newApplication: LeaveApplication = {
         ...newApplicationData,
         id: docRef.id
@@ -318,7 +408,7 @@ export default function LeaveManagementPage() {
       
       // Reset form
       setNewLeaveForm({
-        employeeId: '',
+        employeeId: loggedInEmployee.id,
         leaveType: 'Annual',
         startDate: '',
         endDate: '',
@@ -327,56 +417,11 @@ export default function LeaveManagementPage() {
       })
       
       setShowAddModal(false)
-      alert('Leave application added successfully with PENDING status!')
+      alert('Leave application submitted successfully!')
       
     } catch (error) {
       console.error('Error adding leave application:', error)
       alert('Error adding leave application. Please try again.')
-    }
-  }
-
-  // Handle process leave (approve/reject) - Firebase mein update karein
-  const handleProcessLeave = async () => {
-    if (!processForm.applicationId) return
-
-    try {
-      const applicationToUpdate = leaveApplications.find(app => app.id === processForm.applicationId)
-      if (!applicationToUpdate) return
-
-      const updateData = cleanFirebaseData({
-        status: processForm.action,
-        approverComments: processForm.comments || applicationToUpdate.approverComments,
-        approvalDate: new Date().toISOString().split('T')[0],
-        approverName: 'Admin',
-        updatedAt: new Date().toISOString()
-      })
-
-      // Firebase mein update karein
-      const leaveDoc = doc(db, 'leave-management', processForm.applicationId)
-      await updateDoc(leaveDoc, updateData)
-
-      // Local state update karein
-      setLeaveApplications(
-        leaveApplications.map(app =>
-          app.id === processForm.applicationId
-            ? {
-                ...app,
-                status: processForm.action,
-                approverComments: processForm.comments || app.approverComments,
-                approvalDate: new Date().toISOString().split('T')[0],
-                approverName: 'Admin'
-              }
-            : app
-        )
-      )
-
-      setProcessForm({ applicationId: '', action: 'Approved', comments: '' })
-      setShowAddModal(false)
-      alert(`Leave application ${processForm.action}!`)
-      
-    } catch (error) {
-      console.error('Error processing leave:', error)
-      alert('Error processing leave. Please try again.')
     }
   }
 
@@ -385,10 +430,7 @@ export default function LeaveManagementPage() {
     if (!confirm('Delete this leave application?')) return
 
     try {
-      // Firebase se delete karein
       await deleteDoc(doc(db, 'leave-management', id))
-      
-      // Local state update karein
       setLeaveApplications(leaveApplications.filter(app => app.id !== id))
       alert('Leave application deleted!')
       
@@ -406,7 +448,7 @@ export default function LeaveManagementPage() {
     return LEAVE_TYPES.find(lt => lt.id === leaveType)?.name || leaveType
   }
 
-  // Status color function from code 1
+  // Status color function
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Approved': return 'bg-green-900/20 text-green-400 border-green-800'
@@ -416,7 +458,7 @@ export default function LeaveManagementPage() {
     }
   }
 
-  // Status icon function from code 1
+  // Status icon function
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Approved': return <CheckCircle className="w-5 h-5 text-green-400" />
@@ -426,10 +468,30 @@ export default function LeaveManagementPage() {
     }
   }
 
+  // Get user initials
+  const getUserInitials = () => {
+    if (!session?.user?.name) return 'E'
+    return session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
   if (!session) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+      </div>
+    )
+  }
+
+  if (!loggedInEmployee) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex">
+        <EmployeeSidebar session={session} open={sidebarOpen} onOpenChange={setSidebarOpen} />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500 mx-auto mb-4"></div>
+            <p className="text-slate-400">Loading your profile...</p>
+          </div>
+        </main>
       </div>
     )
   }
@@ -446,25 +508,46 @@ export default function LeaveManagementPage() {
                 {sidebarOpen ? <XIcon className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-white">Leave Management</h1>
-                <p className="text-sm text-slate-400">Manage employee leave applications and track leave balances</p>
+                <h1 className="text-2xl font-bold text-white">My Leave Management</h1>
+                <p className="text-sm text-slate-400 flex items-center gap-2">
+                  <User className="w-4 h-4 text-violet-400" />
+                  {loggedInEmployee.name} • {loggedInEmployee.department} • {loggedInEmployee.position}
+                </p>
               </div>
             </div>
-            <button
-              onClick={() => {
-                setModalMode('add')
-                setShowAddModal(true)
-              }}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Leave Application
-            </button>
+            
+            {/* User Info */}
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-violet-900/30 border border-violet-700 rounded-lg">
+                <Mail className="w-4 h-4 text-violet-400" />
+                <span className="text-sm text-violet-300">{loggedInEmployee.email}</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
+                {getUserInitials()}
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="p-6 max-w-7xl mx-auto space-y-6">
-          {/* Stats - Code 1 style */}
+          {/* Welcome Banner */}
+          <div className="bg-gradient-to-r from-violet-600/20 to-purple-600/20 rounded-xl border border-violet-500/30 p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Welcome, {loggedInEmployee.name}!</h2>
+            <p className="text-slate-300">Manage your leave applications, check balances, and track request status.</p>
+          </div>
+
+          {/* Leave Balances */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {leaveBalances.map(type => (
+              <div key={type.id} className="bg-slate-800 border border-slate-700 rounded-xl p-3">
+                <p className="text-xs text-slate-400">{type.name}</p>
+                <p className="text-lg font-bold text-white mt-1">{type.balance} days</p>
+                <p className="text-xs text-slate-500">Limit: {type.limit}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
               <p className="text-slate-400 text-sm font-medium">Total Applications</p>
@@ -492,14 +575,13 @@ export default function LeaveManagementPage() {
           <div className="flex gap-3">
             <button
               onClick={() => {
-                setModalMode('process')
+                setModalMode('add')
                 setShowAddModal(true)
               }}
               className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium flex items-center gap-2"
-              disabled={pendingApplications.length === 0}
             >
-              <CheckCircle className="h-4 w-4" />
-              Process Applications ({pendingApplications.length})
+              <Plus className="h-4 w-4" />
+              Apply for Leave
             </button>
           </div>
 
@@ -510,7 +592,7 @@ export default function LeaveManagementPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search by employee name or reason..."
+                  placeholder="Search by leave type, reason, or status..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
@@ -543,7 +625,7 @@ export default function LeaveManagementPage() {
             </div>
           </div>
 
-          {/* Leave Applications List */}
+          {/* Leave Applications List - Only logged-in employee's leaves */}
           <div className="space-y-3">
             {filteredApplications.length > 0 ? (
               filteredApplications.map(app => (
@@ -556,7 +638,7 @@ export default function LeaveManagementPage() {
                         </div>
                         <div>
                           <h4 className="font-semibold text-white">{app.employeeName}</h4>
-                          <p className="text-xs text-slate-400">{app.employeeDepartment} • ID: {app.employeeId}</p>
+                          <p className="text-xs text-slate-400">{app.employeeDepartment}</p>
                         </div>
                       </div>
 
@@ -608,13 +690,15 @@ export default function LeaveManagementPage() {
                         <Eye className="h-4 w-4 text-slate-300" />
                       </button>
 
-                      <button
-                        onClick={() => handleDelete(app.id)}
-                        className="p-2 hover:bg-red-900/20 text-red-400 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {app.status === 'Pending' && (
+                        <button
+                          onClick={() => handleDelete(app.id)}
+                          className="p-2 hover:bg-red-900/20 text-red-400 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -623,34 +707,28 @@ export default function LeaveManagementPage() {
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-500" />
                 <p className="text-slate-400">No leave applications found</p>
-                {employees.length > 0 ? (
-                  <button 
-                    onClick={() => {
-                      setModalMode('add')
-                      setShowAddModal(true)
-                    }}
-                    className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors font-medium"
-                  >
-                    Add First Leave Application
-                  </button>
-                ) : (
-                  <p className="text-sm text-slate-500 mt-2">No employees available. Please add employees first.</p>
-                )}
+                <button 
+                  onClick={() => {
+                    setModalMode('add')
+                    setShowAddModal(true)
+                  }}
+                  className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors font-medium"
+                >
+                  Apply for Leave
+                </button>
               </div>
             )}
           </div>
         </div>
       </main>
 
-      {/* Add/Process Modal */}
-      {showAddModal && (
+      {/* Add Leave Modal */}
+      {showAddModal && modalMode === 'add' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-slate-800 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="sticky top-0 flex items-center justify-between p-6 bg-slate-700/50 border-b border-slate-700">
-              <h2 className="text-xl font-bold text-white">
-                {modalMode === 'add' ? 'Add Leave Application' : 'Process Leave Applications'}
-              </h2>
+              <h2 className="text-xl font-bold text-white">Apply for Leave</h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
@@ -660,225 +738,94 @@ export default function LeaveManagementPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              {/* Add Mode */}
-              {modalMode === 'add' && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-slate-300 mb-2 block">Employee *</label>
-                      <select
-                        value={newLeaveForm.employeeId}
-                        onChange={(e) => setNewLeaveForm({ ...newLeaveForm, employeeId: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      >
-                        <option value="" className="bg-slate-900">Select Employee</option>
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id} className="bg-slate-900">
-                            {emp.name} - {emp.department} ({emp.position})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              {/* Employee Info - Read Only */}
+              <div className="p-4 bg-violet-900/20 rounded-lg border border-violet-800">
+                <p className="text-sm text-violet-300 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Applying as: <span className="font-semibold text-white">{loggedInEmployee.name}</span>
+                </p>
+                <p className="text-xs text-violet-400 mt-1">{loggedInEmployee.department} • {loggedInEmployee.position}</p>
+              </div>
 
-                    <div>
-                      <label className="text-sm font-medium text-slate-300 mb-2 block">Leave Type *</label>
-                      <select
-                        value={newLeaveForm.leaveType}
-                        onChange={(e) => setNewLeaveForm({ ...newLeaveForm, leaveType: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      >
-                        {LEAVE_TYPES.map(type => (
-                          <option key={type.id} value={type.id} className="bg-slate-900">{type.name}</option>
-                        ))}
-                      </select>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-slate-300 mb-2 block">Leave Type *</label>
+                  <select
+                    value={newLeaveForm.leaveType}
+                    onChange={(e) => setNewLeaveForm({ ...newLeaveForm, leaveType: e.target.value as any })}
+                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  >
+                    {LEAVE_TYPES.map(type => (
+                      <option key={type.id} value={type.id} className="bg-slate-900">{type.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-                    <div>
-                      <label className="text-sm font-medium text-slate-300 mb-2 block">Start Date *</label>
-                      <input
-                        type="date"
-                        value={newLeaveForm.startDate}
-                        onChange={(e) => setNewLeaveForm({ ...newLeaveForm, startDate: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      />
-                    </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300 mb-2 block">Start Date *</label>
+                  <input
+                    type="date"
+                    value={newLeaveForm.startDate}
+                    onChange={(e) => setNewLeaveForm({ ...newLeaveForm, startDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
 
-                    <div>
-                      <label className="text-sm font-medium text-slate-300 mb-2 block">End Date *</label>
-                      <input
-                        type="date"
-                        value={newLeaveForm.endDate}
-                        onChange={(e) => setNewLeaveForm({ ...newLeaveForm, endDate: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      />
-                    </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300 mb-2 block">End Date *</label>
+                  <input
+                    type="date"
+                    value={newLeaveForm.endDate}
+                    onChange={(e) => setNewLeaveForm({ ...newLeaveForm, endDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
 
-                    {newLeaveForm.startDate && newLeaveForm.endDate && (
-                      <div className="md:col-span-2 p-3 bg-purple-900/20 rounded-lg border border-purple-800">
-                        <p className="text-xs text-purple-400">
-                          📅 Days Requested: <span className="font-semibold">{calculateDays(newLeaveForm.startDate, newLeaveForm.endDate)}</span> days
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-slate-300 mb-2 block">Reason *</label>
-                      <textarea
-                        value={newLeaveForm.reason}
-                        onChange={(e) => setNewLeaveForm({ ...newLeaveForm, reason: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white h-20 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        placeholder="Reason for leave"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 p-3 bg-amber-900/20 rounded-lg border border-amber-800">
-                      <p className="text-xs text-amber-400">
-                        📝 <span className="font-semibold">Note:</span> New leave applications will be created with <span className="font-semibold">PENDING</span> status. 
-                        You can approve or reject them later from the "Process Applications" section.
-                      </p>
-                    </div>
+                {newLeaveForm.startDate && newLeaveForm.endDate && (
+                  <div className="md:col-span-2 p-3 bg-purple-900/20 rounded-lg border border-purple-800">
+                    <p className="text-xs text-purple-400">
+                      📅 Days Requested: <span className="font-semibold">{calculateDays(newLeaveForm.startDate, newLeaveForm.endDate)}</span> days
+                    </p>
                   </div>
+                )}
 
-                  <div className="flex gap-3 pt-4 border-t border-slate-700">
-                    <button
-                      onClick={() => setShowAddModal(false)}
-                      className="flex-1 px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm text-slate-300"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleAddLeaveApplication}
-                      disabled={!newLeaveForm.employeeId || !newLeaveForm.startDate || !newLeaveForm.endDate}
-                      className={`flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2 ${
-                        (!newLeaveForm.employeeId || !newLeaveForm.startDate || !newLeaveForm.endDate)
-                          ? 'opacity-50 cursor-not-allowed'
-                          : 'hover:bg-violet-700'
-                      }`}
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      Add Leave (Pending)
-                    </button>
-                  </div>
-                </>
-              )}
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-slate-300 mb-2 block">Reason *</label>
+                  <textarea
+                    value={newLeaveForm.reason}
+                    onChange={(e) => setNewLeaveForm({ ...newLeaveForm, reason: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white h-20 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    placeholder="Reason for leave"
+                  />
+                </div>
 
-              {/* Process Mode */}
-              {modalMode === 'process' && (
-                <>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-slate-300 mb-2 block">Select Pending Application *</label>
-                      <select
-                        value={processForm.applicationId}
-                        onChange={(e) => setProcessForm({ ...processForm, applicationId: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      >
-                        <option value="" className="bg-slate-900">Choose an application to process</option>
-                        {pendingApplications.map(app => (
-                          <option key={app.id} value={app.id} className="bg-slate-900">
-                            {app.employeeName} - {getLeaveTypeName(app.leaveType)} ({app.daysRequested}d) - {formatDate(app.startDate)} to {formatDate(app.endDate)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                <div className="md:col-span-2 p-3 bg-amber-900/20 rounded-lg border border-amber-800">
+                  <p className="text-xs text-amber-400">
+                    📝 <span className="font-semibold">Note:</span> Your leave application will be submitted with <span className="font-semibold">PENDING</span> status for admin approval.
+                  </p>
+                </div>
+              </div>
 
-                    {pendingApplications.length === 0 && (
-                      <div className="p-4 bg-amber-900/20 rounded-lg border border-amber-800">
-                        <p className="text-sm text-amber-400">
-                          No pending leave applications to process. Add new leave applications first.
-                        </p>
-                      </div>
-                    )}
-
-                    {processForm.applicationId && (
-                      <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-800">
-                        {(() => {
-                          const app = leaveApplications.find(a => a.id === processForm.applicationId)
-                          if (!app) return null
-                          return (
-                            <div className="space-y-2 text-sm">
-                              <p className="text-slate-300"><span className="font-semibold text-white">Employee:</span> {app.employeeName}</p>
-                              <p className="text-slate-300"><span className="font-semibold text-white">Department:</span> {app.employeeDepartment}</p>
-                              <p className="text-slate-300"><span className="font-semibold text-white">Leave Type:</span> {getLeaveTypeName(app.leaveType)}</p>
-                              <p className="text-slate-300"><span className="font-semibold text-white">Dates:</span> {formatDate(app.startDate)} - {formatDate(app.endDate)}</p>
-                              <p className="text-slate-300"><span className="font-semibold text-white">Days:</span> {app.daysRequested} days</p>
-                              <p className="text-slate-300"><span className="font-semibold text-white">Reason:</span> {app.reason}</p>
-                              <p className="text-slate-300"><span className="font-semibold text-white">Applied On:</span> {formatDate(app.appliedDate)}</p>
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    )}
-
-                    {processForm.applicationId && (
-                      <>
-                        <div>
-                          <label className="text-sm font-medium text-slate-300 mb-2 block">Action *</label>
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => setProcessForm({ ...processForm, action: 'Approved' })}
-                              className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
-                                processForm.action === 'Approved'
-                                  ? 'bg-green-600 text-white'
-                                  : 'bg-slate-900/50 border border-slate-700 hover:bg-slate-700 text-slate-300'
-                              }`}
-                            >
-                              <Check className="h-4 w-4" />
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => setProcessForm({ ...processForm, action: 'Rejected' })}
-                              className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
-                                processForm.action === 'Rejected'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-slate-900/50 border border-slate-700 hover:bg-slate-700 text-slate-300'
-                              }`}
-                            >
-                              <Ban className="h-4 w-4" />
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="text-sm font-medium text-slate-300 mb-2 block">
-                            {processForm.action === 'Rejected' ? 'Rejection Reason' : 'Approver Comments'} (Optional)
-                          </label>
-                          <textarea
-                            value={processForm.comments}
-                            onChange={(e) => setProcessForm({ ...processForm, comments: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white h-20 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
-                            placeholder={processForm.action === 'Rejected' ? 'Explain why this application is rejected...' : 'Add any comments...'}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3 pt-4 border-t border-slate-700">
-                    <button
-                      onClick={() => setShowAddModal(false)}
-                      className="flex-1 px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm text-slate-300"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleProcessLeave}
-                      disabled={!processForm.applicationId}
-                      className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 ${
-                        processForm.applicationId
-                          ? processForm.action === 'Approved'
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-red-600 text-white hover:bg-red-700'
-                          : 'bg-slate-900/50 text-slate-400 cursor-not-allowed border border-slate-700'
-                      }`}
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {processForm.action}
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="flex gap-3 pt-4 border-t border-slate-700">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddLeaveApplication}
+                  disabled={!newLeaveForm.startDate || !newLeaveForm.endDate}
+                  className={`flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2 ${
+                    (!newLeaveForm.startDate || !newLeaveForm.endDate)
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-violet-700'
+                  }`}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Submit Application
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -903,7 +850,7 @@ export default function LeaveManagementPage() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <User className="h-5 w-5 text-violet-400" />
-                  Employee Information
+                  Application Information
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
@@ -915,38 +862,40 @@ export default function LeaveManagementPage() {
                     <p className="font-semibold text-white">{selectedApplication.employeeDepartment}</p>
                   </div>
                   <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <p className="text-xs text-slate-400">Employee ID</p>
-                    <p className="font-semibold text-white">{selectedApplication.employeeId}</p>
+                    <p className="text-xs text-slate-400">Leave Type</p>
+                    <p className="font-semibold text-white">{getLeaveTypeName(selectedApplication.leaveType)}</p>
                   </div>
                   <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <p className="text-xs text-slate-400">Application ID</p>
-                    <p className="font-semibold text-white">{selectedApplication.id}</p>
+                    <p className="text-xs text-slate-400">Days Requested</p>
+                    <p className="font-semibold text-white">{selectedApplication.daysRequested} days</p>
                   </div>
                 </div>
               </div>
 
-              {/* Leave Details */}
+              {/* Dates */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-violet-400" />
-                  Leave Details
+                  Leave Dates
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <p className="text-xs text-slate-400">Leave Type</p>
-                    <p className="font-semibold text-white mt-1">{getLeaveTypeName(selectedApplication.leaveType)}</p>
-                  </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <p className="text-xs text-slate-400">Days Requested</p>
-                    <p className="font-semibold text-lg text-white">{selectedApplication.daysRequested} days</p>
-                  </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
                     <p className="text-xs text-slate-400">Start Date</p>
                     <p className="font-semibold text-white">{formatLongDate(selectedApplication.startDate)}</p>
-                    </div>
-                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                      <p className="text-xs text-slate-400">End Date</p>
-                      <p className="font-semibold text-white">{formatLongDate(selectedApplication.endDate)}</p>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                    <p className="text-xs text-slate-400">End Date</p>
+                    <p className="font-semibold text-white">{formatLongDate(selectedApplication.endDate)}</p>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                    <p className="text-xs text-slate-400">Applied On</p>
+                    <p className="font-semibold text-white">{formatDate(selectedApplication.appliedDate)}</p>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                    <p className="text-xs text-slate-400">Status</p>
+                    <span className={`text-xs px-3 py-1 rounded-full border ${getStatusColor(selectedApplication.status)}`}>
+                      {selectedApplication.status}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -962,38 +911,6 @@ export default function LeaveManagementPage() {
                 </div>
               </div>
 
-              {/* Status & Approval */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-violet-400" />
-                  Status & Approval
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <p className="text-xs text-slate-400">Status</p>
-                    <span className={`text-xs px-3 py-1 rounded-full border ${getStatusColor(selectedApplication.status)}`}>
-                      {selectedApplication.status}
-                    </span>
-                  </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <p className="text-xs text-slate-400">Applied Date</p>
-                    <p className="font-semibold text-white">{formatDate(selectedApplication.appliedDate)}</p>
-                  </div>
-                  {selectedApplication.approvalDate && (
-                    <>
-                      <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                        <p className="text-xs text-slate-400">Approval Date</p>
-                        <p className="font-semibold text-white">{formatDate(selectedApplication.approvalDate)}</p>
-                      </div>
-                      <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                        <p className="text-xs text-slate-400">Approver</p>
-                        <p className="font-semibold text-white">{selectedApplication.approverName || 'N/A'}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
               {/* Approver Comments */}
               {selectedApplication.approverComments && (
                 <div>
@@ -1003,6 +920,26 @@ export default function LeaveManagementPage() {
                   </h3>
                   <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-800">
                     <p className="text-blue-400">{selectedApplication.approverComments}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Approval Info */}
+              {selectedApplication.approvalDate && (
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-violet-400" />
+                    Approval Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs text-slate-400">Approval Date</p>
+                      <p className="font-semibold text-white">{formatDate(selectedApplication.approvalDate)}</p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-xs text-slate-400">Approver</p>
+                      <p className="font-semibold text-white">{selectedApplication.approverName || 'Admin'}</p>
+                    </div>
                   </div>
                 </div>
               )}

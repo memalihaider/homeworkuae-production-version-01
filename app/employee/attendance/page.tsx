@@ -27,7 +27,9 @@ import {
   Download,
   FileText,
   Menu,
-  X
+  X,
+  Mail,
+  User
 } from 'lucide-react'
 import { 
   collection, 
@@ -41,9 +43,9 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { getSession } from '@/lib/auth'
+import { getSession, type SessionData } from '@/lib/auth'
 import { EmployeeSidebar } from '../_components/sidebar'
-// Types define karte hain
+
 interface FirebaseEmployee {
   id: string;
   name: string;
@@ -77,7 +79,7 @@ interface Attendance {
 
 export default function AttendancePage() {
   const router = useRouter()
-  const [session, setSession] = useState<any>(null)
+  const [session, setSession] = useState<SessionData | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0])
   const [activeTab, setActiveTab] = useState('history')
@@ -85,7 +87,7 @@ export default function AttendancePage() {
   const [filterStatus, setFilterStatus] = useState('all')
 
   const [attendance, setAttendance] = useState<Attendance[]>([])
-  const [employees, setEmployees] = useState<FirebaseEmployee[]>([])
+  const [loggedInEmployee, setLoggedInEmployee] = useState<FirebaseEmployee | null>(null)
 
   const [markForm, setMarkForm] = useState({
     employeeId: '',
@@ -100,12 +102,11 @@ export default function AttendancePage() {
 
   // History tab ke liye new states
   const [selectedMonth, setSelectedMonth] = useState<string>(
-    new Date().toISOString().slice(0, 7) // YYYY-MM format
+    new Date().toISOString().slice(0, 7)
   )
-  const [selectedEmployee, setSelectedEmployee] = useState<string>('')
   const [monthlyReport, setMonthlyReport] = useState<any>(null)
 
-  // Session check
+  // Session check and fetch logged-in employee
   useEffect(() => {
     const storedSession = getSession()
     if (!storedSession) {
@@ -113,39 +114,29 @@ export default function AttendancePage() {
       return
     }
     setSession(storedSession)
+    
+    // Fetch logged-in employee
+    fetchLoggedInEmployee(storedSession)
   }, [router])
 
-  // Firebase se employees fetch karein
-  useEffect(() => {
-    fetchEmployees()
-    fetchAttendance()
-  }, [])
-
-  // Jab date change ho tab attendance refresh karein
-  useEffect(() => {
-    if (employees.length > 0) {
-      ensureAttendanceForAllEmployees()
-    }
-  }, [currentDate, employees])
-
-  // Jab month ya employee change ho tab report generate karein
-  useEffect(() => {
-    if (activeTab === 'history' && selectedEmployee) {
-      generateMonthlyReport()
-    }
-  }, [selectedMonth, selectedEmployee, attendance, activeTab])
-
-  const fetchEmployees = async () => {
+  // Fetch logged-in employee from Firebase
+  const fetchLoggedInEmployee = async (sessionData: SessionData) => {
     try {
-      const employeesRef = collection(db, 'employees')
-      const snapshot = await getDocs(employeesRef)
+      console.log('🔍 Fetching logged-in employee for attendance...')
       
-      const employeesList: FirebaseEmployee[] = []
-      snapshot.forEach((doc) => {
-        const data = doc.data()
-        if (data.status === 'Active') {
-          employeesList.push({
-            id: doc.id,
+      let employeeData: FirebaseEmployee | null = null
+      
+      // Try by employeeId first
+      if (sessionData.employeeId) {
+        const employeeDoc = await getDocs(query(
+          collection(db, 'employees'), 
+          where('__name__', '==', sessionData.employeeId)
+        ))
+        
+        if (!employeeDoc.empty) {
+          const data = employeeDoc.docs[0].data()
+          employeeData = {
+            id: employeeDoc.docs[0].id,
             name: data.name || '',
             email: data.email || '',
             phone: data.phone || '',
@@ -154,20 +145,77 @@ export default function AttendancePage() {
             role: data.role || '',
             status: data.status || 'Active',
             supervisor: data.supervisor || ''
-          })
+          }
+          console.log('✅ Found employee by ID:', employeeData.name)
         }
-      })
+      }
       
-      setEmployees(employeesList)
+      // If not found by ID, try by email
+      if (!employeeData && sessionData.user.email) {
+        const employeesRef = collection(db, 'employees')
+        const q = query(employeesRef, where('email', '==', sessionData.user.email))
+        const snapshot = await getDocs(q)
+        
+        if (!snapshot.empty) {
+          const data = snapshot.docs[0].data()
+          employeeData = {
+            id: snapshot.docs[0].id,
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            department: data.department || '',
+            position: data.position || '',
+            role: data.role || '',
+            status: data.status || 'Active',
+            supervisor: data.supervisor || ''
+          }
+          console.log('✅ Found employee by email:', employeeData.name)
+        }
+      }
+      
+      setLoggedInEmployee(employeeData)
+      
+      // If employee found, set as default in mark form
+      if (employeeData) {
+        setMarkForm(prev => ({
+          ...prev,
+          employeeId: employeeData.id
+        }))
+      }
+      
     } catch (error) {
-      console.error('Error fetching employees:', error)
+      console.error('Error fetching logged-in employee:', error)
     }
   }
 
+  // Firebase se attendance fetch karein
+  useEffect(() => {
+    if (loggedInEmployee) {
+      fetchAttendance()
+    }
+  }, [loggedInEmployee])
+
+  // Jab date change ho tab attendance refresh karein
+  useEffect(() => {
+    if (loggedInEmployee) {
+      ensureAttendanceForLoggedInEmployee()
+    }
+  }, [currentDate, loggedInEmployee])
+
+  // Jab month change ho tab report generate karein
+  useEffect(() => {
+    if (loggedInEmployee && selectedMonth && activeTab === 'history') {
+      generateMonthlyReport()
+    }
+  }, [selectedMonth, attendance, activeTab, loggedInEmployee])
+
   const fetchAttendance = async () => {
     try {
+      if (!loggedInEmployee) return
+      
       const attendanceRef = collection(db, 'attendance')
-      const snapshot = await getDocs(attendanceRef)
+      const q = query(attendanceRef, where('employeeId', '==', loggedInEmployee.id))
+      const snapshot = await getDocs(q)
       
       const attendanceList: Attendance[] = []
       snapshot.forEach((doc) => {
@@ -207,68 +255,58 @@ export default function AttendancePage() {
     }
   }
 
-  // Ensure all employees have attendance records for today
-  const ensureAttendanceForAllEmployees = async () => {
+  // Ensure logged-in employee has attendance record for today
+  const ensureAttendanceForLoggedInEmployee = async () => {
+    if (!loggedInEmployee) return
+    
     try {
       const todayAttendance = attendance.filter(a => a.date === currentDate)
-      const attendedEmployeeIds = todayAttendance.map(a => a.employeeId)
       
-      const employeesWithoutAttendance = employees.filter(emp => 
-        !attendedEmployeeIds.includes(emp.id)
-      )
-
-      for (const emp of employeesWithoutAttendance) {
-        try {
-          // Check if record already exists in Firebase
-          const attendanceRef = collection(db, 'attendance')
-          const q = query(
-            attendanceRef,
-            where('employeeId', '==', emp.id),
-            where('date', '==', currentDate)
-          )
-          
-          const querySnapshot = await getDocs(q)
-          
-          if (querySnapshot.empty) {
-            // Create new attendance record
-            const newAttendance = {
-              employeeId: emp.id,
-              employeeName: emp.name,
-              date: currentDate,
-              shift: 'Standard Shift',
-              clockIn: '',
-              clockOut: null,
-              status: 'Absent',
-              workingHours: 0,
-              jobId: '',
-              jobTitle: '',
-              overtimeHours: 0,
-              notes: 'Automatically created',
-              attendanceType: 'Auto',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-            
-            await addDoc(collection(db, 'attendance'), cleanFirebaseData(newAttendance))
+      if (todayAttendance.length === 0) {
+        // Check if record already exists in Firebase
+        const attendanceRef = collection(db, 'attendance')
+        const q = query(
+          attendanceRef,
+          where('employeeId', '==', loggedInEmployee.id),
+          where('date', '==', currentDate)
+        )
+        
+        const querySnapshot = await getDocs(q)
+        
+        if (querySnapshot.empty) {
+          // Create new attendance record
+          const newAttendance = {
+            employeeId: loggedInEmployee.id,
+            employeeName: loggedInEmployee.name,
+            date: currentDate,
+            shift: 'Standard Shift',
+            clockIn: '',
+            clockOut: null,
+            status: 'Absent',
+            workingHours: 0,
+            jobId: '',
+            jobTitle: '',
+            overtimeHours: 0,
+            notes: 'Automatically created',
+            attendanceType: 'Auto',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
-        } catch (error) {
-          console.error(`Error creating attendance for ${emp.name}:`, error)
+          
+          await addDoc(collection(db, 'attendance'), cleanFirebaseData(newAttendance))
+          
+          // Refresh attendance list
+          await fetchAttendance()
         }
       }
-
-      // Refresh attendance list
-      await fetchAttendance()
     } catch (error) {
       console.error('Error ensuring attendance:', error)
     }
   }
 
-  // Monthly report generate karein
+  // Monthly report generate karein for logged-in employee
   const generateMonthlyReport = () => {
-    if (!selectedEmployee || !selectedMonth) return
-    
-    const selectedEmp = employees.find(e => e.id === selectedEmployee)
-    if (!selectedEmp) return
+    if (!loggedInEmployee || !selectedMonth) return
     
     const [year, month] = selectedMonth.split('-').map(Number)
     const startDate = new Date(year, month - 1, 1)
@@ -286,7 +324,7 @@ export default function AttendancePage() {
     
     // Employee ki attendance filter karein
     const employeeAttendance = attendance.filter(a => 
-      a.employeeId === selectedEmployee && 
+      a.employeeId === loggedInEmployee.id && 
       a.date.startsWith(selectedMonth)
     )
     
@@ -327,7 +365,7 @@ export default function AttendancePage() {
     const attendanceRate = workingDays > 0 ? ((attendedDays / workingDays) * 100).toFixed(1) : '0'
     
     setMonthlyReport({
-      employee: selectedEmp,
+      employee: loggedInEmployee,
       month: selectedMonth,
       days: dayData,
       summary: {
@@ -356,10 +394,11 @@ export default function AttendancePage() {
     return cleanData
   }
 
-  // Get today's attendance
+  // Get today's attendance for logged-in employee
   const todayAttendance = useMemo(() => {
-    return attendance.filter(a => a.date === currentDate)
-  }, [attendance, currentDate])
+    if (!loggedInEmployee) return []
+    return attendance.filter(a => a.date === currentDate && a.employeeId === loggedInEmployee.id)
+  }, [attendance, currentDate, loggedInEmployee])
 
   // Filter attendance
   const filteredAttendance = useMemo(() => {
@@ -370,15 +409,20 @@ export default function AttendancePage() {
     })
   }, [todayAttendance, searchTerm, filterStatus])
 
-  // Calculate statistics
+  // Calculate statistics for logged-in employee
   const stats = useMemo(() => {
-    const totalEmployees = employees.length
-    const todayAttended = todayAttendance.filter(a => 
-      a.status === 'Present' || a.status === 'Late' || a.status === 'On Job' || a.status === 'Half Day'
-    ).length
+    if (!loggedInEmployee) return {
+      present: 0,
+      late: 0,
+      absent: 0,
+      halfDay: 0,
+      fullLeave: 0,
+      sickLeave: 0,
+      onJob: 0,
+      totalOvertimeHours: 0
+    }
     
     return {
-      total: totalEmployees,
       present: todayAttendance.filter(a => a.status === 'Present').length,
       late: todayAttendance.filter(a => a.status === 'Late').length,
       absent: todayAttendance.filter(a => a.status === 'Absent').length,
@@ -386,21 +430,19 @@ export default function AttendancePage() {
       fullLeave: todayAttendance.filter(a => a.status === 'Full Leave').length,
       sickLeave: todayAttendance.filter(a => a.status === 'Sick Leave').length,
       onJob: todayAttendance.filter(a => a.status === 'On Job').length,
-      totalOvertimeHours: attendance.reduce((sum, a) => sum + (a.overtimeHours || 0), 0),
-      attendanceRate: totalEmployees > 0 ? (todayAttended / totalEmployees * 100).toFixed(1) : '0'
+      totalOvertimeHours: attendance.reduce((sum, a) => sum + (a.overtimeHours || 0), 0)
     }
-  }, [employees, todayAttendance, attendance])
+  }, [todayAttendance, attendance, loggedInEmployee])
 
   // Handle mark attendance
   const handleMarkAttendance = async () => {
-    if (!markForm.employeeId || !markForm.status) {
-      alert('Please fill in required fields')
+    if (!loggedInEmployee) {
+      alert('Employee not found')
       return
     }
 
-    const employee = employees.find(e => e.id === markForm.employeeId)
-    if (!employee) {
-      alert('Employee not found')
+    if (!markForm.status) {
+      alert('Please select a status')
       return
     }
 
@@ -424,8 +466,8 @@ export default function AttendancePage() {
 
       // Prepare attendance data
       const attendanceData = cleanFirebaseData({
-        employeeId: markForm.employeeId,
-        employeeName: employee.name,
+        employeeId: loggedInEmployee.id,
+        employeeName: loggedInEmployee.name,
         date: currentDate,
         shift: 'Standard Shift',
         clockIn: clockInTime,
@@ -444,7 +486,7 @@ export default function AttendancePage() {
       const attendanceRef = collection(db, 'attendance')
       const q = query(
         attendanceRef,
-        where('employeeId', '==', markForm.employeeId),
+        where('employeeId', '==', loggedInEmployee.id),
         where('date', '==', currentDate)
       )
       
@@ -467,7 +509,7 @@ export default function AttendancePage() {
 
       // Reset form
       setMarkForm({
-        employeeId: '',
+        employeeId: loggedInEmployee.id,
         clockIn: '',
         clockOut: '',
         jobId: '',
@@ -625,109 +667,6 @@ export default function AttendancePage() {
     }
   }
 
-  // Bulk mark attendance for all employees
-  const handleBulkMark = async (status: 'Present' | 'Absent' | 'Half Day' | 'Full Leave' | 'Sick Leave') => {
-    if (!confirm(`Mark all employees as ${status} for ${currentDate}?`)) return
-
-    try {
-      for (const emp of employees) {
-        try {
-          // Check if attendance exists for today
-          const attendanceRef = collection(db, 'attendance')
-          const q = query(
-            attendanceRef,
-            where('employeeId', '==', emp.id),
-            where('date', '==', currentDate)
-          )
-          
-          const querySnapshot = await getDocs(q)
-          
-          const clockIn = status === 'Present' ? '09:00' : ''
-          const clockOut = status === 'Present' ? '17:00' : ''
-          const workingHours = status === 'Present' ? 8 : status === 'Half Day' ? 4 : 0
-          
-          const attendanceData = cleanFirebaseData({
-            employeeId: emp.id,
-            employeeName: emp.name,
-            date: currentDate,
-            shift: 'Standard Shift',
-            clockIn: clockIn,
-            clockOut: clockOut,
-            status: status,
-            workingHours: workingHours,
-            jobId: '',
-            jobTitle: '',
-            overtimeHours: 0,
-            notes: `Bulk marked as ${status}`,
-            attendanceType: 'Manual',
-            updatedAt: new Date().toISOString()
-          })
-
-          if (!querySnapshot.empty) {
-            // Update existing
-            const docRef = querySnapshot.docs[0].ref
-            await updateDoc(docRef, attendanceData)
-          } else {
-            // Create new
-            const newAttendance = {
-              ...attendanceData,
-              createdAt: new Date().toISOString()
-            }
-            await addDoc(collection(db, 'attendance'), newAttendance)
-          }
-        } catch (error) {
-          console.error(`Error processing employee ${emp.name}:`, error)
-        }
-      }
-
-      alert(`All employees marked as ${status} successfully!`)
-      await fetchAttendance() // Refresh the attendance list
-      
-    } catch (error: any) {
-      console.error('Error bulk marking:', error)
-      alert(`Error bulk marking: ${error.message}`)
-    }
-  }
-
-  // Get status color from Code 1
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Present': return 'bg-green-900/20 text-green-400 border-green-800'
-      case 'Late': return 'bg-amber-900/20 text-amber-400 border-amber-800'
-      case 'Absent': return 'bg-red-900/20 text-red-400 border-red-800'
-      case 'Half Day': return 'bg-blue-900/20 text-blue-400 border-blue-800'
-      case 'Full Leave': return 'bg-purple-900/20 text-purple-400 border-purple-800'
-      case 'Sick Leave': return 'bg-pink-900/20 text-pink-400 border-pink-800'
-      case 'On Job': return 'bg-indigo-900/20 text-indigo-400 border-indigo-800'
-      default: return 'bg-slate-700 text-slate-300'
-    }
-  }
-
-  // Get status icon from Code 1 style
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Present': return <CheckCircle2 className="w-4 h-4 text-green-400" />
-      case 'Late': return <AlertCircle className="w-4 h-4 text-amber-400" />
-      case 'Absent': return <UserX className="w-4 h-4 text-red-400" />
-      case 'Half Day': return <Clock4 className="w-4 h-4 text-blue-400" />
-      default: return null
-    }
-  }
-
-  // Get status color for calendar view
-  const getCalendarStatusColor = (status: string) => {
-    switch (status) {
-      case 'Present': return 'bg-green-500 text-white'
-      case 'Late': return 'bg-yellow-500 text-white'
-      case 'Absent': return 'bg-red-500 text-white'
-      case 'Half Day': return 'bg-blue-500 text-white'
-      case 'Full Leave': return 'bg-purple-500 text-white'
-      case 'Sick Leave': return 'bg-pink-500 text-white'
-      case 'On Job': return 'bg-indigo-500 text-white'
-      default: return 'bg-gray-200 text-gray-700'
-    }
-  }
-
   // Download report as CSV
   const downloadReport = () => {
     if (!monthlyReport) return
@@ -793,10 +732,58 @@ export default function AttendancePage() {
     setSelectedMonth(`${newYear}-${String(newMonth).padStart(2, '0')}`)
   }
 
+  // Get user initials
+  const getUserInitials = () => {
+    if (!session?.user?.name) return 'E'
+    return session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  // Get status color from Code 1
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Present': return 'bg-green-900/20 text-green-400 border-green-800'
+      case 'Late': return 'bg-amber-900/20 text-amber-400 border-amber-800'
+      case 'Absent': return 'bg-red-900/20 text-red-400 border-red-800'
+      case 'Half Day': return 'bg-blue-900/20 text-blue-400 border-blue-800'
+      case 'Full Leave': return 'bg-purple-900/20 text-purple-400 border-purple-800'
+      case 'Sick Leave': return 'bg-pink-900/20 text-pink-400 border-pink-800'
+      case 'On Job': return 'bg-indigo-900/20 text-indigo-400 border-indigo-800'
+      default: return 'bg-slate-700 text-slate-300'
+    }
+  }
+
+  // Get status color for calendar view
+  const getCalendarStatusColor = (status: string) => {
+    switch (status) {
+      case 'Present': return 'bg-green-500 text-white'
+      case 'Late': return 'bg-yellow-500 text-white'
+      case 'Absent': return 'bg-red-500 text-white'
+      case 'Half Day': return 'bg-blue-500 text-white'
+      case 'Full Leave': return 'bg-purple-500 text-white'
+      case 'Sick Leave': return 'bg-pink-500 text-white'
+      case 'On Job': return 'bg-indigo-500 text-white'
+      default: return 'bg-gray-200 text-gray-700'
+    }
+  }
+
   if (!session) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+      </div>
+    )
+  }
+
+  if (!loggedInEmployee) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex">
+        <EmployeeSidebar session={session} open={sidebarOpen} onOpenChange={setSidebarOpen} />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500 mx-auto mb-4"></div>
+            <p className="text-slate-400">Loading your profile...</p>
+          </div>
+        </main>
       </div>
     )
   }
@@ -817,22 +804,37 @@ export default function AttendancePage() {
                 {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-white">Attendance Management</h1>
-                <p className="text-sm text-slate-400">Track daily attendance, mark status, and manage employee presence</p>
+                <h1 className="text-2xl font-bold text-white">My Attendance</h1>
+                <p className="text-sm text-slate-400 flex items-center gap-2">
+                  <User className="w-4 h-4 text-violet-400" />
+                  {loggedInEmployee.name} • {loggedInEmployee.department} • {loggedInEmployee.position}
+                </p>
               </div>
             </div>
-           
+            
+            {/* User Info */}
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-violet-900/30 border border-violet-700 rounded-lg">
+                <Mail className="w-4 h-4 text-violet-400" />
+                <span className="text-sm text-violet-300">{loggedInEmployee.email}</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
+                {getUserInitials()}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-6 max-w-7xl mx-auto space-y-6">
-          {/* Stats - Code 1 style */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-              <p className="text-slate-400 text-sm font-medium">Total</p>
-              <p className="text-2xl font-bold text-white mt-2">{stats.total}</p>
-            </div>
+          {/* Welcome Banner */}
+          <div className="bg-gradient-to-r from-violet-600/20 to-purple-600/20 rounded-xl border border-violet-500/30 p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Welcome, {loggedInEmployee.name}!</h2>
+            <p className="text-slate-300">Track your daily attendance and view your attendance history.</p>
+          </div>
+
+          {/* Stats - Only for logged-in employee */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
               <p className="text-slate-400 text-sm font-medium">Present</p>
               <p className="text-2xl font-bold text-green-400 mt-2">{stats.present}</p>
@@ -858,390 +860,27 @@ export default function AttendancePage() {
               <p className="text-2xl font-bold text-red-400 mt-2">{stats.absent}</p>
             </div>
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-              <p className="text-slate-400 text-sm font-medium">Rate</p>
-              <p className="text-2xl font-bold text-teal-400 mt-2">{stats.attendanceRate}%</p>
+              <p className="text-slate-400 text-sm font-medium">Overtime</p>
+              <p className="text-2xl font-bold text-teal-400 mt-2">{stats.totalOvertimeHours}h</p>
             </div>
           </div>
 
-          
-
-          {/* Tabs */}
+          {/* Tabs - Only History Tab */}
           <div className="border-b border-slate-700">
             <div className="flex gap-8">
-              {[
-               
-                
-                { id: 'history', label: 'History', icon: BarChart3 },
-              ].map(tab => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`py-3 px-4 font-medium flex items-center gap-2 border-b-2 transition-all ${
-                      activeTab === tab.id
-                        ? 'border-violet-500 text-violet-400'
-                        : 'border-transparent text-slate-400 hover:text-slate-300'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                )
-              })}
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`py-3 px-4 font-medium flex items-center gap-2 border-b-2 transition-all ${
+                  activeTab === 'history'
+                    ? 'border-violet-500 text-violet-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                History
+              </button>
             </div>
           </div>
-
-          {/* Daily Attendance Tab */}
-          {activeTab === 'daily' && (
-            <div className="space-y-4">
-              {/* Date & Filters */}
-              <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-4">
-                <div className="flex gap-4 flex-wrap">
-                  <input
-                    type="date"
-                    value={currentDate}
-                    onChange={(e) => setCurrentDate(e.target.value)}
-                    className="px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                  <div className="flex-1 min-w-60 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search employee..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                  </div>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  >
-                    <option value="all" className="bg-slate-900">All Status</option>
-                    <option value="Present" className="bg-slate-900">Present</option>
-                    <option value="Late" className="bg-slate-900">Late</option>
-                    <option value="Absent" className="bg-slate-900">Absent</option>
-                    <option value="Half Day" className="bg-slate-900">Half Day</option>
-                    <option value="Full Leave" className="bg-slate-900">Full Leave</option>
-                    <option value="Sick Leave" className="bg-slate-900">Sick Leave</option>
-                    <option value="On Job" className="bg-slate-900">On Job</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Attendance List */}
-              <div className="space-y-3">
-                {filteredAttendance.length > 0 ? (
-                  filteredAttendance.map(record => {
-                    const employee = employees.find(e => e.id === record.employeeId)
-                    return (
-                      <div key={record.id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:bg-slate-700/30 transition-colors">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className={`h-2.5 w-2.5 rounded-full ${
-                                record.status === 'Present' ? 'bg-green-500' :
-                                record.status === 'On Job' ? 'bg-indigo-500' :
-                                record.status === 'Half Day' ? 'bg-blue-500' :
-                                record.status === 'Full Leave' ? 'bg-purple-500' :
-                                record.status === 'Sick Leave' ? 'bg-pink-500' :
-                                record.status === 'Late' ? 'bg-amber-500' : 'bg-red-500'
-                              }`} />
-                              <div>
-                                <p className="font-semibold text-white">{record.employeeName}</p>
-                                <p className="text-xs text-slate-400">
-                                  {employee?.department} • {employee?.position}
-                                  {employee?.supervisor && ` • Supervisor: ${employee.supervisor}`}
-                                </p>
-                              </div>
-                              <span className={`text-xs px-3 py-1 rounded-full border ${getStatusColor(record.status)}`}>
-                                {record.status}
-                                {record.attendanceType === 'Auto' && <span className="text-xs ml-1">(Auto)</span>}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-3 text-sm">
-                              <div>
-                                <p className="text-xs text-slate-400">Shift</p>
-                                <p className="font-medium text-white">{record.shift}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-400">Clock In</p>
-                                <p className="font-medium text-white">{record.clockIn || '—'}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-400">Clock Out</p>
-                                <p className="font-medium text-white">{record.clockOut || '—'}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-400">Hours</p>
-                                <p className="font-medium text-white">{record.workingHours}h</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-400">Type</p>
-                                <p className="font-medium text-slate-300">{record.attendanceType}</p>
-                              </div>
-                              {record.jobTitle && (
-                                <div>
-                                  <p className="text-xs text-slate-400">Job</p>
-                                  <p className="font-medium text-violet-400 text-xs">{record.jobTitle}</p>
-                                </div>
-                              )}
-                            </div>
-                            {record.notes && (
-                              <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-700">
-                                <p className="text-xs text-slate-300">Notes: {record.notes}</p>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            {/* Quick Status Change Buttons */}
-                            <div className="flex gap-1 flex-wrap justify-end">
-                              <button
-                                onClick={() => handleQuickStatusChange(record.id, 'Present')}
-                                className="px-2 py-1 bg-green-900/20 text-green-400 text-xs rounded border border-green-800 hover:bg-green-800/30 transition-colors"
-                                title="Mark Present"
-                              >
-                                Present
-                              </button>
-                              <button
-                                onClick={() => handleQuickStatusChange(record.id, 'Half Day')}
-                                className="px-2 py-1 bg-blue-900/20 text-blue-400 text-xs rounded border border-blue-800 hover:bg-blue-800/30 transition-colors"
-                                title="Mark Half Day"
-                              >
-                                Half Day
-                              </button>
-                              <button
-                                onClick={() => handleQuickStatusChange(record.id, 'Absent')}
-                                className="px-2 py-1 bg-red-900/20 text-red-400 text-xs rounded border border-red-800 hover:bg-red-800/30 transition-colors"
-                                title="Mark Absent"
-                              >
-                                Absent
-                              </button>
-                              <button
-                                onClick={() => handleQuickStatusChange(record.id, 'Full Leave')}
-                                className="px-2 py-1 bg-purple-900/20 text-purple-400 text-xs rounded border border-purple-800 hover:bg-purple-800/30 transition-colors"
-                                title="Mark Leave"
-                              >
-                                Leave
-                              </button>
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              {/* Clock In/Out Button */}
-                              <button
-                                onClick={() => handleClockInOut(record)}
-                                className="p-2 hover:bg-green-900/20 rounded-lg text-green-400 border border-green-800 transition-colors"
-                                title={!record.clockIn ? "Clock In" : !record.clockOut ? "Clock Out" : "Reset Times"}
-                              >
-                                {!record.clockIn ? (
-                                  <LogIn className="h-4 w-4" />
-                                ) : !record.clockOut ? (
-                                  <LogOut className="h-4 w-4" />
-                                ) : (
-                                  <Clock className="h-4 w-4" />
-                                )}
-                              </button>
-                              
-                              <button
-                                onClick={() => handleDelete(record.id)}
-                                className="p-2 hover:bg-red-900/20 rounded-lg text-red-400 border border-red-800 transition-colors"
-                                title="Delete Record"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
-                    <div className="text-slate-400">
-                      <Users className="h-12 w-12 mx-auto mb-3 text-slate-500" />
-                      <p className="font-medium">No attendance records for {currentDate}</p>
-                      <p className="text-sm mt-1">Mark attendance for employees using the buttons above</p>
-                      <button 
-                        onClick={() => handleBulkMark('Present')}
-                        className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors font-medium"
-                      >
-                        Mark All Present
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Mark Attendance Tab */}
-          {activeTab === 'mark' && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-6">Mark Individual Attendance</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Form */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Employee *</label>
-                    <select
-                      value={markForm.employeeId}
-                      onChange={(e) => setMarkForm({ ...markForm, employeeId: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    >
-                      <option value="" className="bg-slate-900">Select Employee</option>
-                      {employees.map(emp => (
-                        <option key={emp.id} value={emp.id} className="bg-slate-900">
-                          {emp.name} - {emp.department} ({emp.position})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Status *</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { value: 'Present', label: 'Present', color: 'bg-green-600' },
-                        { value: 'Half Day', label: 'Half Day', color: 'bg-blue-600' },
-                        { value: 'Absent', label: 'Absent', color: 'bg-red-600' },
-                        { value: 'Full Leave', label: 'Full Leave', color: 'bg-purple-600' },
-                        { value: 'Sick Leave', label: 'Sick Leave', color: 'bg-pink-600' },
-                        { value: 'On Job', label: 'On Job', color: 'bg-indigo-600' },
-                        { value: 'Late', label: 'Late', color: 'bg-amber-600' }
-                      ].map(status => (
-                        <button
-                          key={status.value}
-                          type="button"
-                          onClick={() => setMarkForm({ ...markForm, status: status.value })}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${markForm.status === status.value ? status.color + ' text-white' : 'bg-slate-900/50 text-slate-300 hover:bg-slate-700 border border-slate-700'}`}
-                        >
-                          {status.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {(markForm.status === 'Present' || markForm.status === 'Late' || markForm.status === 'On Job') && (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-slate-300 mb-2 block">Clock In Time</label>
-                          <input
-                            type="time"
-                            value={markForm.clockIn}
-                            onChange={(e) => setMarkForm({ ...markForm, clockIn: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-slate-300 mb-2 block">Clock Out Time</label>
-                          <input
-                            type="time"
-                            value={markForm.clockOut}
-                            onChange={(e) => setMarkForm({ ...markForm, clockOut: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-slate-300 mb-2 block">Job ID (Optional)</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., JOB001"
-                            value={markForm.jobId}
-                            onChange={(e) => setMarkForm({ ...markForm, jobId: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-slate-300 mb-2 block">Job Title (Optional)</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., Villa Deep Cleaning"
-                            value={markForm.jobTitle}
-                            onChange={(e) => setMarkForm({ ...markForm, jobTitle: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium text-slate-300 mb-2 block">Overtime Hours (Optional)</label>
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          step="0.5"
-                          value={markForm.overtimeHours}
-                          onChange={(e) => setMarkForm({ ...markForm, overtimeHours: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Notes (Optional)</label>
-                    <textarea
-                      placeholder="Add any notes..."
-                      value={markForm.notes}
-                      onChange={(e) => setMarkForm({ ...markForm, notes: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white h-20 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                  </div>
-                  <button
-                    onClick={handleMarkAttendance}
-                    className="w-full px-4 py-2.5 bg-violet-600 text-white rounded-lg font-medium text-sm hover:bg-violet-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!markForm.employeeId}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Mark Attendance
-                  </button>
-                </div>
-
-                {/* Info Box */}
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700 space-y-3">
-                  <h4 className="font-medium text-white">Attendance Guide</h4>
-                  <ul className="text-sm space-y-2 text-slate-400">
-                    <li className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                      <span><strong className="text-slate-300">Present:</strong> Full day attendance (8 hours)</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                      <span><strong className="text-slate-300">Half Day:</strong> 4 working hours</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                      <span><strong className="text-slate-300">Absent:</strong> No attendance</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-purple-500"></div>
-                      <span><strong className="text-slate-300">Full Leave:</strong> Planned absence</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-pink-500"></div>
-                      <span><strong className="text-slate-300">Sick Leave:</strong> Medical absence</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
-                      <span><strong className="text-slate-300">On Job:</strong> Working at site</span>
-                    </li>
-                  </ul>
-                  <div className="pt-4 border-t border-slate-700 space-y-2">
-                    <p className="text-xs font-medium text-slate-300">Features:</p>
-                    <p className="text-xs text-slate-400">✓ All employees automatically displayed</p>
-                    <p className="text-xs text-slate-400">✓ Real-time status updates</p>
-                    <p className="text-xs text-slate-400">✓ Clock in/out functionality</p>
-                    <p className="text-xs text-slate-400">✓ Bulk operations</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* History Tab - Monthly Report */}
           {activeTab === 'history' && (
@@ -1250,31 +889,15 @@ export default function AttendancePage() {
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Monthly Attendance Report</h3>
+                    <h3 className="text-lg font-semibold text-white">My Monthly Attendance Report</h3>
                     <p className="text-sm text-slate-400">
-                      View detailed attendance history for any employee
+                      View your detailed attendance history
                     </p>
                   </div>
                 </div>
 
-                {/* Filters */}
+                {/* Month Filter */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <label className="text-sm font-medium text-slate-300 mb-2 block">Select Employee *</label>
-                    <select
-                      value={selectedEmployee}
-                      onChange={(e) => setSelectedEmployee(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    >
-                      <option value="" className="bg-slate-900">Select Employee</option>
-                      {employees.map(emp => (
-                        <option key={emp.id} value={emp.id} className="bg-slate-900">
-                          {emp.name} - {emp.department}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
                   <div>
                     <label className="text-sm font-medium text-slate-300 mb-2 block">Select Month</label>
                     <div className="flex gap-2">
@@ -1300,27 +923,20 @@ export default function AttendancePage() {
                   </div>
                 </div>
 
-                {/* Employee select nahi hone tak sab hide */}
-                {!selectedEmployee ? (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 mx-auto mb-4 text-slate-500" />
-                    
-                   
-                  </div>
-                ) : monthlyReport ? (
+                {monthlyReport ? (
                   <>
-                    {/* Download Button - Sirf jab employee select ho aur report available ho */}
+                    {/* Download Button */}
                     <div className="flex justify-end mb-6">
                       <button
                         onClick={downloadReport}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
                       >
                         <Download className="h-4 w-4" />
-                        Download Report
+                        Download My Report
                       </button>
                     </div>
 
-                    {/* Employee Info - Jab employee select ho */}
+                    {/* Employee Info */}
                     <div className="mb-6 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
@@ -1475,18 +1091,17 @@ export default function AttendancePage() {
                       </div>
                     </div>
                   </>
-                ) : selectedEmployee ? (
-                  // Employee select hai lekin report nahi hai (empty data)
+                ) : (
                   <div className="text-center py-12">
                     <FileText className="h-16 w-16 mx-auto mb-4 text-slate-500" />
                     <p className="font-medium text-lg text-white">No Attendance Data Found</p>
                     <p className="text-sm text-slate-400 mt-2">
-                      No attendance records found for {employees.find(e => e.id === selectedEmployee)?.name} 
+                      No attendance records found for {loggedInEmployee.name} 
                       in {new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </p>
                     <p className="text-sm text-slate-500 mt-1">Try selecting a different month</p>
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           )}

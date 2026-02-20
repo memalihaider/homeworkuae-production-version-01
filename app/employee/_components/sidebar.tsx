@@ -30,6 +30,7 @@ export const sidebarItems = [
   { id: 'Salary', name: 'My Salary', icon: User, href: '/employee/payslips' },
   { id: 'attendance', name: 'Attendance', icon: Clock, href: '/employee/attendance' },
   { id: 'leave', name: 'Leave', icon: Calendar, href: '/employee/leave' },
+   { id: 'chat', name: 'Chat bot', icon: Calendar, href: '/employee/chat' },
   
   { id: 'jobs', name: 'My Jobs', icon: Briefcase, href: '/employee/jobs' },
   { id: 'tasks', name: 'My Tasks', icon: CheckSquare, href: '/employee/tasks' },

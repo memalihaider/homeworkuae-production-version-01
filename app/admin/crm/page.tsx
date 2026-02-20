@@ -1898,7 +1898,7 @@ export default function UnifiedCRMDashboard() {
                       onChange={(e) => setFormData({...formData, surveyType: e.target.value})}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-900">Survey-Online</span>
+                    <span className="text-sm text-gray-900">Online Survey</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1.5 rounded">
                     <input
@@ -1909,7 +1909,7 @@ export default function UnifiedCRMDashboard() {
                       onChange={(e) => setFormData({...formData, surveyType: e.target.value})}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-900">No Need</span>
+                    <span className="text-sm text-gray-900">No Survey</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1.5 rounded">
                     <input
@@ -1920,7 +1920,7 @@ export default function UnifiedCRMDashboard() {
                       onChange={(e) => setFormData({...formData, surveyType: e.target.value})}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-900">Physical ur</span>
+                    <span className="text-sm text-gray-900">Onsite Survey</span>
                   </label>
                 </div>
               </div>

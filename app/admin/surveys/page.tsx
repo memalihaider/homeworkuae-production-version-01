@@ -1,6 +1,7 @@
 // 'use client'
 
 // import { useState, useEffect } from 'react'
+// import { useRouter } from 'next/navigation'
 // import { Plus, FileText, Settings, TrendingUp, Share } from 'lucide-react'
 // import SurveysDashboard from './components/SurveysDashboard'
 // import SurveyFormSection from './components/SurveyFormSection'
@@ -36,6 +37,7 @@
 // }
 
 // export default function SurveysModule() {
+//   const router = useRouter()
 //   const [surveys, setSurveys] = useState<FirebaseSurvey[]>([])
 //   const [activeTab, setActiveTab] = useState<'dashboard' | 'create' | 'templates' | 'results'>('dashboard')
 //   const [searchTerm, setSearchTerm] = useState('')
@@ -46,7 +48,7 @@
 //   const [selectedDetailSurvey, setSelectedDetailSurvey] = useState<FirebaseSurvey | null>(null)
 //   const [loading, setLoading] = useState(true)
 
-//   // Fetch real surveys from Firebase - FIXED to include selectedClient
+//   // Fetch real surveys from Firebase
 //   useEffect(() => {
 //     setLoading(true)
 //     const surveysRef = collection(db, 'surveys')
@@ -102,6 +104,18 @@
     
 //     return () => unsubscribe()
 //   }, [])
+
+//   // ✅ FIXED: Edit Survey - Navigate to edit page with ID
+//   const handleEditSurvey = (surveyId: string) => {
+//     console.log('✏️ Editing survey:', surveyId)
+//     router.push(`/admin/surveys/${surveyId}`)
+//   }
+
+//   // ✅ Create New Survey - Navigate to new survey page
+//   const handleCreateNewSurvey = () => {
+//     console.log('🆕 Creating new survey')
+//     router.push('/admin/surveys/new')
+//   }
 
 //   // Delete survey from Firebase
 //   const handleDeleteSurvey = (id: string) => {
@@ -179,22 +193,11 @@
 //     }
 //   }
 
-//   // Edit survey
-//   const handleEditSurvey = (surveyId: string) => {
-//     // SurveyFormSection internally handles edit mode
-//     setActiveTab('create')
-//   }
-
 //   // Share survey
 //   const handleShareSurvey = (surveyId: string) => {
 //     const link = `${window.location.origin}/survey/${surveyId}`
 //     navigator.clipboard.writeText(link)
 //     alert('Survey link copied to clipboard!\n\nShare this link with respondents: ' + link)
-//   }
-
-//   // Create new survey
-//   const handleCreateNewSurvey = () => {
-//     setActiveTab('create')
 //   }
 
 //   const tabs = [
@@ -221,7 +224,7 @@
 //               onClick={() => {
 //                 setActiveTab(tab.id)
 //                 if (tab.id === 'create') {
-//                   // No need to reset selectedSurveyId anymore
+//                   handleCreateNewSurvey()
 //                 }
 //               }}
 //               className={`flex items-center gap-2 px-4 py-2 rounded transition-colors whitespace-nowrap text-[12px] uppercase font-bold tracking-tight ${
@@ -265,7 +268,7 @@
 //         {activeTab === 'templates' && (
 //           <SurveyTemplatesSection onUseTemplate={(id) => {
 //             // Template use functionality
-//             setActiveTab('create')
+//             handleCreateNewSurvey()
 //           }} />
 //         )}
 
@@ -327,14 +330,12 @@ interface FirebaseSurvey {
   sendCount?: number
   completionRate?: number
   priority?: 'Low' | 'Medium' | 'High' | 'Critical'
-  // ✅ Add selectedClient
   selectedClient?: {
     id: string
     name: string
     company: string
     type: 'client' | 'lead'
   }
-  // Keep these for backward compatibility
   clientName?: string
   company?: string
   serviceType?: string
@@ -363,7 +364,6 @@ export default function SurveysModule() {
       snapshot.forEach((doc) => {
         const data = doc.data()
         
-        // Debug: Log raw data
         console.log('🔥 Raw Firebase data for survey:', doc.id, {
           title: data.title,
           selectedClient: data.selectedClient,
@@ -384,9 +384,7 @@ export default function SurveysModule() {
             ? Math.round((data.responsesCount / data.sendCount) * 100)
             : 0,
           priority: data.priority || 'Medium',
-          // ✅ CRITICAL: selectedClient ko include karo
           selectedClient: data.selectedClient || undefined,
-          // Keep these for backward compatibility
           clientName: data.clientName || 'General Client',
           company: data.company || 'General Company',
           serviceType: data.serviceType || 'General Survey'
@@ -409,13 +407,13 @@ export default function SurveysModule() {
     return () => unsubscribe()
   }, [])
 
-  // ✅ FIXED: Edit Survey - Navigate to edit page with ID
+  // Edit Survey - Navigate to edit page with ID
   const handleEditSurvey = (surveyId: string) => {
     console.log('✏️ Editing survey:', surveyId)
     router.push(`/admin/surveys/${surveyId}`)
   }
 
-  // ✅ Create New Survey - Navigate to new survey page
+  // Create New Survey - Navigate to new survey page
   const handleCreateNewSurvey = () => {
     console.log('🆕 Creating new survey')
     router.push('/admin/surveys/new')
@@ -470,12 +468,10 @@ export default function SurveysModule() {
         updatedAt: serverTimestamp()
       }
       
-      // ✅ Include selectedClient if it exists
       if (survey.selectedClient) {
         newSurveyData.selectedClient = survey.selectedClient
       }
       
-      // Keep backward compatibility fields
       newSurveyData.clientName = survey.clientName
       newSurveyData.company = survey.company
       newSurveyData.serviceType = survey.serviceType
@@ -571,7 +567,6 @@ export default function SurveysModule() {
 
         {activeTab === 'templates' && (
           <SurveyTemplatesSection onUseTemplate={(id) => {
-            // Template use functionality
             handleCreateNewSurvey()
           }} />
         )}

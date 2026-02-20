@@ -14,9 +14,10 @@
 //   updateDoc,
 //   serverTimestamp,
 //   getDoc,
-//   getDocs
+//   getDocs,
+//   where
 // } from 'firebase/firestore'
-// import { useParams } from 'next/navigation'
+// import { useParams, useRouter } from 'next/navigation'
 
 // // Add Client/Lead interface
 // interface ClientLead {
@@ -59,10 +60,9 @@
 //   createdAt: any
 //   updatedAt: any
 //   responsesCount: number
-//   // Add selected client/lead to survey
 //   selectedClient?: {
-//     phone: string
-//     email: string
+//     phone?: string
+//     email?: string
 //     id: string
 //     name: string
 //     company: string
@@ -71,6 +71,7 @@
 // }
 
 // export default function SurveyFormSection() {
+//   const router = useRouter()
 //   const params = useParams()
 //   const [surveys, setSurveys] = useState<Survey[]>([])
 //   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null)
@@ -89,7 +90,8 @@
 //   const [showShareModal, setShowShareModal] = useState(false)
   
 //   // New state for clients and leads
-//   const [clientsLeads, setClientsLeads] = useState<ClientLead[]>([])
+//   const [clients, setClients] = useState<ClientLead[]>([])
+//   const [qualifiedLeads, setQualifiedLeads] = useState<ClientLead[]>([])
 //   const [selectedClientLead, setSelectedClientLead] = useState<ClientLead | null>(null)
 //   const [searchTerm, setSearchTerm] = useState('')
 //   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -110,15 +112,15 @@
 //   useEffect(() => {
 //     const fetchClientsAndLeads = async () => {
 //       try {
-//         const clients: ClientLead[] = []
-//         const leads: ClientLead[] = []
+//         const clientsList: ClientLead[] = []
+//         const leadsList: ClientLead[] = []
         
-//         // Fetch clients
+//         // ✅ Fetch ALL clients
 //         const clientsQuery = query(collection(db, 'clients'))
 //         const clientsSnapshot = await getDocs(clientsQuery)
 //         clientsSnapshot.forEach((doc) => {
 //           const data = doc.data()
-//           clients.push({
+//           clientsList.push({
 //             id: doc.id,
 //             name: data.name || '',
 //             company: data.company || '',
@@ -129,26 +131,29 @@
 //             tier: data.tier || ''
 //           })
 //         })
+//         setClients(clientsList)
         
-//         // Fetch leads
-//         const leadsQuery = query(collection(db, 'leads'))
+//         // ✅ Fetch ONLY Won and Qualified leads
+//         const leadsQuery = query(
+//           collection(db, 'leads'),
+//           where('status', 'in', ['Won', 'Qualified'])
+//         )
 //         const leadsSnapshot = await getDocs(leadsQuery)
 //         leadsSnapshot.forEach((doc) => {
 //           const data = doc.data()
-//           leads.push({
+//           leadsList.push({
 //             id: doc.id,
 //             name: data.name || '',
 //             company: data.company || '',
 //             email: data.email || '',
 //             phone: data.phone || '',
 //             type: 'lead',
-//             status: data.status || 'New',
+//             status: data.status || 'Won',
 //             tier: data.tier || ''
 //           })
 //         })
+//         setQualifiedLeads(leadsList)
         
-//         // Combine and sort
-//         setClientsLeads([...clients, ...leads].sort((a, b) => a.name.localeCompare(b.name)))
 //       } catch (error) {
 //         console.error('Error fetching clients and leads:', error)
 //       }
@@ -157,8 +162,20 @@
 //     fetchClientsAndLeads()
 //   }, [])
 
+//   // Combine all contacts for dropdown display (only used for rendering, not filtering)
+//   const allContacts = [
+//     ...clients.map(client => ({
+//       ...client,
+//       displayType: 'Client'
+//     })),
+//     ...qualifiedLeads.map(lead => ({
+//       ...lead,
+//       displayType: `${lead.status} Lead`
+//     }))
+//   ].sort((a, b) => a.name.localeCompare(b.name))
+
 //   // Filter clients/leads based on search
-//   const filteredClientsLeads = clientsLeads.filter(item => {
+//   const filteredContacts = allContacts.filter(item => {
 //     const searchLower = searchTerm.toLowerCase()
 //     return (
 //       item.name.toLowerCase().includes(searchLower) ||
@@ -177,8 +194,17 @@
 //   }
 
 //   // Select client/lead
-//   const selectClientLead = (item: ClientLead) => {
-//     setSelectedClientLead(item)
+//   const selectClientLead = (item: typeof allContacts[0]) => {
+//     setSelectedClientLead({
+//       id: item.id,
+//       name: item.name,
+//       company: item.company,
+//       email: item.email,
+//       phone: item.phone,
+//       type: item.type,
+//       status: item.status,
+//       tier: item.tier
+//     })
 //     setSearchTerm('')
 //     setIsDropdownOpen(false)
 //   }
@@ -189,13 +215,16 @@
 //     setSearchTerm('')
 //   }
 
-//   // Fetch specific survey when editing from URL
+//   // ✅ FIXED: Fetch specific survey when editing from URL
 //   useEffect(() => {
 //     const fetchSurveyById = async (id: string) => {
 //       try {
+//         console.log('🔍 Fetching survey with ID:', id)
 //         const surveyDoc = await getDoc(doc(db, 'surveys', id))
 //         if (surveyDoc.exists()) {
 //           const data = surveyDoc.data()
+//           console.log('✅ Survey data found:', data)
+          
 //           const survey: Survey = {
 //             id: surveyDoc.id,
 //             title: data.title || '',
@@ -207,6 +236,7 @@
 //             responsesCount: data.responsesCount || 0,
 //             selectedClient: data.selectedClient
 //           }
+          
 //           setSelectedSurvey(survey)
 //           setTitle(survey.title)
 //           setDescription(survey.description)
@@ -214,17 +244,35 @@
           
 //           // Set selected client if exists
 //           if (data.selectedClient) {
+//             console.log('✅ Setting selected client:', data.selectedClient)
 //             setSelectedClientLead(data.selectedClient)
 //           }
+//         } else {
+//           console.log('❌ Survey not found with ID:', id)
 //         }
 //       } catch (error) {
 //         console.error('Error fetching survey:', error)
 //       }
 //     }
 
-//     if (params?.id) {
+//     // Check if we have an ID in the URL
+//     if (params?.id && params.id !== 'new') {
+//       console.log('📝 Editing mode: ID =', params.id)
 //       fetchSurveyById(params.id as string)
 //       setShowSavedSurveys(false)
+//     } else {
+//       console.log('🆕 Create new survey mode')
+//       // Reset form for new survey
+//       setSelectedSurvey(null)
+//       setSelectedClientLead(null)
+//       setTitle('New Survey')
+//       setDescription('')
+//       setSections([{
+//         id: 'section-1',
+//         title: 'Basic Information',
+//         description: 'Please provide your feedback',
+//         questions: []
+//       }])
 //     }
 //   }, [params?.id])
 
@@ -254,30 +302,6 @@
     
 //     return () => unsubscribe()
 //   }, [])
-
-//   // Load selected survey data
-//  useEffect(() => {
-//   if (selectedSurvey) {
-//     setTitle(selectedSurvey.title)
-//     setDescription(selectedSurvey.description)
-//     setSections(selectedSurvey.sections)
-    
-//     if (selectedSurvey.selectedClient) {
-//       // Create a complete ClientLead object with defaults for missing fields
-//       const clientLead: ClientLead = {
-//         id: selectedSurvey.selectedClient.id,
-//         name: selectedSurvey.selectedClient.name,
-//         company: selectedSurvey.selectedClient.company,
-//         type: selectedSurvey.selectedClient.type,
-//         email: selectedSurvey.selectedClient.email || '',  // Use existing or default
-//         phone: selectedSurvey.selectedClient.phone || ''   // Use existing or default
-//       }
-//       setSelectedClientLead(clientLead)
-//     } else {
-//       setSelectedClientLead(null)
-//     }
-//   }
-// }, [selectedSurvey])
 
 //   const addSection = () => {
 //     const newSection: FormSection = {
@@ -507,7 +531,7 @@
 //     }
 //   }
 
-//   // Save survey to Firebase - REMOVED LOADING STATES
+//   // ✅ FIXED: Save survey to Firebase - UPDATE vs CREATE
 //   const saveSurvey = async (status: 'draft' | 'published' = 'draft') => {
 //     if (!title.trim()) {
 //       alert('Please enter a survey title')
@@ -533,31 +557,26 @@
 //       console.log('Saving survey data:', surveyData)
 
 //       if (selectedSurvey && selectedSurvey.id) {
-//         // Update existing survey
+//         // ✅ UPDATE EXISTING SURVEY
+//         console.log('📝 UPDATING existing survey:', selectedSurvey.id)
 //         const surveyDoc = doc(db, 'surveys', selectedSurvey.id)
 //         await updateDoc(surveyDoc, surveyData)
 //         alert('Survey updated successfully!')
+        
+//         // Navigate back to dashboard after update
+//         router.push('/admin/surveys')
 //       } else {
-//         // Create new survey
+//         // ✅ CREATE NEW SURVEY
+//         console.log('🆕 CREATING new survey')
 //         await addDoc(collection(db, 'surveys'), {
 //           ...surveyData,
 //           createdAt: serverTimestamp()
 //         })
 //         alert(`Survey ${status === 'published' ? 'published' : 'saved as draft'} successfully!`)
+        
+//         // Navigate back to dashboard after create
+//         router.push('/admin/surveys')
 //       }
-
-//       // Reset form
-//       setSelectedSurvey(null)
-//       setSelectedClientLead(null)
-//       setSearchTerm('')
-//       setTitle('New Survey')
-//       setDescription('')
-//       setSections([{
-//         id: 'section-1',
-//         title: 'Basic Information',
-//         description: 'Please provide your feedback',
-//         questions: []
-//       }])
 //     } catch (error) {
 //       console.error('Error saving survey:', error)
 //       alert('Error saving survey. Please try again.')
@@ -566,8 +585,8 @@
 
 //   // Load survey from saved list
 //   const loadSurvey = (survey: Survey) => {
-//     setSelectedSurvey(survey)
-//     setShowSavedSurveys(false)
+//     // Navigate to edit mode
+//     router.push(`/admin/surveys/${survey.id}`)
 //   }
 
 //   // Handle share survey
@@ -1103,16 +1122,16 @@
 //         </div>
 //       )}
 
-//       {/* NEW: Client/Lead Selection Dropdown - ABOVE Survey Title */}
+//       {/* Client/Lead Selection Dropdown */}
 //       <div className="bg-white rounded border border-gray-300 p-4">
 //         <div className="space-y-3">
 //           <div>
 //             <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1 flex items-center gap-1">
 //               <Users className="w-3 h-3" />
-//               SELECT CLIENT / LEAD *
+//               SELECT CLIENT / LEAD
 //             </label>
             
-//             {/* Dropdown Toggle Button - FIXED: No nested buttons */}
+//             {/* Dropdown Toggle Button */}
 //             <div className="relative">
 //               <button
 //                 onClick={toggleDropdown}
@@ -1123,7 +1142,7 @@
 //                   <Users className="w-4 h-4 text-gray-400" />
 //                   <span className={selectedClientLead ? "text-black" : "text-gray-500"}>
 //                     {selectedClientLead 
-//                       ? `${selectedClientLead.name} - ${selectedClientLead.company} (${selectedClientLead.type})`
+//                       ? `${selectedClientLead.name} - ${selectedClientLead.company} (${selectedClientLead.type === 'client' ? 'Client' : selectedClientLead.status + ' Lead'})`
 //                       : "Select a client or lead..."
 //                     }
 //                   </span>
@@ -1164,8 +1183,8 @@
 
 //                   {/* Results */}
 //                   <div className="max-h-60 overflow-y-auto">
-//                     {filteredClientsLeads.length > 0 ? (
-//                       filteredClientsLeads.map((item) => (
+//                     {filteredContacts.length > 0 ? (
+//                       filteredContacts.map((item) => (
 //                         <div
 //                           key={`${item.type}-${item.id}`}
 //                           onClick={() => selectClientLead(item)}
@@ -1180,11 +1199,11 @@
 //                                     ? 'bg-blue-100 text-blue-800' 
 //                                     : 'bg-green-100 text-green-800'
 //                                 }`}>
-//                                   {item.type.toUpperCase()}
+//                                   {item.type === 'client' ? 'CLIENT' : `${item.status} LEAD`}
 //                                 </span>
-//                                 {item.status && (
-//                                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-800">
-//                                     {item.status}
+//                                 {item.tier && (
+//                                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800">
+//                                     {item.tier}
 //                                   </span>
 //                                 )}
 //                               </div>
@@ -1194,17 +1213,12 @@
 //                                 {item.phone && <span> • {item.phone}</span>}
 //                               </div>
 //                             </div>
-//                             {item.tier && (
-//                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 ml-2">
-//                                 {item.tier}
-//                               </span>
-//                             )}
 //                           </div>
 //                         </div>
 //                       ))
 //                     ) : (
 //                       <div className="p-4 text-sm text-gray-500 text-center">
-//                         No clients or leads found
+//                         No clients or qualified leads found
 //                       </div>
 //                     )}
 //                   </div>
@@ -1212,7 +1226,7 @@
 //               )}
 //             </div>
 
-//             {/* Selected Item Display (when dropdown is closed) */}
+//             {/* Selected Item Display */}
 //             {selectedClientLead && !isDropdownOpen && (
 //               <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200 flex items-center gap-2">
 //                 <span className="text-xs font-medium text-gray-700">Selected:</span>
@@ -1225,7 +1239,7 @@
 //                     ? 'bg-blue-100 text-blue-800' 
 //                     : 'bg-green-100 text-green-800'
 //                 }`}>
-//                   {selectedClientLead.type.toUpperCase()}
+//                   {selectedClientLead.type === 'client' ? 'CLIENT' : `${selectedClientLead.status} LEAD`}
 //                 </span>
 //               </div>
 //             )}
@@ -1337,7 +1351,7 @@
 //                     {survey.selectedClient && (
 //                       <div className="flex items-center gap-2 mt-1">
 //                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
-//                           {survey.selectedClient.name} - {survey.selectedClient.company} ({survey.selectedClient.type})
+//                           {survey.selectedClient.name} - {survey.selectedClient.company} ({survey.selectedClient.type === 'client' ? 'Client' : 'Lead'})
 //                         </span>
 //                       </div>
 //                     )}
@@ -1495,7 +1509,7 @@
 //         </button>
 //       )}
 
-//       {/* Action Buttons - REMOVED LOADING STATES */}
+//       {/* Action Buttons */}
 //       {!showSavedSurveys && (
 //         <div className="flex gap-2 sticky bottom-0 bg-white border-t border-gray-300 py-3 -mx-4 -mb-4 px-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
 //           <button 
@@ -1523,7 +1537,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Save, Eye, Copy, Download, X, ChevronDown, ChevronUp, Hash, Calendar, Star, ThumbsUp, CheckSquare, Radio, Type, MessageSquare, Share, Edit2, Users, Search } from 'lucide-react'
+import { 
+  Plus, Trash2, Save, Eye, Copy, Download, X, ChevronDown, ChevronUp, 
+  Hash, Calendar, Star, ThumbsUp, CheckSquare, Radio, Type, MessageSquare, 
+  Share, Edit2, Users, Search, Camera 
+} from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { 
   collection, 
@@ -1536,7 +1554,8 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
-  getDocs
+  getDocs,
+  where
 } from 'firebase/firestore'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -1552,10 +1571,11 @@ interface ClientLead {
   tier?: string
 }
 
+// UPDATED: Question interface with image-upload
 interface Question {
   id: string
   text: string
-  type: 'text' | 'textarea' | 'multiple-choice' | 'checkbox' | 'rating' | 'scale' | 'NPS' | 'date' | 'number' | 'email' | 'dropdown'
+  type: 'text' | 'textarea' | 'multiple-choice' | 'checkbox' | 'rating' | 'scale' | 'NPS' | 'date' | 'number' | 'email' | 'dropdown' | 'image-upload'
   required: boolean
   options?: string[]
   placeholder?: string
@@ -1563,6 +1583,9 @@ interface Question {
   max?: number
   step?: number
   scaleLabels?: { min: string; max: string }
+  // Image upload specific fields
+  maxImages?: number
+  acceptedFormats?: string[]
 }
 
 interface FormSection {
@@ -1591,6 +1614,29 @@ interface Survey {
   }
 }
 
+// Image Upload Preview Component
+const ImageUploadPreview = ({ images, onRemove }: { images: string[], onRemove: (index: number) => void }) => {
+  return (
+    <div className="grid grid-cols-3 gap-2 mt-2">
+      {images.map((image, index) => (
+        <div key={index} className="relative group border border-gray-200 rounded-lg overflow-hidden">
+          <img 
+            src={image} 
+            alt={`Upload ${index + 1}`} 
+            className="w-full h-24 object-cover"
+          />
+          <button
+            onClick={() => onRemove(index)}
+            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function SurveyFormSection() {
   const router = useRouter()
   const params = useParams()
@@ -1611,7 +1657,8 @@ export default function SurveyFormSection() {
   const [showShareModal, setShowShareModal] = useState(false)
   
   // New state for clients and leads
-  const [clientsLeads, setClientsLeads] = useState<ClientLead[]>([])
+  const [clients, setClients] = useState<ClientLead[]>([])
+  const [qualifiedLeads, setQualifiedLeads] = useState<ClientLead[]>([])
   const [selectedClientLead, setSelectedClientLead] = useState<ClientLead | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -1632,15 +1679,14 @@ export default function SurveyFormSection() {
   useEffect(() => {
     const fetchClientsAndLeads = async () => {
       try {
-        const clients: ClientLead[] = []
-        const leads: ClientLead[] = []
+        const clientsList: ClientLead[] = []
+        const leadsList: ClientLead[] = []
         
-        // Fetch clients
         const clientsQuery = query(collection(db, 'clients'))
         const clientsSnapshot = await getDocs(clientsQuery)
         clientsSnapshot.forEach((doc) => {
           const data = doc.data()
-          clients.push({
+          clientsList.push({
             id: doc.id,
             name: data.name || '',
             company: data.company || '',
@@ -1651,26 +1697,28 @@ export default function SurveyFormSection() {
             tier: data.tier || ''
           })
         })
+        setClients(clientsList)
         
-        // Fetch leads
-        const leadsQuery = query(collection(db, 'leads'))
+        const leadsQuery = query(
+          collection(db, 'leads'),
+          where('status', 'in', ['Won', 'Qualified'])
+        )
         const leadsSnapshot = await getDocs(leadsQuery)
         leadsSnapshot.forEach((doc) => {
           const data = doc.data()
-          leads.push({
+          leadsList.push({
             id: doc.id,
             name: data.name || '',
             company: data.company || '',
             email: data.email || '',
             phone: data.phone || '',
             type: 'lead',
-            status: data.status || 'New',
+            status: data.status || 'Won',
             tier: data.tier || ''
           })
         })
+        setQualifiedLeads(leadsList)
         
-        // Combine and sort
-        setClientsLeads([...clients, ...leads].sort((a, b) => a.name.localeCompare(b.name)))
       } catch (error) {
         console.error('Error fetching clients and leads:', error)
       }
@@ -1679,8 +1727,20 @@ export default function SurveyFormSection() {
     fetchClientsAndLeads()
   }, [])
 
+  // Combine all contacts for dropdown display
+  const allContacts = [
+    ...clients.map(client => ({
+      ...client,
+      displayType: 'Client'
+    })),
+    ...qualifiedLeads.map(lead => ({
+      ...lead,
+      displayType: `${lead.status} Lead`
+    }))
+  ].sort((a, b) => a.name.localeCompare(b.name))
+
   // Filter clients/leads based on search
-  const filteredClientsLeads = clientsLeads.filter(item => {
+  const filteredContacts = allContacts.filter(item => {
     const searchLower = searchTerm.toLowerCase()
     return (
       item.name.toLowerCase().includes(searchLower) ||
@@ -1699,8 +1759,17 @@ export default function SurveyFormSection() {
   }
 
   // Select client/lead
-  const selectClientLead = (item: ClientLead) => {
-    setSelectedClientLead(item)
+  const selectClientLead = (item: typeof allContacts[0]) => {
+    setSelectedClientLead({
+      id: item.id,
+      name: item.name,
+      company: item.company,
+      email: item.email,
+      phone: item.phone,
+      type: item.type,
+      status: item.status,
+      tier: item.tier
+    })
     setSearchTerm('')
     setIsDropdownOpen(false)
   }
@@ -1711,7 +1780,7 @@ export default function SurveyFormSection() {
     setSearchTerm('')
   }
 
-  // ✅ FIXED: Fetch specific survey when editing from URL
+  // Fetch specific survey when editing from URL
   useEffect(() => {
     const fetchSurveyById = async (id: string) => {
       try {
@@ -1738,7 +1807,6 @@ export default function SurveyFormSection() {
           setDescription(survey.description)
           setSections(survey.sections)
           
-          // Set selected client if exists
           if (data.selectedClient) {
             console.log('✅ Setting selected client:', data.selectedClient)
             setSelectedClientLead(data.selectedClient)
@@ -1751,14 +1819,12 @@ export default function SurveyFormSection() {
       }
     }
 
-    // Check if we have an ID in the URL
     if (params?.id && params.id !== 'new') {
       console.log('📝 Editing mode: ID =', params.id)
       fetchSurveyById(params.id as string)
       setShowSavedSurveys(false)
     } else {
       console.log('🆕 Create new survey mode')
-      // Reset form for new survey
       setSelectedSurvey(null)
       setSelectedClientLead(null)
       setTitle('New Survey')
@@ -1841,10 +1907,8 @@ export default function SurveyFormSection() {
   const handleQuestionTypeChange = (type: Question['type']) => {
     const updatedQuestion = { ...newQuestion, type }
     
-    // Set default placeholders based on type
     updatedQuestion.placeholder = getDefaultPlaceholder(type)
     
-    // Set default options for certain types
     if (type === 'multiple-choice' || type === 'checkbox' || type === 'dropdown') {
       updatedQuestion.options = ['Option 1', 'Option 2']
       setOptionsList(['Option 1', 'Option 2'])
@@ -1853,7 +1917,6 @@ export default function SurveyFormSection() {
       setOptionsList([])
     }
     
-    // Set default values for scale types
     if (type === 'scale') {
       updatedQuestion.scaleLabels = { min: 'Very Poor', max: 'Excellent' }
       updatedQuestion.min = 1
@@ -1872,6 +1935,12 @@ export default function SurveyFormSection() {
       updatedQuestion.max = 5
     }
     
+    // Image upload default settings
+    if (type === 'image-upload') {
+      updatedQuestion.maxImages = 5
+      updatedQuestion.acceptedFormats = ['image/jpeg', 'image/png', 'image/webp']
+    }
+    
     setNewQuestion(updatedQuestion)
   }
 
@@ -1883,6 +1952,7 @@ export default function SurveyFormSection() {
       case 'number': return 'Enter a number...'
       case 'email': return 'example@email.com'
       case 'date': return 'Select a date...'
+      case 'image-upload': return 'Upload images here...'
       default: return ''
     }
   }
@@ -1946,10 +2016,13 @@ export default function SurveyFormSection() {
       min: newQuestion.min,
       max: newQuestion.max,
       step: newQuestion.step,
-      scaleLabels: newQuestion.scaleLabels
+      scaleLabels: newQuestion.scaleLabels,
+      maxImages: newQuestion.type === 'image-upload' ? (newQuestion.maxImages || 5) : undefined,
+      acceptedFormats: newQuestion.type === 'image-upload' 
+        ? (newQuestion.acceptedFormats || ['image/jpeg', 'image/png', 'image/webp']) 
+        : undefined
     }
 
-    // Add question to the section
     setSections(sections.map(section => {
       if (section.id === currentSectionId) {
         return {
@@ -1960,7 +2033,6 @@ export default function SurveyFormSection() {
       return section
     }))
 
-    // Close modal and reset
     closeQuestionModal()
   }
 
@@ -2015,7 +2087,9 @@ export default function SurveyFormSection() {
         min: question.min ?? null,
         max: question.max ?? null,
         step: question.step ?? null,
-        scaleLabels: question.scaleLabels || null
+        scaleLabels: question.scaleLabels || null,
+        maxImages: question.maxImages ?? null,
+        acceptedFormats: question.acceptedFormats || null
       }))
     }))
     
@@ -2027,7 +2101,7 @@ export default function SurveyFormSection() {
     }
   }
 
-  // ✅ FIXED: Save survey to Firebase - UPDATE vs CREATE
+  // Save survey to Firebase
   const saveSurvey = async (status: 'draft' | 'published' = 'draft') => {
     if (!title.trim()) {
       alert('Please enter a survey title')
@@ -2053,24 +2127,16 @@ export default function SurveyFormSection() {
       console.log('Saving survey data:', surveyData)
 
       if (selectedSurvey && selectedSurvey.id) {
-        // ✅ UPDATE EXISTING SURVEY
-        console.log('📝 UPDATING existing survey:', selectedSurvey.id)
         const surveyDoc = doc(db, 'surveys', selectedSurvey.id)
         await updateDoc(surveyDoc, surveyData)
         alert('Survey updated successfully!')
-        
-        // Navigate back to dashboard after update
         router.push('/admin/surveys')
       } else {
-        // ✅ CREATE NEW SURVEY
-        console.log('🆕 CREATING new survey')
         await addDoc(collection(db, 'surveys'), {
           ...surveyData,
           createdAt: serverTimestamp()
         })
         alert(`Survey ${status === 'published' ? 'published' : 'saved as draft'} successfully!`)
-        
-        // Navigate back to dashboard after create
         router.push('/admin/surveys')
       }
     } catch (error) {
@@ -2081,7 +2147,6 @@ export default function SurveyFormSection() {
 
   // Load survey from saved list
   const loadSurvey = (survey: Survey) => {
-    // Navigate to edit mode
     router.push(`/admin/surveys/${survey.id}`)
   }
 
@@ -2433,6 +2498,62 @@ export default function SurveyFormSection() {
           </div>
         )
       
+      case 'image-upload':
+        return (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-700">Maximum Images Allowed</label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={newQuestion.maxImages || 5}
+                onChange={(e) => setNewQuestion({...newQuestion, maxImages: parseInt(e.target.value) || 5})}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+              />
+              <p className="text-xs text-gray-500">Maximum number of images user can upload (default: 5)</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-700">Accepted Formats</label>
+              <div className="flex flex-wrap gap-2">
+                {['image/jpeg', 'image/png', 'image/gif', 'image/webp'].map(format => {
+                  const isSelected = newQuestion.acceptedFormats?.includes(format) ?? 
+                    ['image/jpeg', 'image/png', 'image/webp'].includes(format)
+                  return (
+                    <label key={format} className="flex items-center gap-1.5 p-2 border border-gray-200 rounded">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          const currentFormats = newQuestion.acceptedFormats || ['image/jpeg', 'image/png', 'image/webp']
+                          let updatedFormats
+                          if (e.target.checked) {
+                            updatedFormats = [...currentFormats, format]
+                          } else {
+                            updatedFormats = currentFormats.filter(f => f !== format)
+                          }
+                          setNewQuestion({...newQuestion, acceptedFormats: updatedFormats})
+                        }}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-xs">{format.split('/')[1].toUpperCase()}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+            
+            <div className="p-3 bg-gray-100 rounded">
+              <p className="text-xs text-gray-600 flex items-center gap-1">
+                <Camera className="w-4 h-4" />
+                Users will be able to upload images from their gallery
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Images will be stored as Base64 in the response</p>
+            </div>
+          </div>
+        )
+      
       default:
         return null
     }
@@ -2452,6 +2573,7 @@ export default function SurveyFormSection() {
       case 'number': return <Hash className="w-4 h-4" />
       case 'email': return <Type className="w-4 h-4" />
       case 'dropdown': return <ChevronDown className="w-4 h-4" />
+      case 'image-upload': return <Camera className="w-4 h-4" />
       default: return <Type className="w-4 h-4" />
     }
   }
@@ -2468,7 +2590,8 @@ export default function SurveyFormSection() {
     { value: 'rating', label: 'Rating (Stars)', icon: <Star className="w-4 h-4" /> },
     { value: 'scale', label: 'Scale', icon: <Hash className="w-4 h-4" /> },
     { value: 'NPS', label: 'NPS Score', icon: <ThumbsUp className="w-4 h-4" /> },
-    { value: 'date', label: 'Date', icon: <Calendar className="w-4 h-4" /> }
+    { value: 'date', label: 'Date', icon: <Calendar className="w-4 h-4" /> },
+    { value: 'image-upload', label: 'Image Upload', icon: <Camera className="w-4 h-4" /> }
   ]
 
   return (
@@ -2638,7 +2761,7 @@ export default function SurveyFormSection() {
                   <Users className="w-4 h-4 text-gray-400" />
                   <span className={selectedClientLead ? "text-black" : "text-gray-500"}>
                     {selectedClientLead 
-                      ? `${selectedClientLead.name} - ${selectedClientLead.company} (${selectedClientLead.type})`
+                      ? `${selectedClientLead.name} - ${selectedClientLead.company} (${selectedClientLead.type === 'client' ? 'Client' : selectedClientLead.status + ' Lead'})`
                       : "Select a client or lead..."
                     }
                   </span>
@@ -2679,8 +2802,8 @@ export default function SurveyFormSection() {
 
                   {/* Results */}
                   <div className="max-h-60 overflow-y-auto">
-                    {filteredClientsLeads.length > 0 ? (
-                      filteredClientsLeads.map((item) => (
+                    {filteredContacts.length > 0 ? (
+                      filteredContacts.map((item) => (
                         <div
                           key={`${item.type}-${item.id}`}
                           onClick={() => selectClientLead(item)}
@@ -2695,11 +2818,11 @@ export default function SurveyFormSection() {
                                     ? 'bg-blue-100 text-blue-800' 
                                     : 'bg-green-100 text-green-800'
                                 }`}>
-                                  {item.type.toUpperCase()}
+                                  {item.type === 'client' ? 'CLIENT' : `${item.status} LEAD`}
                                 </span>
-                                {item.status && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-800">
-                                    {item.status}
+                                {item.tier && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800">
+                                    {item.tier}
                                   </span>
                                 )}
                               </div>
@@ -2709,17 +2832,12 @@ export default function SurveyFormSection() {
                                 {item.phone && <span> • {item.phone}</span>}
                               </div>
                             </div>
-                            {item.tier && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 ml-2">
-                                {item.tier}
-                              </span>
-                            )}
                           </div>
                         </div>
                       ))
                     ) : (
                       <div className="p-4 text-sm text-gray-500 text-center">
-                        No clients or leads found
+                        No clients or qualified leads found
                       </div>
                     )}
                   </div>
@@ -2740,7 +2858,7 @@ export default function SurveyFormSection() {
                     ? 'bg-blue-100 text-blue-800' 
                     : 'bg-green-100 text-green-800'
                 }`}>
-                  {selectedClientLead.type.toUpperCase()}
+                  {selectedClientLead.type === 'client' ? 'CLIENT' : `${selectedClientLead.status} LEAD`}
                 </span>
               </div>
             )}
@@ -2852,7 +2970,7 @@ export default function SurveyFormSection() {
                     {survey.selectedClient && (
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
-                          {survey.selectedClient.name} - {survey.selectedClient.company} ({survey.selectedClient.type})
+                          {survey.selectedClient.name} - {survey.selectedClient.company} ({survey.selectedClient.type === 'client' ? 'Client' : 'Lead'})
                         </span>
                       </div>
                     )}
@@ -2972,6 +3090,7 @@ export default function SurveyFormSection() {
                         <option value="number">Number</option>
                         <option value="email">Email</option>
                         <option value="dropdown">Dropdown</option>
+                        <option value="image-upload">Image Upload</option>
                       </select>
                       <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-tight text-gray-500 cursor-pointer">
                         <input
@@ -2983,6 +3102,29 @@ export default function SurveyFormSection() {
                         <span>Required</span>
                       </label>
                     </div>
+
+                    {/* Image Upload Preview in Questions List */}
+                    {question.type === 'image-upload' && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+                        <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                          <Camera className="w-4 h-4" />
+                          <span className="font-medium">Image Upload Field</span>
+                          <span className="text-gray-400">•</span>
+                          <span>Max {question.maxImages || 5} images</span>
+                          <span className="text-gray-400">•</span>
+                          <span>Formats: {(question.acceptedFormats || ['JPEG', 'PNG', 'WEBP']).map(f => 
+                            f.split('/')[1].toUpperCase()
+                          ).join(', ')}</span>
+                        </div>
+                        
+                        {/* Sample upload UI */}
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                          <Camera className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                          <p className="text-xs text-gray-500">Click to upload images</p>
+                          <p className="text-[10px] text-gray-400 mt-1">or drag and drop</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

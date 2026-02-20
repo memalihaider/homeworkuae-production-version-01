@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
-import { AlertCircle, Download, TrendingUp, BarChart3, PieChart, User } from 'lucide-react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
+import { AlertCircle, Download, TrendingUp, BarChart3, PieChart, User, Image as ImageIcon, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 
@@ -11,14 +11,12 @@ interface Survey {
   description: string
   status: string
   responsesCount: number
-  // Add selectedClient
   selectedClient?: {
     id: string
     name: string
     company: string
     type: 'client' | 'lead'
   }
-  // Keep these for backward compatibility
   clientName?: string
   company?: string
   sendCount?: number
@@ -37,21 +35,227 @@ interface SurveyResponse {
     questionText: string
     questionType: string
     answer: any
+    imageCount?: number
+    thumbnail?: string
   }>
   submittedAt: any
   timestamp: string
   userAgent: string
+  images?: Record<string, string[]>
 }
 
 interface Props {
   surveys: Survey[]
 }
 
+// Image Modal Component for full-size view
+const ImageModal = ({ 
+  isOpen, 
+  onClose, 
+  images, 
+  currentIndex, 
+  onPrev, 
+  onNext 
+}: { 
+  isOpen: boolean
+  onClose: () => void
+  images: string[]
+  currentIndex: number
+  onPrev: () => void
+  onNext: () => void
+}) => {
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') onPrev()
+      if (e.key === 'ArrowRight') onNext()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden'
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, onClose, onPrev, onNext])
+
+  if (!isOpen) return null
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999] p-4"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
+        className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10 text-white"
+      >
+        <X className="w-6 h-6" />
+      </button>
+      
+      {/* Navigation buttons */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onPrev()
+            }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onNext()
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
+      
+      {/* Image */}
+      <div 
+        className="max-w-6xl max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img 
+          src={images[currentIndex]} 
+          alt={`Full size ${currentIndex + 1}`} 
+          className="max-w-full max-h-[90vh] object-contain cursor-default"
+        />
+        
+        {/* Image counter */}
+        {images.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+            {currentIndex + 1} / {images.length}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Image Gallery Component for displaying multiple images
+const ImageGallery = ({ images }: { images: string[] }) => {
+  const [showModal, setShowModal] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const handlePrev = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))
+  }, [images.length])
+
+  const handleNext = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))
+  }, [images.length])
+
+  const openModal = useCallback((index: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCurrentIndex(index)
+    setShowModal(true)
+  }, [])
+
+  const closeModal = useCallback(() => {
+    setShowModal(false)
+  }, [])
+
+  if (!images || images.length === 0) return null
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {images.map((img, idx) => (
+          <div 
+            key={idx} 
+            className="relative group cursor-pointer"
+            onClick={(e) => openModal(idx, e)}
+          >
+            <img 
+              src={img} 
+              alt={`Upload ${idx + 1}`} 
+              className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-all"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
+              <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <ImageModal
+        isOpen={showModal}
+        onClose={closeModal}
+        images={images}
+        currentIndex={currentIndex}
+        onPrev={handlePrev}
+        onNext={handleNext}
+      />
+    </>
+  )
+}
+
+// Single Image Component for thumbnail-only images
+const SingleImage = ({ image }: { image: string }) => {
+  const [showModal, setShowModal] = useState(false)
+
+  const openModal = useCallback(() => {
+    setShowModal(true)
+  }, [])
+
+  const closeModal = useCallback(() => {
+    setShowModal(false)
+  }, [])
+
+  const handlePrev = useCallback(() => {}, [])
+  const handleNext = useCallback(() => {}, [])
+
+  return (
+    <>
+      <div 
+        className="relative group cursor-pointer inline-block mt-2"
+        onClick={openModal}
+      >
+        <img 
+          src={image} 
+          alt="Thumbnail" 
+          className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-all"
+        />
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
+          <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </div>
+
+      <ImageModal
+        isOpen={showModal}
+        onClose={closeModal}
+        images={[image]}
+        currentIndex={0}
+        onPrev={handlePrev}
+        onNext={handleNext}
+      />
+    </>
+  )
+}
+
 export default function SurveyResultsSection({ surveys }: Props) {
   const [selectedSurvey, setSelectedSurvey] = useState<string | null>(null)
   const [allResponses, setAllResponses] = useState<SurveyResponse[]>([])
 
-  // Fetch all survey responses from Firebase - REMOVED loading state
+  // Fetch all survey responses from Firebase
   useEffect(() => {
     const responsesRef = collection(db, 'survey_submissions')
     const q = query(responsesRef, orderBy('submittedAt', 'desc'))
@@ -67,7 +271,8 @@ export default function SurveyResultsSection({ surveys }: Props) {
           responses: data.responses || [],
           submittedAt: data.submittedAt,
           timestamp: data.timestamp || new Date().toISOString(),
-          userAgent: data.userAgent || ''
+          userAgent: data.userAgent || '',
+          images: data.images || {}
         })
       })
       setAllResponses(responsesList)
@@ -97,7 +302,6 @@ export default function SurveyResultsSection({ surveys }: Props) {
     const totalResponses = allResponses.length
     const totalSurveys = surveys.length
     
-    // Calculate completion rate for each survey
     let totalCompletionRate = 0
     let surveysWithCompletion = 0
     
@@ -114,7 +318,6 @@ export default function SurveyResultsSection({ surveys }: Props) {
       ? Math.round(totalCompletionRate / surveysWithCompletion)
       : 0
     
-    // Calculate average rating from responses
     let totalRating = 0
     let ratingCount = 0
     
@@ -129,12 +332,19 @@ export default function SurveyResultsSection({ surveys }: Props) {
     
     const avgRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 'N/A'
     
+    // Count total images uploaded
+    const totalImages = allResponses.reduce((acc, response) => {
+      const imageCount = Object.values(response.images || {}).reduce((sum, imgs) => sum + imgs.length, 0)
+      return acc + imageCount
+    }, 0)
+    
     return { 
       totalResponses, 
       avgCompletionRate, 
       totalSurveys, 
       avgRating,
-      totalRatingCount: ratingCount
+      totalRatingCount: ratingCount,
+      totalImages
     }
   }, [allResponses, surveys])
 
@@ -254,6 +464,12 @@ export default function SurveyResultsSection({ surveys }: Props) {
           details: answers
         }
       
+      case 'image-upload':
+        return {
+          summary: `${answers.length} image uploads`,
+          details: answers
+        }
+      
       default:
         return {
           summary: `${answers.length} responses`,
@@ -266,16 +482,25 @@ export default function SurveyResultsSection({ surveys }: Props) {
   const exportToCSV = () => {
     if (!selectedSurvey || surveyResponses.length === 0) return
     
-    const headers = ['Response ID', 'Submission Date', 'Question', 'Answer']
+    const headers = ['Response ID', 'Submission Date', 'Question', 'Answer', 'Image Count']
     const rows: string[][] = []
     
     surveyResponses.forEach(response => {
       response.responses.forEach(resp => {
+        let answerText = ''
+        if (resp.questionType === 'image-upload') {
+          const images = response.images?.[resp.questionId] || []
+          answerText = `${images.length} image(s) uploaded`
+        } else {
+          answerText = typeof resp.answer === 'object' ? JSON.stringify(resp.answer) : String(resp.answer)
+        }
+        
         rows.push([
           response.id.substring(0, 8),
           new Date(response.timestamp).toLocaleDateString(),
           resp.questionText,
-          typeof resp.answer === 'object' ? JSON.stringify(resp.answer) : String(resp.answer)
+          answerText,
+          resp.questionType === 'image-upload' ? String(resp.imageCount || 0) : 'N/A'
         ])
       })
     })
@@ -295,8 +520,8 @@ export default function SurveyResultsSection({ surveys }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Stats - FIXED avg completion rate */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-white rounded border border-gray-300 p-3 shadow-none">
           <div className="flex items-center justify-between">
             <div>
@@ -336,10 +561,20 @@ export default function SurveyResultsSection({ surveys }: Props) {
             <User className="w-5 h-5 text-gray-300 opacity-30" />
           </div>
         </div>
+
+        <div className="bg-white rounded border border-gray-300 p-3 shadow-none">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">Total Images</p>
+              <p className="text-xl font-bold text-black">{stats.totalImages}</p>
+            </div>
+            <ImageIcon className="w-5 h-5 text-gray-300 opacity-30" />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Survey Selector - REMOVED loading state */}
+        {/* Survey Selector */}
         <div className="bg-white rounded border border-gray-300 p-3 shadow-none">
           <h3 className="text-sm font-bold text-black mb-3">Survey List</h3>
           
@@ -388,7 +623,7 @@ export default function SurveyResultsSection({ surveys }: Props) {
         <div className="lg:col-span-2">
           {selectedSurveyData ? (
             <div className="space-y-4">
-              {/* Survey Info - UPDATED with proper client info */}
+              {/* Survey Info */}
               <div className="bg-white rounded border border-gray-300 p-4 shadow-none">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -550,11 +785,31 @@ export default function SurveyResultsSection({ surveys }: Props) {
                         
                         <div className="space-y-2">
                           {response.responses.slice(0, 3).map((resp, idx) => (
-                            <div key={idx} className="bg-white border border-gray-300 rounded p-2">
+                            <div key={`${response.id}-${resp.questionId}-${idx}`} className="bg-white border border-gray-300 rounded p-2">
                               <p className="text-xs font-medium text-gray-900 mb-1">{resp.questionText}</p>
-                              <p className="text-sm text-black">
-                                {typeof resp.answer === 'object' ? JSON.stringify(resp.answer) : String(resp.answer)}
-                              </p>
+                              
+                              {resp.questionType === 'image-upload' ? (
+                                <div>
+                                  <p className="text-xs text-blue-600 mb-2">
+                                    {resp.imageCount || 0} image(s) uploaded
+                                  </p>
+                                  
+                                  {/* Show all images for this question */}
+                                  {response.images && response.images[resp.questionId] && (
+                                    <ImageGallery images={response.images[resp.questionId]} />
+                                  )}
+                                  
+                                  {/* Show thumbnail if available and no full images array */}
+                                  {resp.thumbnail && !response.images?.[resp.questionId] && (
+                                    <SingleImage image={resp.thumbnail} />
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-black">
+                                  {typeof resp.answer === 'object' ? JSON.stringify(resp.answer) : String(resp.answer)}
+                                </p>
+                              )}
+                              
                               <p className="text-[10px] text-gray-500 mt-1">Type: {resp.questionType}</p>
                             </div>
                           ))}
