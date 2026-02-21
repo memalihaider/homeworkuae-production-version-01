@@ -263,7 +263,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             
             <a 
               href="/book-service" 
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-pink-600 px-8 text-sm font-black text-white shadow-xl shadow-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 active:scale-95 tracking-wider border-2 border-white/20"
+              className="inline-flex h-12 items-center justify-center rounded-2xl  px-8 text-sm font-black text-white shadow-xl shadow-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 active:scale-95 tracking-wider border-2 border-white/20"
             >
               BOOK NOW
             </a>
@@ -375,68 +375,75 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      {/* Floating Action Buttons - Enhanced Design */}
-      <div className="fixed bottom-8 right-8 z-[9999] flex flex-col gap-4 pointer-events-none">
-        {/* WhatsApp Button - Primary with Pulse */}
-        <a 
-          href="https://wa.me/971507177059" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="pointer-events-auto group relative"
-        >
-          {/* Pulsing background ring */}
-          <div className="absolute inset-0 h-20 w-20 rounded-full bg-[#25D366] opacity-0 group-hover:opacity-20 animate-ping" />
-          
-          {/* Main button */}
-          <div className="relative h-16 w-16 bg-[#25D366] text-white rounded-full shadow-[0_8px_32px_rgba(37,211,102,0.35)] flex items-center justify-center hover:scale-110 transition-transform duration-300 border-4 border-white hover:shadow-[0_12px_48px_rgba(37,211,102,0.5)]">
-            {/* WhatsApp SVG Icon */}
-            <svg className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.006c-1.795 0-3.588.474-5.148 1.37l-.369.221-3.823.954.972-3.855.235-.374A8.871 8.871 0 015.051 2.054 8.916 8.916 0 0113.997 10.5c0 2.408-.937 4.671-2.639 6.373s-3.965 2.639-6.373 2.639"/>
-            </svg>
-            
-            {/* Notification badge */}
-            <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px] font-black animate-pulse">
-              !</div>
-          </div>
-          
-          {/* Tooltip */}
-          <div className="absolute -left-48 bottom-2 px-4 py-3 bg-[#25D366] text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl border border-white/20 md:block hidden">
-            💬 Chat on WhatsApp
-          </div>
-        </a>
-        
-        {/* Phone Button - Secondary */}
-        <a 
-          href={`tel:${profileData.phone}`} 
-          className="pointer-events-auto group relative"
-        >
-          {/* Main button */}
-          <div className="h-14 w-14 bg-slate-900 text-white rounded-full shadow-[0_6px_24px_rgba(0,0,0,0.25)] flex items-center justify-center hover:bg-primary hover:scale-105 transition-all duration-300 border-3 border-white/10 hover:border-white hover:shadow-[0_10px_32px_rgba(219,39,119,0.4)]">
-            <Phone className="h-6 w-6" />
-          </div>
-          
-          {/* Tooltip */}
-          <div className="absolute -left-44 bottom-0 px-4 py-3 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl border border-white/10 md:block hidden">
-            📞 Call: {profileData.phone}
-          </div>
-        </a>
+     {/* Floating Action Buttons - Professional Uniform Design */}
+<div className="fixed bottom-8 right-8 z-[9999] flex flex-col gap-4 pointer-events-none">
+  
+  {/* WhatsApp Button */}
+  <a 
+    href="https://wa.me/971507177059" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="pointer-events-auto group relative"
+  >
+    {/* Pulsing background ring */}
+    <div className="absolute inset-0 h-16 w-16 rounded-full bg-[#25D366] opacity-0 group-hover:opacity-20 animate-ping" />
+    
+    {/* Main button - 16x16 for all */}
+    <div className="relative h-16 w-16 bg-[#25D366] text-white rounded-full shadow-[0_8px_32px_rgba(37,211,102,0.35)] flex items-center justify-center hover:scale-110 transition-transform duration-300 border-4 border-white hover:shadow-[0_12px_48px_rgba(37,211,102,0.5)]">
+      {/* WhatsApp SVG Icon */}
+      <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.006c-1.795 0-3.588.474-5.148 1.37l-.369.221-3.823.954.972-3.855.235-.374A8.871 8.871 0 015.051 2.054 8.916 8.916 0 0113.997 10.5c0 2.408-.937 4.671-2.639 6.373s-3.965 2.639-6.373 2.639"/>
+      </svg>
+      
+      {/* Notification badge */}
+      <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px] font-black animate-pulse">
+        !</div>
+    </div>
+    
+    {/* Tooltip */}
+    <div className="absolute -left-48 bottom-2 px-4 py-3 bg-[#25D366] text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl border border-white/20 md:block hidden">
+      💬 Chat on WhatsApp
+    </div>
+  </a>
+  
+  {/* Phone Button - Same size as WhatsApp */}
+  <a 
+    href={`tel:${profileData.phone}`} 
+    className="pointer-events-auto group relative"
+  >
+    {/* Pulsing background ring - subtle */}
+    <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-600 opacity-0 group-hover:opacity-20 animate-ping" />
+    
+    {/* Main button - 16x16 same as WhatsApp */}
+    <div className="relative h-16 w-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-full shadow-[0_8px_32px_rgba(37,99,235,0.35)] flex items-center justify-center hover:scale-110 transition-transform duration-300 border-4 border-white hover:shadow-[0_12px_48px_rgba(37,99,235,0.5)]">
+      <Phone className="h-7 w-7" />
+    </div>
+    
+    {/* Tooltip */}
+    <div className="absolute -left-48 bottom-2 px-4 py-3 bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl border border-white/20 md:block hidden">
+      📞 Call: {profileData.phone}
+    </div>
+  </a>
 
-        {/* Email Button - Tertiary */}
-        <a 
-          href={`mailto:${profileData.email}`} 
-          className="pointer-events-auto group relative"
-        >
-          {/* Main button */}
-          <div className="h-12 w-12 bg-primary text-white rounded-full shadow-[0_4px_16px_rgba(219,39,119,0.25)] flex items-center justify-center hover:scale-105 transition-all duration-300 border-2 border-white/5 hover:border-white hover:shadow-[0_8px_24px_rgba(219,39,119,0.35)]">
-            <Mail className="h-5 w-5" />
-          </div>
-          
-          {/* Tooltip */}
-          <div className="absolute -left-40 -bottom-1 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg border border-white/10 md:block hidden">
-            ✉ Email Us
-          </div>
-        </a>
-      </div>
+  {/* Email Button - Same size as others */}
+  <a 
+    href={`mailto:${profileData.email}`} 
+    className="pointer-events-auto group relative"
+  >
+    {/* Pulsing background ring - subtle */}
+    <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-600 opacity-0 group-hover:opacity-20 animate-ping" />
+    
+    {/* Main button - 16x16 same as others */}
+    <div className="relative h-16 w-16 bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-full shadow-[0_8px_32px_rgba(37,99,235,0.35)] flex items-center justify-center hover:scale-110 transition-transform duration-300 border-4 border-white hover:shadow-[0_12px_48px_rgba(37,99,235,0.5)]">
+      <Mail className="h-7 w-7" />
+    </div>
+    
+    {/* Tooltip */}
+    <div className="absolute -left-48 bottom-2 px-4 py-3 bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-2xl border border-white/20 md:block hidden">
+      ✉ Email: {profileData.email}
+    </div>
+  </a>
+</div>
     </div>
   )
 }
