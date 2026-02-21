@@ -263,7 +263,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             
             <a 
               href="/book-service" 
-              className="inline-flex h-12 items-center justify-center rounded-2xl  px-8 text-sm font-black text-white shadow-xl shadow-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 active:scale-95 tracking-wider border-2 border-white/20"
+              className="inline-flex h-12 items-center justify-center rounded-2xl  bg-pink-700 px-8 text-sm font-black text-white shadow-xl shadow-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 active:scale-95 tracking-wider border-2 border-white/20"
             >
               BOOK NOW
             </a>
@@ -279,7 +279,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="space-y-6">
-              <h4 className="text-sm font-bold uppercase tracking-widest mb-6 text-primary underline decoration-primary/20 underline-offset-8">Contact Us</h4>
+              <h4 className="text-sm font-bold uppercase tracking-widest mb-6 text-white underline decoration-primary/20 underline-offset-8">Contact Us</h4>
               <ul className="space-y-4 text-sm text-slate-400">
                 <li className="flex items-start gap-4 group cursor-pointer">
                   <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shrink-0 shadow-lg">
@@ -321,7 +321,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold uppercase tracking-widest mb-6 text-primary underline decoration-primary/20 underline-offset-8">Cleaning Services</h4>
+              <h4 className="text-sm font-bold uppercase tracking-widest mb-6 text-white underline decoration-primary/20 underline-offset-8">Cleaning Services</h4>
               <ul className="space-y-4 text-sm text-slate-400">
                 <li><a href="/services/residential-cleaning" className="hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><ArrowRight className="h-3 w-3" /> Normal Cleaning</a></li>
                 <li><a href="/services/villa-deep-cleaning" className="hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><ArrowRight className="h-3 w-3" /> Deep Cleaning</a></li>
@@ -330,7 +330,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold uppercase tracking-widest mb-6 text-primary underline decoration-primary/20 underline-offset-8">Quick Links</h4>
+              <h4 className="text-sm font-bold uppercase tracking-widest mb-6 text-white underline decoration-primary/20 underline-offset-8">Quick Links</h4>
               <ul className="space-y-4 text-sm text-slate-400">
                 <li><a href="/" className="hover:text-white transition-colors flex items-center gap-2">Home</a></li>
                 <li><a href="/about" className="hover:text-white transition-colors flex items-center gap-2">About us</a></li>
@@ -342,7 +342,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="space-y-6">
-              <h4 className="text-sm font-bold uppercase tracking-widest text-primary underline decoration-primary/20 underline-offset-8">Newsletter</h4>
+              <h4 className="text-sm font-bold uppercase tracking-widest text-white underline decoration-primary/20 underline-offset-8">Newsletter</h4>
               <p className="text-slate-400 text-sm italic font-medium">Subscribe our newsletter for latest updates</p>
               <div className="relative group">
                 <input 
