@@ -315,4 +315,3 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
       </motion.div>
     )
   }
-}
