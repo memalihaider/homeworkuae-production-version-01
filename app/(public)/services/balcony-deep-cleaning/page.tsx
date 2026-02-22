@@ -317,7 +317,7 @@ export default function BalconyDeepCleaning() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
-            <BookingFormProvider preselectedServiceName="Balcony Deep Cleaning" showSuccessModal={true} />
+            <BookingFormProvider preselectedServiceName="Balcony Deep Cleaning" />
           </div>
         </div>
       </section>

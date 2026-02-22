@@ -311,7 +311,7 @@ export default function WindowCleaning() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
-            <BookingFormProvider preselectedServiceName="Window cleaning" showSuccessModal={true} />
+            <BookingFormProvider preselectedServiceName="Window cleaning" />
           </div>
         </div>
       </section>

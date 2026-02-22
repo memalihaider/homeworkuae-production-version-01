@@ -138,7 +138,7 @@ export default function FloorDeepCleaning() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
-            <BookingFormProvider preselectedServiceName="Floor deep cleaning" showSuccessModal={true} />
+            <BookingFormProvider preselectedServiceName="Floor deep cleaning" />
           </div>
         </div>
       </section>

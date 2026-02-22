@@ -342,7 +342,7 @@ export default function MoveInOutCleaning() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
-            <BookingFormProvider preselectedServiceName="Move in/out Cleaning" showSuccessModal={true} />
+            <BookingFormProvider preselectedServiceName="Move in/out Cleaning" />
           </div>
         </div>
       </section>

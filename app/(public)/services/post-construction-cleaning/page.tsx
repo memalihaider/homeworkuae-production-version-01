@@ -340,7 +340,7 @@ export default function PostConstructionCleaning() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
-            <BookingFormProvider preselectedServiceName="Post Construction Cleaning" showSuccessModal={true} />
+            <BookingFormProvider preselectedServiceName="Post Construction Cleaning" />
           </div>
         </div>
       </section>

@@ -2,11 +2,9 @@
 
 import { 
   ArrowRight, 
-  Send, 
-  CheckCircle2,
-  X
+  Send
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, addDoc, serverTimestamp, query, where } from 'firebase/firestore'
@@ -28,10 +26,9 @@ interface FormData {
 
 interface BookingFormProps {
   preselectedServiceName?: string
-  showSuccessModal?: boolean
 }
 
-export default function BookingForm({ preselectedServiceName, showSuccessModal = true }: BookingFormProps) {
+export default function BookingForm({ preselectedServiceName }: BookingFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [services, setServices] = useState<FirebaseService[]>([])
@@ -43,24 +40,12 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
     message: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [submittedData, setSubmittedData] = useState<any>(null)
   const [isClient, setIsClient] = useState(false)
 
   // Set client flag
   useEffect(() => {
     setIsClient(true)
   }, [])
-
-  // Check for success state in URL
-  useEffect(() => {
-    if (!isClient) return
-    
-    const isSuccess = searchParams.get('thankyou')
-    if (isSuccess === 'true' && showSuccessModal) {
-      setShowSuccess(true)
-    }
-  }, [searchParams, showSuccessModal, isClient])
 
   // Fetch active services from Firebase
   useEffect(() => {
@@ -163,12 +148,6 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
       const result = await saveBookingToFirebase(bookingData)
 
       if (result.success) {
-        setSubmittedData({
-          bookingId: result.bookingId,
-          ...formData,
-          serviceName: selectedService?.name
-        })
-        
         // Send email notification to services@homeworkuae.com
         try {
           await fetch('/api/send-booking-email', {
@@ -188,22 +167,8 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
           // Continue with success even if email fails
         }
         
-        // Update URL to include success state
-        if (showSuccessModal) {
-          router.push(`?thankyou=true&booking-id=${result.bookingId}`, { scroll: false })
-          setShowSuccess(true)
-        } else {
-          alert('Booking submitted successfully! We will contact you soon.')
-        }
-        
-        // Reset form
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          service: preselectedServiceName && services.find(s => s.name.toLowerCase() === preselectedServiceName.toLowerCase())?.id || '',
-          message: ''
-        })
+        // Redirect to thank you page
+        router.push(`/thank-you?booking-id=${result.bookingId}`)
       } else {
         throw new Error(result.error || 'Failed to submit booking')
       }
@@ -230,19 +195,15 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
     return grouped
   }
 
-  const closeSuccess = () => {
-    setShowSuccess(false)
-    router.push(window.location.pathname, { scroll: false })
-  }
+
 
   return (
-    <>
-      <motion.div 
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="p-10 md:p-16 bg-white rounded-[3.5rem] border border-slate-100 shadow-3xl relative overflow-hidden"
-      >
+    <motion.div 
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="p-10 md:p-16 bg-white rounded-[3.5rem] border border-slate-100 shadow-3xl relative overflow-hidden"
+    >
         <div className="absolute top-0 right-0 p-8">
           <div className="h-20 w-20 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center animate-pulse">
              <Send className="h-8 w-8 text-primary/20" />
@@ -352,69 +313,6 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
           </form>
         </div>
       </motion.div>
-
-      {/* Success Modal */}
-      <AnimatePresence>
-        {showSuccess && submittedData && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
-            >
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-8 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0 bg-grid-white/[0.2]" />
-                </div>
-                
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring" }}
-                  className="relative z-10 flex justify-center mb-6"
-                >
-                  <div className="bg-white rounded-full p-4">
-                    <CheckCircle2 className="h-12 w-12 text-green-600" />
-                  </div>
-                </motion.div>
-                
-                <h4 className="text-2xl font-black text-white text-center mb-2">Thank you for the booking</h4>
-                <p className="text-green-50 text-center font-bold text-sm">
-                  Your request has been received
-                </p>
-              </div>
-
-              <div className="p-8 space-y-4">
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-600 font-bold">
-                    Thank you <span className="text-primary font-black">{submittedData.name}</span>! We'll review your booking and contact you within 2 hours.
-                  </p>
-                  
-                  <div className="bg-slate-50 rounded-2xl p-4 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Service</span>
-                      <span className="font-black text-slate-900 text-right">{submittedData.serviceName}</span>
-                    </div>
-                    <div className="flex justify-between items-start border-t border-slate-200 pt-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Booking ID</span>
-                      <span className="font-mono text-xs text-primary font-black">{submittedData.bookingId.slice(0, 8)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <motion.button
-                  onClick={closeSuccess}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary transition-all flex items-center justify-center gap-2"
-                >
-                  Close <X className="h-4 w-4" />
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </>
-  )
+    )
+  }
 }

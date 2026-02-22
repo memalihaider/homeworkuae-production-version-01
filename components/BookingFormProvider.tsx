@@ -5,7 +5,6 @@ import BookingForm from './BookingForm'
 
 interface BookingFormProviderProps {
   preselectedServiceName?: string
-  showSuccessModal?: boolean
 }
 
 function BookingFormSkeleton() {
@@ -19,14 +18,12 @@ function BookingFormSkeleton() {
 }
 
 export default function BookingFormProvider({ 
-  preselectedServiceName, 
-  showSuccessModal = true 
+  preselectedServiceName
 }: BookingFormProviderProps) {
   return (
     <Suspense fallback={<BookingFormSkeleton />}>
       <BookingForm 
-        preselectedServiceName={preselectedServiceName} 
-        showSuccessModal={showSuccessModal}
+        preselectedServiceName={preselectedServiceName}
       />
     </Suspense>
   )

@@ -354,7 +354,7 @@ export default function ACDuctCleaning() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto">
-            <BookingFormProvider preselectedServiceName="Ac Duct Cleaning" showSuccessModal={true} />
+            <BookingFormProvider preselectedServiceName="Ac Duct Cleaning" />
           </div>
         </div>
       </section>
