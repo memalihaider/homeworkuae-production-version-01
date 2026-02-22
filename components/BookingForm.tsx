@@ -56,7 +56,7 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
   useEffect(() => {
     if (!isClient) return
     
-    const isSuccess = searchParams.get('booking-success')
+    const isSuccess = searchParams.get('thankyou')
     if (isSuccess === 'true' && showSuccessModal) {
       setShowSuccess(true)
     }
@@ -154,7 +154,7 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
         email: formData.email,
         phone: formData.phone,
         serviceId: formData.service,
-        serviceName: selectedService?.name || 'Service',
+        service: selectedService?.name || 'Service',
         message: formData.message,
         source: 'service-page-booking'
       }
@@ -169,9 +169,28 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
           serviceName: selectedService?.name
         })
         
+        // Send email notification to services@homeworkuae.com
+        try {
+          await fetch('/api/send-booking-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientName: formData.name,
+              clientEmail: formData.email,
+              clientPhone: formData.phone,
+              serviceName: selectedService?.name || 'Service',
+              message: formData.message,
+              bookingId: result.bookingId,
+            }),
+          })
+        } catch (emailError) {
+          console.error('Email notification failed:', emailError)
+          // Continue with success even if email fails
+        }
+        
         // Update URL to include success state
         if (showSuccessModal) {
-          router.push(`?booking-success=true&booking-id=${result.bookingId}`, { scroll: false })
+          router.push(`?thankyou=true&booking-id=${result.bookingId}`, { scroll: false })
           setShowSuccess(true)
         } else {
           alert('Booking submitted successfully! We will contact you soon.')
@@ -360,7 +379,7 @@ export default function BookingForm({ preselectedServiceName, showSuccessModal =
                   </div>
                 </motion.div>
                 
-                <h4 className="text-2xl font-black text-white text-center mb-2">Booking Confirmed!</h4>
+                <h4 className="text-2xl font-black text-white text-center mb-2">Thank you for the booking</h4>
                 <p className="text-green-50 text-center font-bold text-sm">
                   Your request has been received
                 </p>

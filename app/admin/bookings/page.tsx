@@ -43,7 +43,7 @@ import {
 } from 'lucide-react'
 
 import { db } from '@/lib/firebase'
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where, Timestamp, onSnapshot } from 'firebase/firestore'
 import { format, addDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns'
 
 interface Booking {
@@ -85,6 +85,7 @@ interface Service {
 
 // Status icons and colors
 const statusIcons = {
+  new: AlertCircle,
   pending: AlertCircle,
   accepted: ThumbsUp,
   confirmed: CheckCircle,
@@ -95,6 +96,7 @@ const statusIcons = {
 }
 
 const statusColors = {
+  new: 'bg-slate-100 text-slate-700 dark:bg-slate-950/30 dark:text-slate-300',
   pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300',
   accepted: 'bg-teal-100 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300',
   confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300',
@@ -105,6 +107,7 @@ const statusColors = {
 }
 
 const calendarStatusColors = {
+  new: 'bg-slate-500',
   pending: 'bg-amber-500',
   accepted: 'bg-teal-500',
   confirmed: 'bg-blue-500',
@@ -137,16 +140,13 @@ export default function AdminBookings() {
 
   // Fetch data from Firebase
   useEffect(() => {
-    fetchBookings()
     fetchServices()
-  }, [])
-
-  const fetchBookings = async () => {
-    try {
-      const bookingsRef = collection(db, 'bookings')
-      const q = query(bookingsRef, orderBy('createdAt', 'desc'))
-      const querySnapshot = await getDocs(q)
-      
+    
+    // Set up real-time listener for bookings
+    const bookingsRef = collection(db, 'bookings')
+    const q = query(bookingsRef, orderBy('createdAt', 'desc'))
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const bookingsData: Booking[] = []
       
       querySnapshot.forEach((doc) => {
@@ -182,10 +182,13 @@ export default function AdminBookings() {
       })
       
       setBookings(bookingsData)
-    } catch (error) {
+    }, (error) => {
       console.error('Error fetching bookings:', error)
-    }
-  }
+    })
+    
+    return () => unsubscribe()
+  }, [])
+
 
   const fetchServices = async () => {
     try {
@@ -494,8 +497,6 @@ export default function AdminBookings() {
       setBookings(bookings.map(b => b.id === editFormData.id ? editFormData : b))
       setSelectedBooking(editFormData)
       setIsEditingDetails(false)
-      
-      await fetchBookings()
     } catch (error) {
       console.error('Error updating booking:', error)
       alert('Update failed!')
@@ -539,7 +540,6 @@ export default function AdminBookings() {
           <button 
             className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 transition-colors shadow-lg shadow-green-500/20"
             onClick={() => {
-              fetchBookings()
               fetchServices()
             }}
           >
