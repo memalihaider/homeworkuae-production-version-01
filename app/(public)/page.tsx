@@ -265,7 +265,7 @@ export default function HomePage() {
                 <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 mt-10">
                   <CTAButton 
                     text="Get Started" 
-                    href="/booking" 
+                    href="/book-service" 
                     variant="primary" 
                     icon={ArrowUpRight}
                   />
