@@ -299,8 +299,8 @@ export default function SofaDeepCleaning() {
                 <a href="tel:80046639675" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-600 transition-all flex items-center gap-3">
                    800 4663 9675
                 </a>
-                <a href="mailto:services@homeworkuae.com" className="bg-white/10 text-white border border-white/20 px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center gap-3">
-                   Email Us
+                <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
+                   Book Now
                 </a>
               </div>
             </div>

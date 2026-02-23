@@ -339,6 +339,9 @@ export default function ACCoilCleaning() {
                 <a href="mailto:services@homeworkuae.com" className="bg-white/10 text-white border border-white/20 px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center gap-3">
                    Request A Quote
                 </a>
+                <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
+                   Book Now
+                </a>
               </div>
             </div>
             <ThermometerSnowflake className="absolute -bottom-10 -left-10 h-64 w-64 text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-1000" />

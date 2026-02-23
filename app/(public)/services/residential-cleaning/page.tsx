@@ -299,11 +299,8 @@ export default function ResidentialCleaning() {
               <h4 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tighter">Ready For A <span className="text-primary italic">Spotless Home?</span></h4>
               <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for a professional cleaning experience you can trust.</p>
               <div className="flex flex-wrap justify-center gap-6">
-                <a href="tel:80046639675" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-600 transition-all flex items-center gap-3">
-                   800 4663 9675
-                </a>
-                <a href="mailto:services@homeworkuae.com" className="bg-white/10 text-white border border-white/20 px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center gap-3">
-                   Email Us
+                <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3 shadow-2xl shadow-primary/40">
+                   Book Now
                 </a>
               </div>
             </div>

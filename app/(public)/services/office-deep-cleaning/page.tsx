@@ -131,6 +131,30 @@ export default function OfficeDeepCleaning() {
         <div className="absolute bottom-0 left-0 w-1/4 h-full bg-blue-500/5 blur-[120px] rounded-full -ml-20" />
       </section>
 
+      {/* CTA Section */}
+      <section className="py-24 bg-slate-950 text-white relative">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-20 p-12 bg-slate-950 rounded-[3.5rem] text-center relative overflow-hidden group container mx-auto px-4 max-w-3xl"
+        >
+          <div className="relative z-10">
+            <h4 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tighter\">Transform Your <span className="text-primary italic\">Workspace</span></h4>
+            <p className="text-slate-400 text-lg mb-10 font-bold\">Contact us today for a professional office deep cleaning experience.</p>
+            <div className="flex flex-wrap justify-center gap-6\">
+              <a href="tel:80046639675" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-600 transition-all flex items-center gap-3\">
+                 800 4663 9675
+              </a>
+
+              <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3\">
+                 Book Now
+              </a>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
     </div>
   )
 }

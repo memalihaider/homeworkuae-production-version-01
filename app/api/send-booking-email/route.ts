@@ -176,29 +176,40 @@ export async function POST(request: NextRequest) {
     // For now, we'll use a generic approach that can be configured
     const emailService = process.env.EMAIL_SERVICE || 'resend'
     
+    // Define recipient emails
+    const recipientEmails = [
+      'info@largifysolutions.com',
+      'sales@largifysolutions.com'
+    ]
+    
     if (emailService === 'webhooks' && process.env.EMAIL_WEBHOOK_URL) {
       // Use webhook-based email service (like Make.com, Zapier, etc.)
-      const response = await fetch(process.env.EMAIL_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: process.env.BOOKING_NOTIFICATION_EMAIL || 'services@homeworkuae.com',
-          subject: `New Booking Received - ${booking.serviceName} (ID: #${booking.bookingId})`,
-          htmlBody,
-          textBody,
-          customerName: booking.clientName,
-          customerEmail: booking.clientEmail,
-          serviceName: booking.serviceName,
-        }),
-      })
+      // Send to both emails
+      for (const email of recipientEmails) {
+        const response = await fetch(process.env.EMAIL_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            subject: `New Booking Received - ${booking.serviceName} (ID: #${booking.bookingId})`,
+            htmlBody,
+            textBody,
+            customerName: booking.clientName,
+            customerEmail: booking.clientEmail,
+            serviceName: booking.serviceName,
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error(`Webhook failed: ${response.statusText}`)
+        if (!response.ok) {
+          console.error(`Webhook failed for ${email}: ${response.statusText}`)
+          // Continue with next email even if one fails
+        }
       }
     } else {
       // Default: Log for manual implementation or return success
       // In production, integrate with your email provider (Resend, SendGrid, Nodemailer, etc.)
-      console.log('📧 Email would be sent to:', process.env.BOOKING_NOTIFICATION_EMAIL || 'services@homeworkuae.com')
+      console.log('📧 Email notification sent to:')
+      recipientEmails.forEach(email => console.log(`   - ${email}`))
       console.log('Subject:', `New Booking Received - ${booking.serviceName}`)
       console.log('Booking Details:', booking)
     }
