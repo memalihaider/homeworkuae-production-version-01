@@ -283,6 +283,11 @@ function BookingPageContent() {
             bookingTime: formData.bookingTime,
             message: formData.notes,
             bookingId: bookingId,
+            clientAddress: formData.clientAddress,
+            propertyType: formData.propertyType,
+            area: formData.area,
+            frequency: formData.frequency,
+            source: 'booking-page',
           }),
         })
       } catch (emailError) {

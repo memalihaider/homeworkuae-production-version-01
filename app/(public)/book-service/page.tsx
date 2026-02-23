@@ -220,6 +220,11 @@ export default function BookService() {
               bookingTime: formData.time,
               message: formData.message,
               bookingId: result.bookingRef,
+              clientAddress: formData.address,
+              propertyType: formData.propertyType,
+              area: formData.propertySize,
+              frequency: formData.frequency,
+              source: 'book-service-page',
             }),
           });
         } catch (emailError) {

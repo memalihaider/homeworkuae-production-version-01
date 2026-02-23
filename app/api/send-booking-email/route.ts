@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 interface BookingEmailData {
   clientName: string
@@ -9,6 +12,12 @@ interface BookingEmailData {
   bookingDate?: string
   bookingTime?: string
   bookingId: string
+  // Additional fields
+  clientAddress?: string
+  propertyType?: string
+  area?: string
+  frequency?: string
+  source?: string
 }
 
 // Generate HTML email template for booking
@@ -82,10 +91,40 @@ const generateBookingEmailHTML = (booking: BookingEmailData): string => {
                     <span class="detail-value">${booking.bookingTime}</span>
                 </div>
                 ` : ''}
+                ${booking.propertyType ? `
+                <div class="detail-row">
+                    <span class="detail-label">Property Type:</span>
+                    <span class="detail-value">${booking.propertyType}</span>
+                </div>
+                ` : ''}
+                ${booking.area ? `
+                <div class="detail-row">
+                    <span class="detail-label">Area:</span>
+                    <span class="detail-value">${booking.area}</span>
+                </div>
+                ` : ''}
+                ${booking.frequency ? `
+                <div class="detail-row">
+                    <span class="detail-label">Frequency:</span>
+                    <span class="detail-value">${booking.frequency}</span>
+                </div>
+                ` : ''}
+                ${booking.clientAddress ? `
+                <div class="detail-row">
+                    <span class="detail-label">Address:</span>
+                    <span class="detail-value">${booking.clientAddress}</span>
+                </div>
+                ` : ''}
                 <div class="detail-row">
                     <span class="detail-label">Status:</span>
                     <span class="detail-value"><span class="status-badge">NEW</span></span>
                 </div>
+                ${booking.source ? `
+                <div class="detail-row">
+                    <span class="detail-label">Source:</span>
+                    <span class="detail-value">${booking.source}</span>
+                </div>
+                ` : ''}
             </div>
 
             ${booking.message ? `
@@ -136,12 +175,17 @@ CUSTOMER INFORMATION
 Name: ${booking.clientName}
 Email: ${booking.clientEmail}
 Phone: ${booking.clientPhone}
+${booking.clientAddress ? `Address: ${booking.clientAddress}` : ''}
 
 SERVICE INFORMATION
 -------------------
 Service: ${booking.serviceName}
 ${booking.bookingDate ? `Date: ${booking.bookingDate}` : ''}
 ${booking.bookingTime ? `Time: ${booking.bookingTime}` : ''}
+${booking.propertyType ? `Property Type: ${booking.propertyType}` : ''}
+${booking.area ? `Area: ${booking.area}` : ''}
+${booking.frequency ? `Frequency: ${booking.frequency}` : ''}
+${booking.source ? `Source: ${booking.source}` : ''}
 Status: NEW
 
 ${booking.message ? `CUSTOMER MESSAGE
@@ -172,53 +216,45 @@ export async function POST(request: NextRequest) {
     const htmlBody = generateBookingEmailHTML(booking)
     const textBody = generateBookingEmailText(booking)
 
-    // Send email using a simple fetch to EmailJS or similar service
-    // For now, we'll use a generic approach that can be configured
-    const emailService = process.env.EMAIL_SERVICE || 'resend'
+    // Get recipient email from environment variable or use default
+    const recipientEmail = process.env.BOOKING_EMAIL_TO || 'sales@largifysolutions.com'
+    const fromEmail = process.env.BOOKING_EMAIL_FROM || 'onboarding@resend.dev'
     
-    // Define recipient emails
-    const recipientEmails = [
-      'info@largifysolutions.com',
-      'sales@largifysolutions.com'
-    ]
-    
-    if (emailService === 'webhooks' && process.env.EMAIL_WEBHOOK_URL) {
-      // Use webhook-based email service (like Make.com, Zapier, etc.)
-      // Send to both emails
-      for (const email of recipientEmails) {
-        const response = await fetch(process.env.EMAIL_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: email,
-            subject: `New Booking Received - ${booking.serviceName} (ID: #${booking.bookingId})`,
-            htmlBody,
-            textBody,
-            customerName: booking.clientName,
-            customerEmail: booking.clientEmail,
-            serviceName: booking.serviceName,
-          }),
-        })
+    // Send email using Resend
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: recipientEmail,
+      subject: `🔔 New Booking: ${booking.serviceName} - ${booking.clientName} (ID: #${booking.bookingId})`,
+      html: htmlBody,
+      text: textBody,
+      replyTo: booking.clientEmail,
+    })
 
-        if (!response.ok) {
-          console.error(`Webhook failed for ${email}: ${response.statusText}`)
-          // Continue with next email even if one fails
-        }
-      }
-    } else {
-      // Default: Log for manual implementation or return success
-      // In production, integrate with your email provider (Resend, SendGrid, Nodemailer, etc.)
-      console.log('📧 Email notification sent to:')
-      recipientEmails.forEach(email => console.log(`   - ${email}`))
-      console.log('Subject:', `New Booking Received - ${booking.serviceName}`)
-      console.log('Booking Details:', booking)
+    if (error) {
+      console.error('Resend API error:', error)
+      // Don't fail the booking if email fails - just log it
+      return NextResponse.json(
+        {
+          success: true,
+          warning: 'Booking received but email notification failed',
+          error: error.message,
+        },
+        { status: 200 }
+      )
     }
+
+    console.log('✅ Email sent successfully via Resend:', {
+      emailId: data?.id,
+      to: recipientEmail,
+      bookingId: booking.bookingId,
+    })
 
     return NextResponse.json(
       {
         success: true,
         message: 'Email notification sent successfully',
         bookingId: booking.bookingId,
+        emailId: data?.id,
       },
       { status: 200 }
     )
@@ -231,6 +267,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Booking received (email notification queued)',
         warning: 'Email notification pending',
+        error: error.message,
       },
       { status: 200 }
     )

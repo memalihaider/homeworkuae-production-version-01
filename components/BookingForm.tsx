@@ -164,6 +164,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
             serviceName: selectedService?.name || 'Service',
             message: formData.message,
             bookingId: result.bookingId,
+            source: 'service-page-booking',
           }),
         })
       } catch (emailError) {
