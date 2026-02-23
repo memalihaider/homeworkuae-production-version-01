@@ -287,7 +287,7 @@ function BookingPageContent() {
         }
         
         // Redirect to thank-you page
-        router.push(`/thank-you?booking-id=${bookingId}`)
+        router.push('/thank-you')
       } else {
         throw new Error(result.error || 'Failed to save booking')
       }

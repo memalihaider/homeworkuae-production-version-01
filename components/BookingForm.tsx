@@ -168,7 +168,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
         }
         
         // Redirect to thank you page
-        router.push(`/thank-you?booking-id=${result.bookingId}`)
+        router.push('/thank-you')
       } else {
         throw new Error(result.error || 'Failed to submit booking')
       }

@@ -223,7 +223,7 @@ export default function BookService() {
           }
 
           // Redirect to thank-you page
-          router.push(`/thank-you?booking-id=${result.bookingRef}`);
+          router.push('/thank-you');
         }
       } catch (error: any) {
         console.error("Booking error:", error);
