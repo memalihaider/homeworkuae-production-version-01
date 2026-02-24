@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Configure Hostinger SMTP transport
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+    port: parseInt(process.env.SMTP_PORT || '465'),
+    secure: true, // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER || 'sales@largifysolutions.com',
+      pass: process.env.SMTP_PASSWORD || '',
+    },
+  })
+}
 
 interface BookingEmailData {
   clientName: string
@@ -218,35 +229,27 @@ export async function POST(request: NextRequest) {
 
     // Get recipient email from environment variable or use default
     const recipientEmail = process.env.BOOKING_EMAIL_TO || 'sales@largifysolutions.com'
-    const fromEmail = process.env.BOOKING_EMAIL_FROM || 'onboarding@resend.dev'
+    const fromEmail = process.env.SMTP_USER || 'sales@largifysolutions.com'
     
-    // Send email using Resend
-    const { data, error } = await resend.emails.send({
-      from: fromEmail,
+    // Send email using Nodemailer with Hostinger SMTP
+    const transporter = createTransporter()
+    
+    const mailOptions = {
+      from: `"Homework UAE Bookings" <${fromEmail}>`,
       to: recipientEmail,
       subject: `🔔 New Booking: ${booking.serviceName} - ${booking.clientName} (ID: #${booking.bookingId})`,
       html: htmlBody,
       text: textBody,
       replyTo: booking.clientEmail,
-    })
-
-    if (error) {
-      console.error('Resend API error:', error)
-      // Don't fail the booking if email fails - just log it
-      return NextResponse.json(
-        {
-          success: true,
-          warning: 'Booking received but email notification failed',
-          error: error.message,
-        },
-        { status: 200 }
-      )
     }
 
-    console.log('✅ Email sent successfully via Resend:', {
-      emailId: data?.id,
+    const info = await transporter.sendMail(mailOptions)
+
+    console.log('✅ Email sent successfully via Hostinger SMTP:', {
+      messageId: info.messageId,
       to: recipientEmail,
       bookingId: booking.bookingId,
+      response: info.response,
     })
 
     return NextResponse.json(
@@ -254,7 +257,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Email notification sent successfully',
         bookingId: booking.bookingId,
-        emailId: data?.id,
+        messageId: info.messageId,
       },
       { status: 200 }
     )

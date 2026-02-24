@@ -101,6 +101,7 @@ export default function BookService() {
   const [step, setStep] = useState(1);
   const [firebaseServices, setFirebaseServices] = useState<FirebaseService[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -184,6 +185,7 @@ export default function BookService() {
       nextStep();
     } else {
       // Complete booking - Save to Firebase
+      setIsSubmitting(true);
       try {
         // Validate required fields
         if (
@@ -194,21 +196,43 @@ export default function BookService() {
           !formData.date
         ) {
           alert('Please fill in all required fields');
+          setIsSubmitting(false);
           return;
         }
 
+        console.log('📝 Submitting booking to Firebase...', formData);
+
         // Save to Firebase first and wait for confirmation
         const result = await saveBookingToFirebase(formData);
+
+        console.log('✅ Firebase save result:', result);
 
         // Only proceed if booking was successfully saved
         if (!result.success) {
           throw new Error(result.error || 'Failed to save booking to database');
         }
 
-        // Send email notification (non-blocking)
+        // Send email notification (await to ensure it completes)
         try {
-          const selectedServiceName = firebaseServices.find(s => s.id === formData.service)?.name || 'Service';
-          await fetch('/api/send-booking-email', {
+          // Get service name from either Firebase services or hardcoded services
+          let selectedServiceName = firebaseServices.find(s => s.id === formData.service)?.name;
+          
+          if (!selectedServiceName) {
+            // Check hardcoded services
+            for (const category of serviceCategories) {
+              const service = category.options.find(opt => opt.id === formData.service);
+              if (service) {
+                selectedServiceName = service.label;
+                break;
+              }
+            }
+          }
+          
+          selectedServiceName = selectedServiceName || 'Service';
+          
+          console.log('📧 Sending email notification...');
+          
+          const emailResponse = await fetch('/api/send-booking-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -226,17 +250,23 @@ export default function BookService() {
               source: 'book-service-page',
             }),
           });
+          
+          const emailResult = await emailResponse.json();
+          console.log('📧 Email result:', emailResult);
         } catch (emailError) {
-          console.error('Email notification failed:', emailError);
+          console.error('❌ Email notification failed:', emailError);
           // Continue even if email fails - booking is already saved
         }
+
+        console.log('✅ Booking completed successfully! Redirecting...');
 
         // Only redirect after booking is confirmed saved
         router.push('/booking-thank-you');
         
       } catch (error: any) {
-        console.error("Booking submission error:", error);
+        console.error("❌ Booking submission error:", error);
         alert(`Error submitting booking: ${error?.message || 'Please try again.'}`);
+        setIsSubmitting(false);
       }
     }
   };
@@ -682,10 +712,20 @@ export default function BookService() {
 
                     <button
                       type="submit"
-                      className="h-16 px-12 bg-primary text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-all flex items-center gap-4 active:scale-95 flex-1 md:flex-initial justify-center group"
+                      disabled={isSubmitting}
+                      className="h-16 px-12 bg-primary text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-all flex items-center gap-4 active:scale-95 flex-1 md:flex-initial justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {step === totalSteps ? "Complete Booking" : "Continue"}
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          {step === totalSteps ? "Complete Booking" : "Continue"}
+                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
