@@ -159,6 +159,8 @@ const ALL_PAGES_CONFIG = {
   "Job Profitability": { icon: TrendingUp, href: "/admin/job-profitability" },
   Bookings: { icon: Calendar, href: "/admin/bookings" },
   "Process Inquiry": { icon: Inbox, href: "/admin/process-inquiry" },
+
+
   "Employee Chat": { icon: MessageCircle, href: "/admin/employee-chat" },
   "HR Management": { icon: UserCircle, href: "/admin/hr" },
   "Employee Directory": { icon: Users, href: "/admin/hr/employee-directory" },
@@ -279,6 +281,8 @@ const MENU_STRUCTURE = [
     label: "Report",
     key: "Report",
   },
+
+  
   {
     type: "group",
     label: "HR Management",

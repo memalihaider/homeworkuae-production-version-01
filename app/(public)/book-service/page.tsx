@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSXElementConstructor, ReactElement, ReactNode, ReactPortal } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -117,43 +117,8 @@ export default function BookService() {
   });
 
   // Original hardcoded services (unchanged)
-  const serviceCategories = [
-    {
-      group: "Normal Cleaning",
-      options: [
-        { id: "residential-normal", label: "Residential Cleaning" },
-        { id: "office-normal", label: "Office Cleaning" },
-        { id: "mattress-normal", label: "Mattress Normal Clean" },
-        { id: "window-normal", label: "Window Normal Clean" },
-        { id: "balcony-normal", label: "Balcony Normal Clean" },
-        { id: "sofa-normal", label: "Sofa Normal Clean" },
-        { id: "carpet-normal", label: "Carpet Normal Clean" },
-        { id: "curtains-normal", label: "Curtains Normal Clean" },
-      ],
-    },
-    {
-      group: "Deep Cleaning",
-      options: [
-        { id: "villa-deep", label: "Full Villa Deep Cleaning" },
-        { id: "apartment-deep", label: "Full Apartment Deep Cleaning" },
-        { id: "mattress-deep", label: "Mattress Deep Clean" },
-        { id: "window-deep", label: "Window Deep Clean" },
-        { id: "balcony-deep", label: "Balcony Deep Clean" },
-        { id: "sofa-deep", label: "Sofa Deep Clean" },
-        { id: "carpet-deep", label: "Carpet Deep Clean" },
-        { id: "curtains-deep", label: "Curtains Deep Clean" },
-        { id: "post-construction", label: "Post-Construction Cleaning" },
-      ],
-    },
-    {
-      group: "Technical Services",
-      options: [
-        { id: "ac-duct", label: "AC Duct Cleaning & Sanitization" },
-        { id: "water-tank", label: "Water Tank Cleaning (DM Approved)" },
-        { id: "disinfection", label: "Full Property Disinfection" },
-        { id: "mold-remediation", label: "Mold Remediation" },
-      ],
-    },
+  const serviceCategories: any[] = [
+   
   ];
 
   // Fetch services from Firebase on component mount
@@ -220,7 +185,7 @@ export default function BookService() {
           if (!selectedServiceName) {
             // Check hardcoded services
             for (const category of serviceCategories) {
-              const service = category.options.find(opt => opt.id === formData.service);
+              const service = category.options.find((opt: { id: string; }) => opt.id === formData.service);
               if (service) {
                 selectedServiceName = service.label;
                 break;
@@ -286,7 +251,7 @@ export default function BookService() {
   const getServiceName = (id: string) => {
     // First check hardcoded services
     for (const category of serviceCategories) {
-      const service = category.options.find((opt) => opt.id === id);
+      const service = category.options.find((opt: { id: string; }) => opt.id === id);
       if (service) return service.label;
     }
     
@@ -542,7 +507,7 @@ export default function BookService() {
                               {/* Hardcoded Services (unchanged) */}
                               {serviceCategories.map((cat, idx) => (
                                 <optgroup key={`hardcoded-${idx}`} label={cat.group}>
-                                  {cat.options.map((opt) => (
+                                  {cat.options.map((opt: { id: string | number | readonly string[] | undefined; label: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
                                     <option key={`hardcoded-${opt.id}`} value={opt.id}>
                                       {opt.label}
                                     </option>
@@ -777,3 +742,4 @@ export default function BookService() {
     </div>
   );
 }
+

@@ -134,7 +134,7 @@ export default function ClientProfiles() {
         // 1. Fetch from 'leads' collection where status is 'Won' OR 'Qualified'
         const leadsQuery = query(
           collection(db, 'leads'),
-          where('status', 'in', ['Won', 'Qualified']) // ✅ Changed: Now includes both Won and Qualified
+          where('status', 'in', ['Won', 'Qualified'])
         )
         
         const leadsSnapshot = await getDocs(leadsQuery)
@@ -149,11 +149,22 @@ export default function ClientProfiles() {
               ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString().split('T')[0] : data.createdAt)
               : new Date().toISOString().split('T')[0]
             
-            const totalSpent = data.value || data.totalSpent || 0
+            // Parse totalSpent from leads
+            let totalSpent = 0
+            if (data.value) {
+              totalSpent = parseFloat(data.value) || 0
+            } else if (data.totalSpent) {
+              totalSpent = parseFloat(data.totalSpent) || 0
+            } else if (data.estimatedValue) {
+              totalSpent = parseFloat(data.estimatedValue) || 0
+            } else if (data.amount) {
+              totalSpent = parseFloat(data.amount) || 0
+            }
+            
             const projects = data.serviceHistory ? data.serviceHistory.length : 0
             
             allClients.push({
-              id: `lead_${firebaseId}`, // Generate unique local ID
+              id: `lead_${firebaseId}`,
               firebaseId: firebaseId,
               name: data.name || 'Unknown',
               company: data.company || '',
@@ -192,8 +203,28 @@ export default function ClientProfiles() {
           if (!clientMap.has(firebaseId)) {
             clientMap.set(firebaseId, true)
             
+            // Parse totalSpent from clients collection - FIXED
+            let totalSpent = 0
+            if (data.totalSpent !== undefined && data.totalSpent !== null) {
+              // Handle both number and string
+              if (typeof data.totalSpent === 'number') {
+                totalSpent = data.totalSpent
+              } else if (typeof data.totalSpent === 'string') {
+                totalSpent = parseFloat(data.totalSpent) || 0
+              } else {
+                totalSpent = 0
+              }
+            }
+            
+            // Debug log
+            console.log(`Client ${data.name}:`, {
+              raw: data.totalSpent,
+              parsed: totalSpent,
+              type: typeof data.totalSpent
+            })
+            
             allClients.push({
-              id: `manual_${firebaseId}`, // Generate unique local ID
+              id: `manual_${firebaseId}`,
               firebaseId: firebaseId,
               name: data.name || 'Unknown',
               company: data.company || '',
@@ -201,7 +232,7 @@ export default function ClientProfiles() {
               phone: data.phone || '',
               location: data.location || '',
               joinDate: data.joinDate || new Date().toISOString().split('T')[0],
-              totalSpent: data.totalSpent || 0,
+              totalSpent: totalSpent, // Use parsed value
               projects: data.projects || 0,
               lastService: data.lastService || 'No service yet',
               status: data.status || 'Active',
@@ -212,6 +243,13 @@ export default function ClientProfiles() {
             })
           }
         })
+        
+        // Debug: Log all clients
+        console.log('All clients loaded:', allClients.map(c => ({ 
+          name: c.name, 
+          totalSpent: c.totalSpent,
+          raw: c.totalSpent
+        })))
         
         setClients(allClients)
         setClientMap(clientMap)
@@ -224,7 +262,7 @@ export default function ClientProfiles() {
     fetchAllClients()
   }, [])
 
-  // Real-time listener ONLY for new clients (not for initial load)
+  // Real-time listener for clients collection
   useEffect(() => {
     // Skip if we don't have initial data yet
     if (clientMap.size === 0) return
@@ -239,6 +277,16 @@ export default function ClientProfiles() {
           
           // Check if client already exists in our map
           if (!clientMap.has(firebaseId)) {
+            // Parse totalSpent for new client
+            let totalSpent = 0
+            if (data.totalSpent !== undefined && data.totalSpent !== null) {
+              if (typeof data.totalSpent === 'number') {
+                totalSpent = data.totalSpent
+              } else if (typeof data.totalSpent === 'string') {
+                totalSpent = parseFloat(data.totalSpent) || 0
+              }
+            }
+            
             const newClient: Client = {
               id: `manual_${firebaseId}`,
               firebaseId: firebaseId,
@@ -248,7 +296,7 @@ export default function ClientProfiles() {
               phone: data.phone || '',
               location: data.location || '',
               joinDate: data.joinDate || new Date().toISOString().split('T')[0],
-              totalSpent: data.totalSpent || 0,
+              totalSpent: totalSpent,
               projects: data.projects || 0,
               lastService: data.lastService || 'No service yet',
               status: data.status || 'Active',
@@ -258,9 +306,7 @@ export default function ClientProfiles() {
               source: 'manual'
             }
             
-            // Update both state and map
             setClients(prev => {
-              // Check if client already exists in the array
               const exists = prev.some(client => client.firebaseId === firebaseId)
               if (!exists) {
                 return [...prev, newClient]
@@ -274,6 +320,44 @@ export default function ClientProfiles() {
               return newMap
             })
           }
+        }
+        
+        // Handle updates to existing clients
+        if (change.type === 'modified') {
+          const data = change.doc.data()
+          const firebaseId = change.doc.id
+          
+          // Parse updated totalSpent
+          let totalSpent = 0
+          if (data.totalSpent !== undefined && data.totalSpent !== null) {
+            if (typeof data.totalSpent === 'number') {
+              totalSpent = data.totalSpent
+            } else if (typeof data.totalSpent === 'string') {
+              totalSpent = parseFloat(data.totalSpent) || 0
+            }
+          }
+          
+          setClients(prev => prev.map(client => {
+            if (client.firebaseId === firebaseId) {
+              return {
+                ...client,
+                name: data.name || client.name,
+                company: data.company || client.company,
+                email: data.email || client.email,
+                phone: data.phone || client.phone,
+                location: data.location || client.location,
+                joinDate: data.joinDate || client.joinDate,
+                totalSpent: totalSpent,
+                projects: data.projects || client.projects,
+                lastService: data.lastService || client.lastService,
+                status: data.status || client.status,
+                tier: data.tier || client.tier,
+                notes: data.notes || client.notes,
+                contracts: data.contracts || client.contracts
+              }
+            }
+            return client
+          }))
         }
       })
     }, (error) => {
@@ -327,21 +411,20 @@ export default function ClientProfiles() {
     })
 
     // Sort
-   // Sort
-if (sortConfig.key) {
-  filtered.sort((a, b) => {
-    const aValue = a[sortConfig.key!] as any
-    const bValue = b[sortConfig.key!] as any
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key!] as any
+        const bValue = b[sortConfig.key!] as any
 
-    if (aValue == null && bValue == null) return 0
-    if (aValue == null) return sortConfig.direction === 'asc' ? 1 : -1
-    if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue == null && bValue == null) return 0
+        if (aValue == null) return sortConfig.direction === 'asc' ? 1 : -1
+        if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1
 
-    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
-    return 0
-  })
-}
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
+        return 0
+      })
+    }
 
     return filtered
   }, [clients, searchTerm, filters, sortConfig])
@@ -361,10 +444,12 @@ if (sortConfig.key) {
   }
 
   const metrics = useMemo(() => {
-    const totalRevenue = clients.reduce((sum, c) => sum + c.totalSpent, 0)
+    const totalRevenue = clients.reduce((sum, c) => sum + (c.totalSpent || 0), 0)
     const avgClientValue = clients.length > 0 ? totalRevenue / clients.length : 0
-    const totalProjects = clients.reduce((sum, c) => sum + c.projects, 0)
+    const totalProjects = clients.reduce((sum, c) => sum + (c.projects || 0), 0)
     const activeClients = clients.filter(c => c.status === 'Active').length
+
+    console.log('Metrics calculated:', { totalRevenue, avgClientValue, totalProjects, clientCount: clients.length, activeClients })
 
     return { totalRevenue, avgClientValue, totalProjects, clientCount: clients.length, activeClients }
   }, [clients])
@@ -386,7 +471,6 @@ if (sortConfig.key) {
           }
         }
         
-        // Update local state and map
         setClients(prev => prev.filter(c => c.id !== id))
         if (firebaseId) {
           setClientMap(prev => {
@@ -407,7 +491,7 @@ if (sortConfig.key) {
     }
   }, [selectedClient, editingClient])
 
-  // Add new client to Firebase - DO NOT add to local state here
+  // Add new client to Firebase
   const handleAddClient = useCallback(async (clientData: Omit<Client, 'id' | 'joinDate' | 'lastService' | 'contracts' | 'source' | 'firebaseId'>) => {
     try {
       const clientDoc = {
@@ -428,10 +512,7 @@ if (sortConfig.key) {
         updatedAt: new Date().toISOString()
       }
 
-      // Save to Firebase 'clients' collection
       await addDoc(collection(db, 'clients'), clientDoc)
-      
-      // DO NOT add to local state here - real-time listener will handle it
       
       setShowAddClient(false)
       setNewClientData({
@@ -463,7 +544,6 @@ if (sortConfig.key) {
         return
       }
 
-      // Prepare update data
       const updateData: any = {
         name: updatedData.name,
         company: updatedData.company,
@@ -478,14 +558,12 @@ if (sortConfig.key) {
         updatedAt: new Date().toISOString()
       }
 
-      // Update in Firebase based on source
       if (client.source === 'manual') {
         await updateDoc(doc(db, 'clients', client.firebaseId), updateData)
       } else if (client.source === 'lead') {
         await updateDoc(doc(db, 'leads', client.firebaseId), updateData)
       }
 
-      // Update local state
       setClients(prev => prev.map(c => 
         c.id === client.id ? { ...c, ...updateData } : c
       ))
@@ -521,7 +599,6 @@ if (sortConfig.key) {
           return
         }
 
-        const importedCount = 0
         const errors: string[] = []
         
         for (let i = 1; i < lines.length; i++) {
@@ -539,18 +616,18 @@ if (sortConfig.key) {
             clientData[header] = values[idx]
           })
           
-          // Validate required fields
           if (!clientData.name || !clientData.email || !clientData.phone) {
             errors.push(`Row ${i + 1}: Missing required fields (name, email, phone)`)
             continue
           }
           
-          // Validate email format
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
           if (!emailRegex.test(clientData.email)) {
             errors.push(`Row ${i + 1}: Invalid email format`)
             continue
           }
+          
+          const totalSpent = clientData.totalspent ? parseFloat(clientData.totalspent) || 0 : 0
           
           const clientDoc = {
             name: clientData.name,
@@ -561,7 +638,7 @@ if (sortConfig.key) {
             status: (['Active', 'Inactive', 'Suspended'].includes(clientData.status) ? clientData.status : 'Active'),
             location: clientData.location || '',
             joinDate: clientData.joindate || new Date().toISOString().split('T')[0],
-            totalSpent: parseFloat(clientData.totalspent) || 0,
+            totalSpent: totalSpent,
             projects: parseInt(clientData.projects) || 0,
             lastService: clientData.lastservice || 'No service yet',
             notes: clientData.notes || '',
@@ -700,7 +777,7 @@ if (sortConfig.key) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">AED {(metrics.totalRevenue / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold text-gray-900">AED {metrics.totalRevenue.toLocaleString()}</p>
             </div>
             <DollarSign className="h-8 w-8 text-emerald-600" />
           </div>
@@ -709,7 +786,7 @@ if (sortConfig.key) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Avg Client Value</p>
-              <p className="text-2xl font-bold text-gray-900">AED {(metrics.avgClientValue / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold text-gray-900">AED {Math.round(metrics.avgClientValue).toLocaleString()}</p>
             </div>
             <TrendingUp className="h-8 w-8 text-amber-600" />
           </div>
@@ -910,90 +987,98 @@ if (sortConfig.key) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {paginatedClients.map((client) => (
-                    <tr key={client.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-sm font-medium text-blue-700">
-                              {client.name.split(' ').map(n => n[0]).join('')}
-                            </span>
+                  {paginatedClients.map((client) => {
+                    // Debug: Log each client's totalSpent when rendering
+                    console.log(`Rendering ${client.name}: totalSpent =`, client.totalSpent)
+                    
+                    return (
+                      <tr key={client.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              <span className="text-sm font-medium text-blue-700">
+                                {client.name.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                              <div className="text-sm text-gray-500">{client.location}</div>
+                            </div>
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                            <div className="text-sm text-gray-500">{client.location}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{client.company}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{client.email}</div>
+                          <div className="text-sm text-gray-500">{client.phone}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            client.tier === 'Platinum' ? 'bg-purple-100 text-purple-800' :
+                            client.tier === 'Gold' ? 'bg-yellow-100 text-yellow-800' :
+                            client.tier === 'Silver' ? 'bg-gray-100 text-gray-800' :
+                            'bg-orange-100 text-orange-800'
+                          }`}>
+                            {client.tier}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            client.status === 'Active' ? 'bg-green-100 text-green-800' :
+                            client.status === 'Inactive' ? 'bg-gray-100 text-gray-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {client.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                          {client.totalSpent > 0 ? (
+                            <>AED {client.totalSpent.toLocaleString()}</>
+                          ) : (
+                            <>AED 0</>
+                          )}
+                        </td>
+                     
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {client.lastService}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedClient(client)
+                                setShowDetails(true)
+                              }}
+                              className="text-blue-600 hover:text-blue-900 p-1"
+                              title="View details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                setEditingClient(client)
+                                setShowEditClient(true)
+                              }}
+                              className="text-green-600 hover:text-green-900 p-1"
+                              title="Edit client"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDeleteClient(client.id, client.source, client.firebaseId)}
+                              className="text-red-600 hover:text-red-900 p-1"
+                              title="Delete client"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{client.company}</div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{client.email}</div>
-                        <div className="text-sm text-gray-500">{client.phone}</div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          client.tier === 'Platinum' ? 'bg-purple-100 text-purple-800' :
-                          client.tier === 'Gold' ? 'bg-yellow-100 text-yellow-800' :
-                          client.tier === 'Silver' ? 'bg-gray-100 text-gray-800' :
-                          'bg-orange-100 text-orange-800'
-                        }`}>
-                          {client.tier}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          client.status === 'Active' ? 'bg-green-100 text-green-800' :
-                          client.status === 'Inactive' ? 'bg-gray-100 text-gray-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {client.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        AED {(client.totalSpent / 1000).toFixed(0)}K
-                      </td>
-                   
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {client.lastService}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedClient(client)
-                              setShowDetails(true)
-                            }}
-                            className="text-blue-600 hover:text-blue-900 p-1"
-                            title="View details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          
-                          {/* EDIT BUTTON - YEH ADD KIYA HAI */}
-                          <button
-                            onClick={() => {
-                              setEditingClient(client)
-                              setShowEditClient(true)
-                            }}
-                            className="text-green-600 hover:text-green-900 p-1"
-                            title="Edit client"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          
-                          <button
-                            onClick={() => handleDeleteClient(client.id, client.source, client.firebaseId)}
-                            className="text-red-600 hover:text-red-900 p-1"
-                            title="Delete client"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

@@ -31,6 +31,7 @@ const ALL_PAGES = [
   'Dashboard',
   'Lead Dashboard', 
   'Communications',
+  
   'Clients',
   'Surveys',
   'Report',           // ✅ Changed from 'report' to 'Report' with proper capitalization
