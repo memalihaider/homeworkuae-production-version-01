@@ -377,7 +377,7 @@ export async function POST(request: Request) {
 
    const mailOptions = {
   from: '"Homework UAE" <Homeworkuae2026@gmail.com>',
-  to: 'sales@homeworkuae.com, sales@largifysolutions.com,'  // COMMA SE SEPARATE KARO
+  to: 'sales@homeworkuae.com, sales@largifysolutions.com,' , 
   subject: `🔔 New Booking: ${clientName} - ${serviceName} (#${bookingId})`,
   html: htmlContent,
   text: textContent,
