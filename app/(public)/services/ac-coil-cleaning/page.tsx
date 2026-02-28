@@ -242,107 +242,26 @@ export default function ACCoilCleaning() {
         </div>
       </section>
 
-      {/* Video Section */}
-      <section className="py-24 bg-slate-900 overflow-hidden relative">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em] mb-4">Technical Proficiency</h2>
-            <h3 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase mb-6">WATCH OUR COIL SERVICE</h3>
-          </div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative max-w-5xl mx-auto aspect-video rounded-[3rem] overflow-hidden shadow-3xl bg-slate-800 border border-white/10 group"
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center group-hover:scale-110 transition-transform duration-500 cursor-pointer">
-                <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-white mb-6 shadow-2xl shadow-primary/40 mx-auto">
-                  <Play className="h-10 w-10 fill-current ml-1" />
-                </div>
-                <p className="text-white/40 font-black uppercase text-xs tracking-[0.3em]">Watch Service Demo</p>
-              </div>
+      {/* CTA Section */}
+      <section className="py-24 bg-slate-950 text-white relative">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-20 p-12 bg-slate-950 rounded-[3.5rem] text-center relative overflow-hidden group container mx-auto px-4 max-w-3xl"
+        >
+          <div className="relative z-10">
+            <h4 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tighter">Keep Your AC Running at <span className="text-primary italic">Peak Efficiency</span></h4>
+            <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for professional AC coil cleaning in the UAE.</p>
+            <div className="flex flex-wrap justify-center gap-6">
+              <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
+                 Book Now
+              </a>
             </div>
-          </motion.div>
-        </div>
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/5 blur-[120px] rounded-full -mr-20" />
+          </div>
+        </motion.div>
       </section>
 
-      {/* Why Choose Us Section */}
-      <section className="py-24 bg-slate-50 relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em] mb-4">The Solution</h2>
-            <h3 className="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6">WHY CLEAN COILS MATTER?</h3>
-            <p className="text-slate-600 font-bold max-w-2xl mx-auto italic">“A clean AC unit can save between 5% to 15% on energy bills annually.”</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {[
-              { 
-                title: "Expertise & Tools", 
-                desc: "Professionals have the right equipment and knowledge to ensure a thorough clean. They can also spot issues you may miss.", 
-                icon: ShieldCheck 
-              },
-              { 
-                title: "Energy Efficiency", 
-                desc: "Dirty coils can increase energy waste by up to 30%. We restore that efficiency, lowering your soaring utility bills.", 
-                icon: Sparkles 
-              },
-              { 
-                title: "IAQ Benefits", 
-                desc: "We eliminate dust and mold accumulation on coils, preventing respiratory problems and allergic reactions.", 
-                icon: Zap 
-              },
-              { 
-                title: "System Lifespan", 
-                desc: "Regular maintenance can extend your AC’s lifespan by years, saving you massive replacement costs down the line.", 
-                icon: Activity 
-              }
-            ].map((value, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-10 bg-white rounded-4xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
-              >
-                <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center text-primary mb-6 shadow-inner shadow-slate-200">
-                  <value.icon className="h-7 w-7" />
-                </div>
-                <h4 className="text-xl font-black text-slate-900 mb-4 tracking-tight uppercase">{value.title}</h4>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed">{value.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-20 p-12 bg-slate-950 rounded-[3.5rem] text-center relative overflow-hidden group border border-white/5"
-          >
-            <div className="relative z-10">
-              <h4 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tighter uppercase whitespace-pre-line">
-                PRIORITIZE COIL CLEANING FOR{"\n"}
-                <span className="text-primary italic text-3xl md:text-5xl uppercase">COMFORT, SAVINGS, AND HEALTH</span>
-              </h4>
-              <p className="text-slate-400 text-lg mb-10 font-bold max-w-2xl mx-auto">
-                Make it a priority today and enjoy lower bills and a healthier environment in your UAE home.
-              </p>
-              <div className="flex flex-wrap justify-center gap-6">
-                <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
-                   Book Now
-                </a>
-              </div>
-            </div>
-            <ThermometerSnowflake className="absolute -bottom-10 -left-10 h-64 w-64 text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-1000" />
-            <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/10 blur-[100px] rounded-full" />
-          </motion.div>
-        </div>
-      </section>
     </div>
   )
 }

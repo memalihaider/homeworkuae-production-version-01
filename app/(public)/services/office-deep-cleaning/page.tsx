@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { CheckCircle2, ArrowRight, Briefcase, ShieldCheck, Zap, Droplets, Play } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Briefcase, ShieldCheck, Zap, Droplets } from 'lucide-react'
 
 export default function OfficeDeepCleaning() {
   return (
@@ -102,34 +102,6 @@ export default function OfficeDeepCleaning() {
         </div>
       </section>
 
-      {/* Video Section */}
-      <section className="py-24 bg-slate-900 overflow-hidden relative">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-sm font-black text-primary uppercase tracking-[0.4em] mb-4">See Us In Action</h2>
-            <h3 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase mb-6">SERVICE DEMO VIDEO</h3>
-          </div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative max-w-5xl mx-auto aspect-video rounded-[3rem] overflow-hidden shadow-3xl bg-slate-800 border border-white/10 group"
-          >
-            {/* Placeholder until video link is added */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center group-hover:scale-110 transition-transform duration-500">
-                <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-white mb-6 shadow-2xl shadow-primary/40 mx-auto">
-                  <Play className="h-10 w-10 fill-current ml-1" />
-                </div>
-                <p className="text-white/40 font-black uppercase text-xs tracking-[0.3em]">Video Preview Coming Soon</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/5 blur-[120px] rounded-full -mr-20" />
-        <div className="absolute bottom-0 left-0 w-1/4 h-full bg-blue-500/5 blur-[120px] rounded-full -ml-20" />
-      </section>
 
       {/* CTA Section */}
       <section className="py-24 bg-slate-950 text-white relative">
