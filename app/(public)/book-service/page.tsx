@@ -232,7 +232,7 @@ export default function BookService() {
         console.log('✅ Booking completed successfully! Redirecting...');
 
         // Redirect to thank you page
-        router.push('/booking-thank-you');
+        router.push('/thank-you');
         
       } catch (error: any) {
         console.error("❌ Booking submission error:", error);

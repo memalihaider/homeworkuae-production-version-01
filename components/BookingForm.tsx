@@ -173,7 +173,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
       }
       
       // Only redirect after booking is confirmed saved
-      router.push('/booking-thank-you')
+      router.push('/thank-you')
       
     } catch (error) {
       console.error('Booking submission error:', error)
