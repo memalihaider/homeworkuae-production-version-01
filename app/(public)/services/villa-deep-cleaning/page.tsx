@@ -1,112 +1,22 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { 
-  CheckCircle2, 
-  Star, 
-  ShieldCheck, 
-  Zap, 
-  Clock, 
-  ArrowRight, 
-  Layers, 
-  Play, 
-  Sparkles, 
-  Droplets, 
-  Shield, 
-  Search,
-  Home,
-  Bed,
-  Bath,
-  CookingPot,
-  PlusCircle,
-  Wind
-} from 'lucide-react'
+import { CheckCircle2, ArrowRight, Home } from 'lucide-react'
 
 export default function VillaDeepCleaning() {
-  const categories = [
-    {
-      title: "Bedroom & Living Room",
-      icon: Bed,
-      items: [
-        { name: "Walls and Skirting", desc: "Meticulous cleaning of walls, corners, and skirting boards to remove dust, grime, and cobwebs." },
-        { name: "Ceilings and Fixtures", desc: "Dusting and cleaning of ceilings, light fixtures, ceiling fans, and air conditioning vents." },
-        { name: "Furniture and Upholstery", desc: "Vacuuming and spot-cleaning of furniture and upholstery to remove stains and deep-seated dirt." },
-        { name: "Windows and Mirrors", desc: "Thorough cleaning of windows, frames, sills, and mirrors for a crystal-clear, streak-free finish." },
-        { name: "Flooring", desc: "Deep cleaning of carpets, rugs, wooden floors, and tiles to restore their original showroom luster." }
-      ]
-    },
-    {
-      title: "Bathrooms",
-      icon: Bath,
-      items: [
-        { name: "Cabinets and Countertops", desc: "Deep cleaning and sanitizing of all bathroom cabinets, countertops, sinks, and mirrors." },
-        { name: "Shower Areas and Tubs", desc: "Removal of soap scum, mildew, and hard water stains from tiles, grout, and glass shower doors." },
-        { name: "Toilets", desc: "Comprehensive medical-grade cleaning and disinfection of toilets, including under rims and behind fixtures." },
-        { name: "Floors", desc: "Mopping and intensive scrubbing of bathroom floors to eliminate all dirt and harmful bacteria." }
-      ]
-    },
-    {
-      title: "Kitchens",
-      icon: CookingPot,
-      items: [
-        { name: "Cabinets and Drawers", desc: "Detailed cleaning and professional organizing of all kitchen cabinets and storage drawers." },
-        { name: "Countertops and Backsplashes", desc: "Sanitizing and intensive scrubbing of countertops and backsplashes to remove grease and stains." },
-        { name: "Appliances", desc: "Detailed cleaning of the exterior and interior of ovens, microwaves, refrigerators, and dishwashers." },
-        { name: "Sinks and Faucets", desc: "Professional descaling and polishing of sinks, faucets, and drain strainers for a hygienic finish." },
-        { name: "Floors", desc: "Thorough cleaning of kitchen floors to ensure a perfectly sanitary environment for cooking." }
-      ]
-    },
-    {
-      title: "Balconies and Outdoor Areas",
-      icon: Layers,
-      items: [
-        { name: "Floors and Handrails", desc: "Sweeping, mopping, and intensive scrubbing of balcony floors and handrails to remove desert dust." },
-        { name: "Outdoor Furniture", desc: "Dusting and cleaning of outdoor furniture and fixtures to remove dirt and weather debris." },
-        { name: "Drainage Strainers", desc: "Cleaning and unclogging of all drainage strainers to prevent water buildup and ensure clear drainage." }
-      ]
-    },
-    {
-      title: "General Areas",
-      icon: PlusCircle,
-      items: [
-        { name: "Dusting and Vacuuming", desc: "Comprehensive dusting of all surfaces, including shelves, picture frames, and high-end electronics." },
-        { name: "Sanitizing Touchpoints", desc: "Disinfecting high-touch areas such as door handles, light switches, and remote controls." },
-        { name: "Air Freshening", desc: "Using professional air fresheners and deodorizers to leave your home smelling exceptionally fresh." }
-      ]
-    }
-  ]
-
-  const servicesList = [
-    { name: "Villa Deep Cleaning", slug: "villa-deep-cleaning" },
-    { name: "Move in/out Cleaning", slug: "move-in-out-cleaning" },
-    { name: "Apartment Deep Cleaning", slug: "apartment-deep-cleaning" },
-    { name: "Office Deep Cleaning", slug: "office-cleaning" },
-    { name: "Post Construction Cleaning", slug: "post-construction-cleaning" },
-    { name: "Kitchen Deep Cleaning", slug: "kitchen-deep-cleaning" },
-    { name: "Garage Deep Cleaning", slug: "garage-deep-cleaning" },
-    { name: "Grout Deep Cleaning", slug: "grout-deep-cleaning" },
-    { name: "Floor deep cleaning", slug: "floor-deep-cleaning" },
-    { name: "Window cleaning", slug: "window-cleaning" },
-    { name: "Balcony Deep Cleaning", slug: "balcony-deep-cleaning" },
-    { name: "Sofa Deep Cleaning", slug: "sofa-deep-cleaning" },
-    { name: "Mattress Deep Cleaning", slug: "mattress-deep-cleaning" },
-    { name: "Carpets Deep Cleaning", slug: "carpets-deep-cleaning" },
-    { name: "Ac Duct Cleaning", slug: "ac-duct-cleaning" }
-  ]
-
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1600" 
-            alt="Villa Deep Cleaning" 
+          <img
+            src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1600"
+            alt="Villa Deep Cleaning"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -120,7 +30,7 @@ export default function VillaDeepCleaning() {
               VILLA <br />
               <span className="text-primary italic">DEEP CLEANING</span>
             </h1>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium uppercase tracking-tight">
+            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
               Transform Your Villa with UAE's Expert Deep Cleaning Services
             </p>
           </motion.div>
@@ -130,114 +40,71 @@ export default function VillaDeepCleaning() {
       {/* Details Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-8 order-2 lg:order-1">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="space-y-10"
-              >
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
-                    Welcome to <span className="text-primary">Homework Cleaning Services LLC</span>
-                  </h2>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed">
-                    Is your villa in need of a thorough and meticulous clean? Look no further! At Homework Cleaning Services LLC, we specialize in transforming your villa into a spotless sanctuary. Our professional team uses advanced equipment and eco-friendly cleaning solutions to ensure every corner of your villa shines with brilliance.
-                  </p>
-                  <div className="p-8 bg-slate-50 rounded-3xl border-l-4 border-primary">
-                    <p className="text-slate-700 font-bold italic">
-                      "If you're looking to perform Villa Deep Cleaning, here's a practical checklist to keep your home clean and organized efficiently."
-                    </p>
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1000"
+                alt="Villa Deep Cleaning"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-1 lg:order-2"
+            >
+              <div className="inline-flex items-center gap-3 text-primary">
+                <Home className="h-6 w-6" />
+                <span className="text-sm font-black uppercase tracking-widest">Villa Cleaning Specialists</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                Complete Villa <br />
+                <span className="text-primary italic">Deep Sanitization</span>
+              </h2>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                Is your villa in need of a thorough and meticulous clean? At Homework Cleaning Services LLC, we specialize in transforming your villa into a spotless sanctuary. Our professional team uses advanced equipment and eco-friendly cleaning solutions to ensure every corner of your villa shines with brilliance.
+              </p>
+
+              <div className="grid gap-4">
+                {[
+                  "Walls, Skirting & Sills Cleaning",
+                  "Furniture & Upholstery Deep Clean",
+                  "Shower Areas & Bathtub Scrubbing",
+                  "Full Kitchen Appliance Cleaning",
+                  "Countertops & Backsplash Sanitization",
+                  "High-Touch Point Antimicrobial Treatment",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 group">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <span className="text-slate-700 font-bold">{item}</span>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="space-y-12">
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4 uppercase">
-                    <Home className="h-8 w-8 text-primary" />
-                    Our Comprehensive Villa Services:
-                  </h3>
-
-                  <div className="grid gap-8">
-                    {categories.map((cat, idx) => (
-                      <motion.div 
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50"
-                      >
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            <cat.icon className="h-6 w-6" />
-                          </div>
-                          <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{cat.title}</h4>
-                        </div>
-                        <div className="grid md:grid-cols-1 gap-6">
-                          {cat.items.map((item, i) => (
-                            <div key={i} className="flex gap-4 group">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
-                                <CheckCircle2 className="h-3 w-3" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-slate-900 text-sm uppercase tracking-wider mb-1">{item.name}</h5>
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 order-1 lg:order-2 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-3xl sticky top-24 max-h-[80vh] overflow-y-auto"
+              <motion.a
+                href="/book-service"
+                className="inline-flex items-center gap-4 bg-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-white shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-colors"
+                whileTap={{ scale: 0.95 }}
               >
-                <h4 className="text-2xl font-black mb-8 tracking-tight italic">Other Services</h4>
-                <div className="space-y-4">
-                  {servicesList.map((service, i) => (
-                    <a 
-                      key={i} 
-                      href={`/services/${service.slug}`} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        service.slug === "villa-deep-cleaning" 
-                        ? 'bg-primary border-primary text-white font-black' 
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-xs uppercase tracking-widest">{service.name}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
-                  ))}
-                </div>
-
-                <div className="mt-12 p-8 bg-white/5 rounded-3xl border border-white/10 text-center">
-                  <p className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Pricing</p>
-                  <p className="text-4xl font-black text-primary tracking-tighter mb-8 italic">Get Quote</p>
-                  <button className="w-full bg-white text-slate-900 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary hover:text-white transition-all">
-                    Custom Estimates
-                  </button>
-                </div>
-              </motion.div>
-            </div>
+                Book Villa Deep Clean <ArrowRight className="h-5 w-5" />
+              </motion.a>
+            </motion.div>
           </div>
         </div>
       </section>
 
-
-
       {/* CTA Section */}
       <section className="py-24 bg-slate-950 text-white relative">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -248,7 +115,7 @@ export default function VillaDeepCleaning() {
             <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for a professional villa deep cleaning experience.</p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
-                 Book Now
+                Book Now
               </a>
             </div>
           </div>

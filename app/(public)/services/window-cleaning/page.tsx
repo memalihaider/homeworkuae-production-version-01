@@ -1,78 +1,22 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { 
-  CheckCircle2, 
-  Star, 
-  ShieldCheck, 
-  Zap, 
-  Clock, 
-  ArrowRight, 
-  Sun, 
-  Sparkles, 
-  Home, 
-  Building2, 
-  Maximize, 
-  Droplets, 
-  Construction,
-  Play
-} from 'lucide-react'
-
+import { CheckCircle2, ArrowRight, Sun } from 'lucide-react'
 
 export default function WindowCleaning() {
-  const servicesList = [
-    { name: "Regular Residential cleaning", slug: "residential-cleaning" },
-    { name: "Regular Office cleaning", slug: "office-cleaning" },
-    { name: "Floor deep cleaning", slug: "floor-deep-cleaning" },
-    { name: "Window cleaning", slug: "window-cleaning" },
-    { name: "Balcony Deep Cleaning", slug: "balcony-deep-cleaning" },
-    { name: "Sofa Deep Cleaning", slug: "sofa-deep-cleaning" },
-    { name: "Carpets Deep Cleaning", slug: "carpets-deep-cleaning" },
-    { name: "Mattress Deep Cleaning", slug: "mattress-deep-cleaning" }
-  ]
-
-  const categories = [
-    {
-      title: "Residential Window Cleaning",
-      icon: Home,
-      items: [
-        { name: "Interior and Exterior Cleaning", desc: "Thorough cleaning of both the inside and outside surfaces of your windows." },
-        { name: "Frame and Sill Cleaning", desc: "Dusting and wiping down window frames, sills, and tracks to remove dirt and cobwebs." },
-        { name: "Screen Cleaning", desc: "Removing and cleaning window screens to eliminate dust and debris." }
-      ]
-    },
-    {
-      title: "Commercial Window Cleaning",
-      icon: Building2,
-      items: [
-        { name: "Office Buildings", desc: "Cleaning windows of all sizes and types in commercial buildings, ensuring a professional appearance." },
-        { name: "Retail Stores", desc: "Keeping storefront windows clean and inviting to attract customers and enhance curb appeal." },
-        { name: "High-Rise Windows", desc: "Specialized equipment and techniques for safely cleaning windows on high-rise buildings." }
-      ]
-    },
-    {
-      title: "Specialized Window Cleaning",
-      icon: Maximize,
-      items: [
-        { name: "Hard Water Stain Removal", desc: "Treating and removing hard water stains and mineral deposits to restore clarity." },
-        { name: "Post-Construction Cleaning", desc: "Removing construction dust, debris, and adhesive residue from windows after projects." }
-      ]
-    }
-  ]
-
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1600" 
-            alt="Window Cleaning" 
+          <img
+            src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1600"
+            alt="Window Cleaning"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -86,7 +30,7 @@ export default function WindowCleaning() {
               CRYSTAL <br />
               <span className="text-primary italic">CLEAR</span> WINDOWS
             </h1>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium uppercase tracking-tight">
+            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
               Crystal Clear Window Cleaning Services in UAE – Stunning Views, Every Time
             </p>
           </motion.div>
@@ -96,114 +40,71 @@ export default function WindowCleaning() {
       {/* Details Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-8 order-2 lg:order-1">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="space-y-10"
-              >
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
-                    Welcome to <span className="text-primary">Homework Cleaning Services LLC</span>
-                  </h2>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed">
-                    Sparkling clean windows can enhance the appearance of your home or office, providing a clear view and letting in natural light. At Homework Cleaning Services LLC, we offer comprehensive window cleaning services to ensure your windows are spotless and streak-free. Our experienced team uses advanced cleaning techniques and eco-friendly products to achieve exceptional results.
-                  </p>
-                  <div className="p-8 bg-slate-50 rounded-3xl border-l-4 border-primary">
-                    <p className="text-slate-700 font-bold italic">
-                      "Cleaning windows properly ensures a streak-free shine and helps maintain their clarity and lifespan. Here's a step-by-step guide for achieving spotless windows."
-                    </p>
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1000"
+                alt="Window Cleaning"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-1 lg:order-2"
+            >
+              <div className="inline-flex items-center gap-3 text-primary">
+                <Sun className="h-6 w-6" />
+                <span className="text-sm font-black uppercase tracking-widest">Window Cleaning Specialists</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                Streak-Free <br />
+                <span className="text-primary italic">Window Cleaning</span>
+              </h2>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                Sparkling clean windows can enhance the appearance of your home or office, providing a clear view and letting in natural light. At Homework Cleaning Services LLC, we offer comprehensive window cleaning services to ensure your windows are spotless and streak-free using advanced techniques and eco-friendly products.
+              </p>
+
+              <div className="grid gap-4">
+                {[
+                  "Interior & Exterior Glass Cleaning",
+                  "Window Frame & Sill Cleaning",
+                  "Fly Screen Cleaning & Inspection",
+                  "Commercial Office Building Windows",
+                  "High-Rise Window Access Solutions",
+                  "Hard Water Stain Removal Treatment",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 group">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <span className="text-slate-700 font-bold">{item}</span>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="space-y-12">
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4">
-                    <Sun className="h-8 w-8 text-primary" />
-                    OUR WINDOW CLEANING SERVICES INCLUDE:
-                  </h3>
-
-                  <div className="grid gap-8">
-                    {categories.map((cat, idx) => (
-                      <motion.div 
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50"
-                      >
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            <cat.icon className="h-6 w-6" />
-                          </div>
-                          <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{cat.title}</h4>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          {cat.items.map((item, i) => (
-                            <div key={i} className="flex gap-4 group">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
-                                <CheckCircle2 className="h-3 w-3" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-slate-900 text-sm uppercase tracking-wider mb-1">{item.name}</h5>
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 order-1 lg:order-2 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-3xl sticky top-24"
+              <motion.a
+                href="/book-service"
+                className="inline-flex items-center gap-4 bg-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-white shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-colors"
+                whileTap={{ scale: 0.95 }}
               >
-                <h4 className="text-2xl font-black mb-8 tracking-tight italic">Other Services</h4>
-                <div className="space-y-4">
-                  {servicesList.map((service, i) => (
-                    <a 
-                      key={i} 
-                      href={`/services/${service.slug}`} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        service.slug === "window-cleaning" 
-                        ? 'bg-primary border-primary text-white font-black' 
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-xs uppercase tracking-widest">{service.name}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
-                  ))}
-                </div>
-
-                <div className="mt-12 p-8 bg-white/5 rounded-3xl border border-white/10 text-center">
-                  <p className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Pricing</p>
-                  <p className="text-4xl font-black text-primary tracking-tighter mb-8 italic">Contact Us</p>
-                  <a href="/book-service" className="w-full bg-white text-slate-900 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary hover:text-white transition-all inline-block">
-                    Custom Quote
-                  </a>
-                </div>
-              </motion.div>
-            </div>
+                Book Window Cleaning <ArrowRight className="h-5 w-5" />
+              </motion.a>
+            </motion.div>
           </div>
         </div>
       </section>
 
-
-
       {/* CTA Section */}
       <section className="py-24 bg-slate-950 text-white relative">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -214,7 +115,7 @@ export default function WindowCleaning() {
             <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for professional window cleaning services.</p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
-                 Book Now
+                Book Now
               </a>
             </div>
           </div>

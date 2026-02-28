@@ -1,118 +1,22 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { 
-  CheckCircle2, 
-  Star, 
-  ShieldCheck, 
-  Zap, 
-  Clock, 
-  ArrowRight, 
-  Building2, 
-  Play, 
-  Sparkles, 
-  Droplets, 
-  Shield, 
-  Search,
-  Wind,
-  ShieldAlert,
-  Flame,
-  Fan,
-  Activity,
-  History,
-  TrendingDown,
-  Scale,
-  Construction,
-  Layers,
-  Eraser,
-  Glasses
-} from 'lucide-react'
+import { CheckCircle2, ArrowRight, Building2 } from 'lucide-react'
 
 export default function FacadeCleaning() {
-  const categories = [
-    {
-      title: "Surface Cleaning Systems",
-      icon: Layers,
-      items: [
-        { name: "High-Pressure Washing", desc: "Using advanced water jets to remove deep-seated dirt, mold, and stains from brick, stone, and metal." },
-        { name: "Delicate Soft Washing", desc: "Applying pH-balanced solutions for sensitive exteriors to remove algae and grime without abrasion." },
-        { name: "Stone & Brick Care", desc: "Specialized treatment for porous surfaces to ensure thorough cleaning without structural damage." },
-        { name: "Metal Facade Detailing", desc: "Precision cleaning for aluminum and steel panels to restore original shine and prevent oxidation." }
-      ]
-    },
-    {
-      title: "Expert Stain Removal",
-      icon: Eraser,
-      items: [
-        { name: "Graffiti Eradication", desc: "Efficient removal of unwanted markings and paint using non-damaging chemical solvents." },
-        { name: "Rust & Mineral Treatment", desc: "Eliminating unsightly rust streaks and white mineral deposits from your building's exterior." },
-        { name: "Carbon & Pollution", desc: "Removing black carbon buildup caused by UAE's city traffic and environmental factors." },
-        { name: "Bio-Growth Cladding", desc: "Scientific removal of fungal and mildew growth that jeopardizes facade integrity." }
-      ]
-    },
-    {
-      title: "Glass & Window Cleaning",
-      icon: Glasses,
-      items: [
-        { name: "Streak-Free Windows", desc: "Precision cleaning of exterior glass, frames, and sills to enhance visibility and aesthetics." },
-        { name: "Full Glass Facades", desc: "Deep cleaning for modern glass-walled buildings to ensure a clear, reflective, and spotless finish." },
-        { name: "Reach-and-Wash Tech", desc: "Utilizing de-ionized water systems and telescopic poles for safe, smear-free results." },
-        { name: "Frame & Seal Care", desc: "Cleaning and checking of window gaskets and frames to prevent dirt accumulation and leaks." }
-      ]
-    },
-    {
-      title: "Maintenance & Protection",
-      icon: Shield,
-      items: [
-        { name: "Regular Care Plans", desc: "Customized maintenance schedules to keep your facade looking pristine throughout the year." },
-        { name: "longevity Enhancement", desc: "Removing corrosive particles that cause premature aging of your building's materials." },
-        { name: "Structural Inspection", desc: "Providing a visual overview of facade health during the cleaning process to catch issues early." },
-        { name: "Dubai Weather Proofing", desc: "Removing sand and dust accumulation typical of the UAE desert environment." }
-      ]
-    },
-    {
-      title: "Why Choose Facade Experts",
-      icon: ShieldCheck,
-      items: [
-        { name: "Rope Access Mastery", desc: "Our team is highly trained in safe, modern facade access techniques for high-rise assets." },
-        { name: "Surgical Attention", desc: "We focus on every nook and cranny, ensuring your facade is uniformly spotless." },
-        { name: "Tailored Strategy", desc: "Unique cleaning plans that respect the specific material composition of your building." },
-        { name: "Insured & Reliable", desc: "Vetted professionals committed to providing exceptional service with local integrity." }
-      ]
-    }
-  ]
-
-  const servicesList = [
-    { name: "Ac Duct Cleaning", slug: "ac-duct-cleaning" },
-    { name: "Ac Coil Cleaning", slug: "ac-coil-cleaning" },
-    { name: "Kitchen Hood Cleaning", slug: "kitchen-hood-cleaning" },
-    { name: "Grease Trap Cleaning", slug: "grease-trap-cleaning" },
-    { name: "Restaurant Cleaning", slug: "restaurant-cleaning" },
-    { name: "Water Tank Cleaning", slug: "water-tank-cleaning" },
-    { name: "Swimming Pool Cleaning", slug: "swimming-pool-cleaning" },
-    { name: "Gym Deep Cleaning", slug: "gym-deep-cleaning" },
-    { name: "Facade Cleaning", slug: "facade-cleaning" },
-    { name: "Villa Deep Cleaning", slug: "villa-deep-cleaning" },
-    { name: "Move in/out Cleaning", slug: "move-in-out-cleaning" },
-    { name: "Apartment Deep Cleaning", slug: "apartment-deep-cleaning" },
-    { name: "Office Deep Cleaning", slug: "office-cleaning" },
-    { name: "Post Construction Cleaning", slug: "post-construction-cleaning" },
-    { name: "Kitchen Deep Cleaning", slug: "kitchen-deep-cleaning" }
-  ]
-
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1541888941295-1e3c83743aa1?auto=format&fit=crop&q=80&w=1600" 
-            alt="Facade Cleaning" 
+          <img
+            src="https://images.unsplash.com/photo-1541888941295-1e3c83743aa1?auto=format&fit=crop&q=80&w=1600"
+            alt="Facade Cleaning"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -124,9 +28,9 @@ export default function FacadeCleaning() {
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
               IMPRESSIVE <br />
-              <span className="text-primary italic text-5xl md:text-8xl">BUILDING EXTERIORS</span>
+              <span className="text-primary italic">BUILDING EXTERIORS</span>
             </h1>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium uppercase tracking-tight">
+            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
               Sparkling Facade Cleaning in UAE – First Impressions That Last
             </p>
           </motion.div>
@@ -136,121 +40,71 @@ export default function FacadeCleaning() {
       {/* Details Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-8 order-2 lg:order-1">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="space-y-10"
-              >
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight uppercase">
-                    Pristine Skylines: The <span className="text-primary italic text-3xl md:text-5xl border-b-4 border-primary/20">Master Facade Cleaning Checklist</span>
-                  </h2>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed italic">
-                    First impressions matter, and a clean facade can make a significant difference. 
-                  </p>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed">
-                    At Homework Cleaning Services LLC, we specialize in professional facade cleaning services to ensure your building’s exterior looks pristine and inviting. Our experienced team uses advanced cleaning techniques and eco-friendly products to remove dirt, grime, and stains, enhancing the appearance and longevity of your building asset in the demanding UAE climate.
-                  </p>
-                  <div className="p-8 bg-slate-50 rounded-3xl border-l-4 border-primary shadow-sm">
-                    <p className="text-slate-700 font-bold italic text-sm">
-                      "If you're looking to perform Facade Cleaning, here's a practical checklist to keep your home clean and organized efficiently."
-                    </p>
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1541888941295-1e3c83743aa1?auto=format&fit=crop&q=80&w=1000"
+                alt="Facade Cleaning"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-1 lg:order-2"
+            >
+              <div className="inline-flex items-center gap-3 text-primary">
+                <Building2 className="h-6 w-6" />
+                <span className="text-sm font-black uppercase tracking-widest">Facade Specialists</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                Pristine Skylines: <br />
+                <span className="text-primary italic">Master Facade Cleaning</span>
+              </h2>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                First impressions matter, and a clean facade can make a significant difference. At Homework Cleaning Services LLC, we specialize in professional facade cleaning services to ensure your building's exterior looks pristine and inviting. Our experienced team uses advanced techniques and eco-friendly products to remove dirt, grime, and stains.
+              </p>
+
+              <div className="grid gap-4">
+                {[
+                  "High-Pressure Water Jet Washing",
+                  "Graffiti Eradication",
+                  "Streak-Free Window Cleaning",
+                  "Regular Maintenance Plans",
+                  "Rope Access Mastery",
+                  "Structural Condition Inspection",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 group">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <span className="text-slate-700 font-bold">{item}</span>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="space-y-12">
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4 uppercase">
-                    <Building2 className="h-8 w-8 text-primary" />
-                    Our Comprehensive Restoration Services:
-                  </h3>
-
-                  <div className="grid gap-8">
-                    {categories.map((cat, idx) => (
-                      <motion.div 
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50"
-                      >
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            <cat.icon className="h-6 w-6" />
-                          </div>
-                          <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{cat.title}</h4>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          {cat.items.map((item, i) => (
-                            <div key={i} className="flex gap-4 group">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
-                                <CheckCircle2 className="h-3 w-3" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-slate-900 text-sm uppercase tracking-wider mb-1">{item.name}</h5>
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-10 border-t border-slate-100 italic font-medium text-slate-500">
-                  <p>
-                    Don’t let dirt and pollution dull your architectural vision. Contact Homework Cleaning Services LLC today for a specialized facade cleaning audit and maintenance plan.
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 order-1 lg:order-2 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-3xl sticky top-24 max-h-[80vh] overflow-y-auto"
+              <motion.a
+                href="/book-service"
+                className="inline-flex items-center gap-4 bg-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-white shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-colors"
+                whileTap={{ scale: 0.95 }}
               >
-                <h4 className="text-2xl font-black mb-8 tracking-tight italic">Exterior Services</h4>
-                <div className="space-y-4">
-                  {servicesList.map((service, i) => (
-                    <a 
-                      key={i} 
-                      href={`/services/${service.slug}`} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        service.slug === "facade-cleaning" 
-                        ? 'bg-primary border-primary text-white font-black shadow-lg shadow-primary/20' 
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-[10px] uppercase font-bold tracking-widest">{service.name}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
-                  ))}
-                </div>
-
-                <div className="mt-12 p-8 bg-primary/10 rounded-3xl border border-primary/20 text-center">
-                  <p className="text-sm font-bold text-primary mb-4 uppercase tracking-[0.2em]">Book Your Service</p>
-                  <p className="text-2xl font-black text-white tracking-tighter mb-8 italic leading-tight uppercase tracking-widest">RESTORE YOUR<br />SKYLINE</p>
-                  <a href="https://homeworkuae.com/book-service" className="block w-full bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all shadow-xl shadow-primary/30">
-                     Book Now
-                  </a>
-                </div>
-              </motion.div>
-            </div>
+                Book Facade Cleaning <ArrowRight className="h-5 w-5" />
+              </motion.a>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="py-24 bg-slate-950 text-white relative">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -261,7 +115,7 @@ export default function FacadeCleaning() {
             <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for professional facade cleaning services.</p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
-                 Book Now
+                Book Now
               </a>
             </div>
           </div>
@@ -271,4 +125,3 @@ export default function FacadeCleaning() {
     </div>
   )
 }
-

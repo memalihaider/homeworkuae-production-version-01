@@ -1,85 +1,22 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { CheckCircle2, Star, ShieldCheck, Zap, Clock, ArrowRight, Sparkles, Home, Bed, Bath, Soup, PlusCircle } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Home } from 'lucide-react'
 
 export default function ResidentialCleaning() {
-  const servicesList = [
-    { name: "Regular Residential cleaning", slug: "residential-cleaning" },
-    { name: "Regular Office cleaning", slug: "office-cleaning" },
-    { name: "Floor deep cleaning", slug: "floor-deep-cleaning" },
-    { name: "Window cleaning", slug: "window-cleaning" },
-    { name: "Balcony Deep Cleaning", slug: "balcony-deep-cleaning" },
-    { name: "Sofa Deep Cleaning", slug: "sofa-deep-cleaning" },
-    { name: "Carpets Deep Cleaning", slug: "carpets-deep-cleaning" },
-    { name: "Mattress Deep Cleaning", slug: "mattress-deep-cleaning" }
-  ]
-
-  const categories = [
-    {
-      title: "Living Areas",
-      icon: Home,
-      items: [
-        { name: "Dusting", desc: "Thorough dusting of all surfaces, including furniture, shelves, and décor items." },
-        { name: "Vacuuming and Mopping", desc: "Vacuuming carpets and rugs, and mopping hard floors to remove dirt, dust, and allergens." },
-        { name: "Window Cleaning", desc: "Cleaning windows, window sills, and tracks for a streak-free finish." },
-        { name: "Fixture Cleaning", desc: "Dusting and cleaning light fixtures, ceiling fans, and air conditioning vents." }
-      ]
-    },
-    {
-      title: "Bedrooms",
-      icon: Bed,
-      items: [
-        { name: "Bed Making", desc: "Changing bed linens and making beds to create a neat and tidy space." },
-        { name: "Floor Cleaning", desc: "Vacuuming and mopping bedroom floors to maintain cleanliness." },
-        { name: "Surface Wiping", desc: "Wiping down and dusting all surfaces, including nightstands, dressers, and mirrors." },
-        { name: "Closet Organization", desc: "Tidying and organizing closets and storage spaces." }
-      ]
-    },
-    {
-      title: "Bathrooms",
-      icon: Bath,
-      items: [
-        { name: "Sanitizing Fixtures", desc: "Cleaning and sanitizing sinks, faucets, countertops, and mirrors." },
-        { name: "Shower and Tub Cleaning", desc: "Scrubbing and sanitizing showers, tubs, and tiles to remove soap scum and grime." },
-        { name: "Toilet Cleaning", desc: "Thorough cleaning and disinfection of toilets." },
-        { name: "Floor Cleaning", desc: "Mopping and scrubbing bathroom floors to remove dirt and bacteria." }
-      ]
-    },
-    {
-      title: "Kitchen",
-      icon: Soup,
-      items: [
-        { name: "Countertops and Backsplashes", desc: "Scrubbing and sanitizing countertops and backsplashes to remove stains and spills." },
-        { name: "Appliance Cleaning", desc: "Cleaning the exterior of appliances, including ovens, microwaves, refrigerators, and dishwashers." },
-        { name: "Sink and Faucet Cleaning", desc: "Descaling and sanitizing sinks and faucets." },
-        { name: "Floor Cleaning", desc: "Vacuuming and mopping kitchen floors to maintain a clean and sanitary environment." }
-      ]
-    },
-    {
-      title: "Additional Areas",
-      icon: PlusCircle,
-      items: [
-        { name: "Hallways and Entryways", desc: "Sweeping, vacuuming, and mopping floors, and wiping down surfaces." },
-        { name: "Laundry Rooms", desc: "Cleaning and organizing laundry areas, and wiping down washers and dryers." },
-        { name: "Pet Areas", desc: "Cleaning and sanitizing areas where pets eat, sleep, and play." }
-      ]
-    }
-  ]
-
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1600" 
-            alt="Residential Cleaning" 
+          <img
+            src="https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1600"
+            alt="Residential Cleaning"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -94,7 +31,7 @@ export default function ResidentialCleaning() {
               <span className="text-primary italic">RESIDENTIAL</span> CLEANING
             </h1>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
-              UAE's Trusted Residential Cleaning – Experience Pristine Living Spaces Experts
+              UAE's Trusted Residential Cleaning – Experience Pristine Living Spaces
             </p>
           </motion.div>
         </div>
@@ -103,114 +40,71 @@ export default function ResidentialCleaning() {
       {/* Details Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-8 order-2 lg:order-1">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="space-y-10"
-              >
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
-                    Welcome to <span className="text-primary">Homework Cleaning Services LLC</span>
-                  </h2>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed">
-                    Keeping your home clean and tidy is essential for a comfortable and healthy living environment. At Homework Cleaning Services LLC, we offer reliable and comprehensive regular residential cleaning services tailored to your specific needs. Our experienced team uses advanced cleaning techniques and eco-friendly products to ensure your home stays spotless and inviting.
-                  </p>
-                  <div className="p-8 bg-slate-50 rounded-3xl border-l-4 border-primary">
-                    <p className="text-slate-700 font-bold italic">
-                      "If you're looking to perform regular residential cleaning, here's a practical checklist to keep your home clean and organized efficiently. You can adjust the frequency based on your household's needs."
-                    </p>
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1000"
+                alt="Residential Cleaning"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-1 lg:order-2"
+            >
+              <div className="inline-flex items-center gap-3 text-primary">
+                <Home className="h-6 w-6" />
+                <span className="text-sm font-black uppercase tracking-widest">Home Cleaning Specialists</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                Expert Regular <br />
+                <span className="text-primary italic">Home Cleaning Service</span>
+              </h2>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                Keeping your home clean and tidy is essential for a comfortable and healthy living environment. At Homework Cleaning Services LLC, we offer reliable and comprehensive regular residential cleaning services tailored to your specific needs. Our experienced team uses advanced techniques and eco-friendly products to ensure your home stays spotless.
+              </p>
+
+              <div className="grid gap-4">
+                {[
+                  "Full Surface Dusting & Wiping",
+                  "Carpet Vacuuming & Floor Mopping",
+                  "Window & Mirror Cleaning",
+                  "Bathroom Deep Sanitization",
+                  "Shower, Tub & Toilet Cleaning",
+                  "Bed Making & Bedroom Tidying",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 group">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <span className="text-slate-700 font-bold">{item}</span>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="space-y-12">
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4">
-                    <Sparkles className="h-8 w-8 text-primary" />
-                    OUR CLEANING SERVICES INCLUDE:
-                  </h3>
-
-                  <div className="grid gap-8">
-                    {categories.map((cat, idx) => (
-                      <motion.div 
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50"
-                      >
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            <cat.icon className="h-6 w-6" />
-                          </div>
-                          <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{cat.title}</h4>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          {cat.items.map((item, i) => (
-                            <div key={i} className="flex gap-4 group">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
-                                <CheckCircle2 className="h-3 w-3" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-slate-900 text-sm uppercase tracking-wider mb-1">{item.name}</h5>
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 order-1 lg:order-2 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-3xl sticky top-24"
+              <motion.a
+                href="/book-service"
+                className="inline-flex items-center gap-4 bg-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-white shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-colors"
+                whileTap={{ scale: 0.95 }}
               >
-                <h4 className="text-2xl font-black mb-8 tracking-tight italic">Other Services</h4>
-                <div className="space-y-4">
-                  {servicesList.map((service, i) => (
-                    <a 
-                      key={i} 
-                      href={`/services/${service.slug}`} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        service.slug === "residential-cleaning" 
-                        ? 'bg-primary border-primary text-white font-black' 
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-xs uppercase tracking-widest">{service.name}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
-                  ))}
-                </div>
-
-                <div className="mt-12 p-8 bg-white/5 rounded-3xl border border-white/10 text-center">
-                  <p className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Starting From</p>
-                  <p className="text-4xl font-black text-primary tracking-tighter mb-8 italic">AED 35/hr</p>
-                  <button className="w-full bg-white text-slate-900 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary hover:text-white transition-all">
-                    Book Online
-                  </button>
-                </div>
-              </motion.div>
-            </div>
+                Book Residential Clean <ArrowRight className="h-5 w-5" />
+              </motion.a>
+            </motion.div>
           </div>
         </div>
       </section>
 
-
-
       {/* CTA Section */}
       <section className="py-24 bg-slate-950 text-white relative">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -221,7 +115,7 @@ export default function ResidentialCleaning() {
             <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for professional residential cleaning services.</p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
-                 Book Now
+                Book Now
               </a>
             </div>
           </div>

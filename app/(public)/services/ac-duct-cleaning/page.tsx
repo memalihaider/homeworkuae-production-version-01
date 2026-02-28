@@ -1,113 +1,22 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { 
-  CheckCircle2, 
-  Star, 
-  ShieldCheck, 
-  Zap, 
-  Clock, 
-  ArrowRight, 
-  Layers, 
-  Play, 
-  Sparkles, 
-  Droplets, 
-  Shield, 
-  Search,
-  Wind,
-  ShieldAlert,
-  ThermometerSnowflake,
-  Fan,
-  History,
-  Activity
-} from 'lucide-react'
-
+import { CheckCircle2, ArrowRight, Wind } from 'lucide-react'
 
 export default function ACDuctCleaning() {
-  const categories = [
-    {
-      title: "Health & Respiratory Impact",
-      icon: ShieldAlert,
-      items: [
-        { name: "Hidden Dangers", desc: "Contaminated ducts can make indoor air 2-5x more polluted than outdoor air." },
-        { name: "Allergy Relief", desc: "Reducing dust and pollen to help the 50 million people who suffer from allergies." },
-        { name: "Asthma Support", desc: "Clean airways are critical for the nearly 25 million people affected by asthma." },
-        { name: "Mold Mitigation", desc: "Eliminating damp environments where mold and bacteria thrive inside ductwork." }
-      ]
-    },
-    {
-      title: "Financial & Energy Savings",
-      icon: Zap,
-      items: [
-        { name: "Energy Efficiency", desc: "Clogged ducts can waste up to 30% of your energy use; cleaning restores efficiency." },
-        { name: "Prevention vs Repair", desc: "Cleaning costs (700-1000 AED) are far lower than thousands for duct replacement." },
-        { name: "HVAC Longevity", desc: "Reducing strain on your AC system prevents premature component failure." },
-        { name: "Lower Utility Bills", desc: "Proper airflow means your system doesn't have to work overtime to cool your home." }
-      ]
-    },
-    {
-      title: "Warning Signs & Inspection",
-      icon: Search,
-      items: [
-        { name: "Visible Debris", desc: "Dust buildup around vent openings is a clear sign that cleaning is overdue." },
-        { name: "Musty Odors", desc: "Unpleasant smells often indicate mold presence within the damp duct network." },
-        { name: "Reduced Airflow", desc: "Weak air coming from vents suggests blockages or heavy dust accumulation." },
-        { name: "Rising Bills", desc: "Unexpected increases in energy costs often point to system performance issues." }
-      ]
-    },
-    {
-      title: "Our Professional Process",
-      icon: Wind,
-      items: [
-        { name: "Site Preparation", desc: "We cover furniture and flooring to ensure no dust settles on your belongings." },
-        { name: "Advanced Techniques", desc: "Utilizing air scrubbing and negative air pressure to capture every particle." },
-        { name: "Specialized Equipment", desc: "Technicians use industrial-grade tools for thorough internal duct agitation." },
-        { name: "Post-Cleaning Verification", desc: "Final check of airflow and debris removal to ensure the job is done right." }
-      ]
-    },
-    {
-      title: "Maintenance & Prevention",
-      icon: Clock,
-      items: [
-        { name: "Annual Schedule", desc: "We recommend a professional deep duct cleaning at least once every year." },
-        { name: "Filter Replacement", desc: "Maintain your results by replacing AC filters every 1 to 3 months." },
-        { name: "IAQ Strategies", desc: "Supplement clean ducts with air purifiers and regular fresh air circulation." },
-        { name: "Routine Check-ups", desc: "Scheduled HVAC maintenance keeps the entire system running smoothly." }
-      ]
-    }
-  ]
-
-  const servicesList = [
-    { name: "Ac Duct Cleaning", slug: "ac-duct-cleaning" },
-    { name: "Ac Coil Cleaning", slug: "ac-coil-cleaning" },
-    { name: "Kitchen Hood Cleaning", slug: "kitchen-hood-cleaning" },
-    { name: "Grease Trap Cleaning", slug: "grease-trap-cleaning" },
-    { name: "Restaurant Cleaning", slug: "restaurant-cleaning" },
-    { name: "Water Tank Cleaning", slug: "water-tank-cleaning" },
-    { name: "Swimming Pool Cleaning", slug: "swimming-pool-cleaning" },
-    { name: "Gym Deep Cleaning", slug: "gym-deep-cleaning" },
-    { name: "Facade Cleaning", slug: "facade-cleaning" },
-    { name: "Villa Deep Cleaning", slug: "villa-deep-cleaning" },
-    { name: "Move in/out Cleaning", slug: "move-in-out-cleaning" },
-    { name: "Apartment Deep Cleaning", slug: "apartment-deep-cleaning" },
-    { name: "Office Deep Cleaning", slug: "office-cleaning" },
-    { name: "Post Construction Cleaning", slug: "post-construction-cleaning" },
-    { name: "Kitchen Deep Cleaning", slug: "kitchen-deep-cleaning" }
-  ]
-
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1600" 
-            alt="AC Duct Cleaning" 
+          <img
+            src="https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1600"
+            alt="Ac Duct Cleaning"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/40 to-slate-950" />
+          <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -121,7 +30,7 @@ export default function ACDuctCleaning() {
               AC DUCT <br />
               <span className="text-primary italic">CLEANING</span>
             </h1>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium uppercase tracking-tight">
+            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
               Breathe Easy with UAE's Professional AC Duct Cleaning Services
             </p>
           </motion.div>
@@ -131,123 +40,71 @@ export default function ACDuctCleaning() {
       {/* Details Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-12 gap-16">
-            <div className="lg:col-span-8 order-2 lg:order-1">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="space-y-10"
-              >
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight uppercase">
-                    Breathe Easy: Your Ultimate <span className="text-primary italic">Guide to AC Duct Cleaning</span>
-                  </h2>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed italic">
-                    Cleaning your AC ducts is more than just a chore—it’s essential for your health and your home’s efficiency. Many people overlook this necessary task, only to pay the price later.
-                  </p>
-                  <p className="text-slate-600 text-lg font-medium leading-relaxed">
-                    At Homework UAE, we prioritize your indoor air quality by removing dust, allergens, and mold from your ventilation system. Our NADCA-inspired cleaning process ensures that every corner of your ductwork is scrubbed clean and sanitized using hospital-grade disinfectants.
-                  </p>
-                  <div className="p-8 bg-slate-50 rounded-3xl border-l-4 border-primary shadow-sm">
-                    <p className="text-slate-700 font-bold italic">
-                      "If you're looking to perform AC Duct Cleaning, here's a practical checklist to keep your AC clean and organized efficiently."
-                    </p>
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1000"
+                alt="Ac Duct Cleaning"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-1 lg:order-2"
+            >
+              <div className="inline-flex items-center gap-3 text-primary">
+                <Wind className="h-6 w-6" />
+                <span className="text-sm font-black uppercase tracking-widest">Air Quality Specialists</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                Breathe Easy: Your Ultimate <br />
+                <span className="text-primary italic">Guide to AC Duct Cleaning</span>
+              </h2>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                Cleaning your AC ducts is more than just a chore—it's essential for your health and your home's efficiency. Many people overlook this necessary task, only to pay the price later. At Homework UAE, we prioritize your indoor air quality by removing dust, allergens, and mold from your ventilation system using hospital-grade disinfectants.
+              </p>
+
+              <div className="grid gap-4">
+                {[
+                  "Hidden Pollutant Removal",
+                  "Allergy & Asthma Relief",
+                  "Energy Efficiency Restoration",
+                  "Advanced Air Scrubbing",
+                  "Annual Maintenance Schedule",
+                  "Filter Replacement Guidance",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 group">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <span className="text-slate-700 font-bold">{item}</span>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="space-y-12">
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4 uppercase">
-                    <Activity className="h-8 w-8 text-primary" />
-                    Our Comprehensive Checklist:
-                  </h3>
-
-                  <div className="grid gap-8">
-                    {categories.map((cat, idx) => (
-                      <motion.div 
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50"
-                      >
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                            <cat.icon className="h-6 w-6" />
-                          </div>
-                          <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{cat.title}</h4>
-                        </div>
-                        <div className="grid md:grid-cols-1 gap-6">
-                          {cat.items.map((item, i) => (
-                            <div key={i} className="flex gap-4 group">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
-                                <CheckCircle2 className="h-3 w-3" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-slate-900 text-sm uppercase tracking-wider mb-1">{item.name}</h5>
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-10 border-t border-slate-100 italic font-medium text-slate-500">
-                  <p>
-                    An expert once said, “Investing in regular duct cleaning saves you money in the long run and enhances your indoor air quality.” Don’t wait for a problem to arise—schedule your duct cleaning today for a breath of fresh air.
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 order-1 lg:order-2 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-3xl sticky top-24 max-h-[80vh] overflow-y-auto"
+              <motion.a
+                href="/book-service"
+                className="inline-flex items-center gap-4 bg-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-white shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-colors"
+                whileTap={{ scale: 0.95 }}
               >
-                <h4 className="text-2xl font-black mb-8 tracking-tight italic">Technical Services</h4>
-                <div className="space-y-4">
-                  {servicesList.map((service, i) => (
-                    <a 
-                      key={i} 
-                      href={`/services/${service.slug}`} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        service.slug === "ac-duct-cleaning" 
-                        ? 'bg-primary border-primary text-white font-black shadow-lg shadow-primary/20' 
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-[10px] uppercase font-bold tracking-widest">{service.name}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
-                  ))}
-                </div>
-
-                <div className="mt-12 p-8 bg-primary/10 rounded-3xl border border-primary/20 text-center">
-                  <p className="text-sm font-bold text-primary mb-4 uppercase tracking-[0.2em]">Easy Booking</p>
-                  <p className="text-2xl font-black text-white tracking-tighter mb-8 italic leading-tight uppercase tracking-widest">BREATHE EASY</p>
-                  <a href="https://homeworkuae.com/book-service" className="block w-full bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all shadow-xl shadow-primary/40">
-                     Book Now
-                  </a>
-                </div>
-              </motion.div>
-            </div>
+                Book AC Duct Clean <ArrowRight className="h-5 w-5" />
+              </motion.a>
+            </motion.div>
           </div>
         </div>
       </section>
 
-
-
       {/* CTA Section */}
       <section className="py-24 bg-slate-950 text-white relative">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -258,7 +115,7 @@ export default function ACDuctCleaning() {
             <p className="text-slate-400 text-lg mb-10 font-bold">Contact us today for professional AC duct cleaning services.</p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="https://homeworkuae.com/book-service" className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all flex items-center gap-3">
-                 Book Now
+                Book Now
               </a>
             </div>
           </div>
@@ -268,4 +125,3 @@ export default function ACDuctCleaning() {
     </div>
   )
 }
-
