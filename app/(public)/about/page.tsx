@@ -2,7 +2,8 @@
 
 import { CheckCircle2, Users, Award, Leaf, Target, Eye, Heart, Sparkles, ShieldCheck, Zap, ArrowRight, History, Building2 } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { getAboutPage, defaultAboutPage, type CMSAboutPage } from '@/lib/cms-data'
 
 export default function About() {
   const ref = useRef(null)
@@ -10,8 +11,14 @@ export default function About() {
     target: ref,
     offset: ["start start", "end start"]
   })
-
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"])
+  const [cms, setCms] = useState<CMSAboutPage>(defaultAboutPage)
+
+  useEffect(() => {
+    let m = true
+    getAboutPage().then(d => { if (m) setCms(d) }).catch(() => {})
+    return () => { m = false }
+  }, [])
 
   return (
     <div className="flex flex-col overflow-hidden">
@@ -22,7 +29,7 @@ export default function About() {
           style={{ y: heroY }}
         >
           <img 
-            src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=1600" 
+            src={cms.heroImage} 
             alt="About Us Background" 
             className="w-full h-full object-cover"
           />
@@ -36,14 +43,15 @@ export default function About() {
             transition={{ duration: 0.8 }}
           >
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-6">
-              Established Since 2004
+              {cms.heroBadge}
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
-              THE STORY OF <br />
-              <span className="text-primary italic">HOMEWORK</span>
+              {cms.heroTitle.split('\n').map((line, i) => (
+                <span key={i}>{i > 0 && <br />}{i === cms.heroTitle.split('\n').length - 1 ? <span className="text-primary italic">{line}</span> : line}{' '}</span>
+              ))}
             </h1>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium">
-              A brainchild of the parent company E-Movers, dedicated to delivering meticulously clean environments pre and post-move.
+              {cms.heroSubtitle}
             </p>
           </motion.div>
         </div>
@@ -64,19 +72,14 @@ export default function About() {
                 <span className="text-sm font-black uppercase tracking-widest">Our Heritage</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
-                Built on 20+ Years of <br />
-                <span className="text-primary italic">Relocation Excellence</span>
+                {cms.legacyTitle.split('\n').map((line, i) => (
+                  <span key={i}>{i > 0 && <br />}{i === cms.legacyTitle.split('\n').length - 1 ? <span className="text-primary italic">{line}</span> : line}{' '}</span>
+                ))}
               </h2>
               <div className="space-y-6 text-slate-600 text-lg font-medium leading-relaxed">
-                <p>
-                  Homework is a brainchild of the parent company <span className="text-slate-900 font-bold">E-Movers</span>, who have been in the relocation and moving business for 20+ years. Over the years, E-Movers has seen the need for cleaning services across homes and offices pre and post-moving.
-                </p>
-                <p>
-                  In addition, with COVID-19 in the mist, there has been an increasing need for sanitization and deep cleaning services. We jumped into action to provide the UAE with a hygiene partner they can trust.
-                </p>
-                <p>
-                  Through the years, we have mastered the smartest and most innovative cleaning techniques that provide our customers the ultimate cleaning service. Just like our parent company, we aim to provide <span className="text-primary font-bold">no stress and guarantee no mess</span>.
-                </p>
+                {cms.legacyParagraphs.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
               </div>
               
               <div className="flex items-center gap-6 pt-4">
@@ -130,7 +133,7 @@ export default function About() {
               <div>
                 <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight uppercase">Our Vision</h3>
                 <p className="text-slate-500 text-lg leading-relaxed font-medium">
-                  To be the first choice to our employees, suppliers and customers in the region we operate.
+                  {cms.visionText}
                 </p>
               </div>
             </motion.div>
@@ -145,7 +148,7 @@ export default function About() {
               <div>
                 <h3 className="text-3xl font-black text-white mb-4 tracking-tight uppercase">Our Mission</h3>
                 <p className="text-slate-400 text-lg leading-relaxed font-medium">
-                  To provide reliable, flexible and consistent solution to our internal and external stakeholders in our hygiene business.
+                  {cms.missionText}
                 </p>
               </div>
             </motion.div>
@@ -167,12 +170,10 @@ export default function About() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { title: "Honoring Professional SLAs", desc: "We stick to our commitments and performance standards.", icon: ShieldCheck },
-              { title: "Reliability & Integrity", desc: "Consistent results and honest service every single time.", icon: Zap },
-              { title: "Customer-First Approach", desc: "Your satisfaction is the primary driver of our operations.", icon: Heart },
-              { title: "Excellence and Quality", desc: "Setting the gold standard in every hygiene session.", icon: Award }
-            ].map((value, i) => (
+            {cms.coreValues.map((value, i) => {
+              const valueIcons = [ShieldCheck, Zap, Heart, Award]
+              const ValueIcon = valueIcons[i % valueIcons.length]
+              return (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -183,12 +184,13 @@ export default function About() {
                 className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:bg-white hover:shadow-2xl transition-all duration-500 text-center"
               >
                 <div className="h-16 w-16 rounded-2xl bg-white flex items-center justify-center text-primary mx-auto mb-6 shadow-sm">
-                  <value.icon className="h-8 w-8" />
+                  <ValueIcon className="h-8 w-8" />
                 </div>
                 <h4 className="text-xl font-black text-slate-900 mb-3 tracking-tight">{value.title}</h4>
-                <p className="text-slate-500 font-medium text-sm leading-relaxed">{value.desc}</p>
+                <p className="text-slate-500 font-medium text-sm leading-relaxed">{value.description}</p>
               </motion.div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
@@ -209,7 +211,7 @@ export default function About() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Main Office</div>
-                    <div className="text-lg font-bold">Al Quoz - Dubai - United Arab Emirates</div>
+                    <div className="text-lg font-bold">{cms.contactAddress}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-6 group">
@@ -218,7 +220,7 @@ export default function About() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Toll Free</div>
-                    <div className="text-lg font-bold">800 4663 9675</div>
+                    <div className="text-lg font-bold">{cms.contactPhone}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-6 group">
@@ -227,7 +229,7 @@ export default function About() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Support</div>
-                    <div className="text-lg font-bold">services@homeworkuae.com</div>
+                    <div className="text-lg font-bold">{cms.contactEmail}</div>
                   </div>
                 </div>
               </div>

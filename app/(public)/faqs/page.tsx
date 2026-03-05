@@ -5,6 +5,7 @@ import { Plus, Minus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
 import { collection, getDocs } from 'firebase/firestore'
+import { getFAQPage, defaultFAQPage, type CMSFAQPage } from '@/lib/cms-data'
 
 // Firebase FAQ Type
 type FirebaseFAQ = {
@@ -78,7 +79,14 @@ const staticFAQs = [
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
   const [firebaseFAQs, setFirebaseFAQs] = useState<FirebaseFAQ[]>([])
+  const [cms, setCms] = useState<CMSFAQPage>(defaultFAQPage)
 
+  // Fetch CMS data
+  useEffect(() => {
+    let m = true
+    getFAQPage().then(d => { if (m) setCms(d) }).catch(() => {})
+    return () => { m = false }
+  }, [])
   // Fetch FAQs from Firebase
   useEffect(() => {
     const fetchFAQs = async () => {
@@ -147,10 +155,10 @@ export default function FAQ() {
               Knowledge Base
             </span>
             <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter mb-8 leading-tight">
-              Common <span className="text-primary italic">Questions</span>
+              {cms.heroTitle.includes(' ') ? <>{cms.heroTitle.split(' ').slice(0, -1).join(' ')} <span className="text-primary italic">{cms.heroTitle.split(' ').slice(-1)}</span></> : cms.heroTitle}
             </h1>
             <p className="text-xl text-slate-600 font-medium">
-              Everything you need to know about our premium cleaning services in Dubai and across the UAE.
+              {cms.heroSubtitle}
             </p>
           </motion.div>
 

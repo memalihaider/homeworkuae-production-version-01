@@ -12,6 +12,7 @@ import {
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import Link from 'next/link'
+import { getLayoutSettings, defaultLayoutSettings, type CMSLayoutSettings } from '@/lib/cms-data'
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const [profileData, setProfileData] = useState({
@@ -21,6 +22,14 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     address: 'Office: 201, 2nd Floor, Al Saaha Offices - B, Downtown Dubai - UAE' // Default address
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [cms, setCms] = useState<CMSLayoutSettings>(defaultLayoutSettings)
+
+  // Fetch CMS layout settings
+  useEffect(() => {
+    let m = true
+    getLayoutSettings().then(d => { if (m) setCms(d) }).catch(() => {})
+    return () => { m = false }
+  }, [])
 
   // Fetch profile data from Firebase
   useEffect(() => {
@@ -237,10 +246,10 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
           <div className="flex items-center gap-3">
             <a 
-              href="/book-service" 
+              href={cms.navbar.ctaLink} 
               className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-7 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] tracking-wide"
             >
-              BOOK NOW
+              {cms.navbar.ctaText}
             </a>
           </div>
         </div>
@@ -317,8 +326,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="space-y-5">
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80">Newsletter</h4>
-              <p className="text-slate-500 text-[13px]">Subscribe for latest updates</p>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80">{cms.footer.newsletterTitle}</h4>
+              <p className="text-slate-500 text-[13px]">{cms.footer.newsletterSubtitle}</p>
               <div className="relative">
                 <input 
                   type="email" 
@@ -333,7 +342,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           </div>
           
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-[11px] text-slate-500 tracking-wide">© 2025 Home Work UAE. All rights reserved.</p>
+            <p className="text-[11px] text-slate-500 tracking-wide">{cms.footer.copyrightText}</p>
             <div className="flex items-center gap-3">
               {[Facebook, Instagram, Music2].map((Icon, i) => (
                 <a key={i} href="#" className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center hover:bg-[#039ED9] transition-colors group">

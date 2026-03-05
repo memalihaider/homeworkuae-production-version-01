@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore'
+import WebsiteCMS from './website/page'
 
 // Blog Post Type
 type BlogPost = {
@@ -752,6 +753,7 @@ You have the right to request access to the personal data we hold about you, to 
       <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl w-fit flex-wrap">
         {[
           
+          { id: 'website', label: 'Website CMS', icon: Globe },
           { id: 'blog', label: 'Blog Posts', icon: FileText },
           { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
           { id: 'faq', label: 'FAQs', icon: HelpCircle },
@@ -1154,6 +1156,13 @@ You have the right to request access to the personal data we hold about you, to 
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Website CMS Tab */}
+        {activeTab === 'website' && (
+          <div className="p-6">
+            <WebsiteCMS />
           </div>
         )}
 

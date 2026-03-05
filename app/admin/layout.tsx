@@ -50,6 +50,7 @@ import {
   Inbox,
   Bot,
   MessageCircle,
+  Layout,
 } from "lucide-react";
 import { getSession, logout } from "@/lib/auth";
 import { db } from "@/lib/firebase";
@@ -215,6 +216,7 @@ const ALL_PAGES_CONFIG = {
     href: "/admin/ai-command-center/recommendations",
   },
   CMS: { icon: Globe, href: "/admin/cms" },
+  "Website CMS": { icon: Layout, href: "/admin/cms/website" },
   Settings: { icon: SettingsIcon, href: "/admin/settings" },
 };
 
@@ -332,9 +334,13 @@ const MENU_STRUCTURE = [
     key: "AI Command Center",
   },
   {
-    type: "single",
+    type: "group",
     label: "CMS",
     key: "CMS",
+    submenu: [
+      { label: "CMS", key: "CMS" },
+      { label: "Website CMS", key: "Website CMS" },
+    ],
   },
   {
     type: "single",

@@ -33,6 +33,7 @@ import {
 import { db } from '@/lib/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 import Link from 'next/link'
+import { getServicesPage, defaultServicesPage, type CMSServicesPage } from '@/lib/cms-data'
 
 // Firebase service type
 type FirebaseService = {
@@ -154,6 +155,14 @@ export default function ServicesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [firebaseServices, setFirebaseServices] = useState<FirebaseService[]>([])
   const [serviceCategories, setServiceCategories] = useState(DUMMY_SERVICE_CATEGORIES)
+  const [cms, setCms] = useState<CMSServicesPage>(defaultServicesPage)
+
+  // Fetch CMS data
+  useEffect(() => {
+    let m = true
+    getServicesPage().then(d => { if (m) setCms(d) }).catch(() => {})
+    return () => { m = false }
+  }, [])
 
   // Fetch services from Firebase
   useEffect(() => {
@@ -288,7 +297,7 @@ export default function ServicesPage() {
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
           <img 
-            src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=1600" 
+            src={cms.heroImage} 
             alt="Homework UAE Services" 
             className="w-full h-full object-cover"
           />
@@ -305,11 +314,12 @@ export default function ServicesPage() {
               Our Expertise
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
-              PROFESSIONAL <br />
-              <span className="text-primary italic text-5xl md:text-8xl lowercase underline decoration-white/10 decoration-8 underline-offset-10">hygiene solutions</span>
+              {cms.heroTitle.split('\n').map((line, i) => (
+                <span key={i}>{i > 0 && <br />}{i === cms.heroTitle.split('\n').length - 1 ? <span className="text-primary italic text-5xl md:text-8xl lowercase underline decoration-white/10 decoration-8 underline-offset-10">{line}</span> : line}{' '}</span>
+              ))}
             </h1>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-bold uppercase tracking-tight italic">
-              UAE's most comprehensive cleaning and technical service catalog.
+              {cms.heroSubtitle}
             </p>
             
             {/* Firebase services indicator */}

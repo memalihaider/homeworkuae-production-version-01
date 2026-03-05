@@ -20,6 +20,7 @@ import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc, collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore'
+import { getContactPage, defaultContactPage, type CMSContactPage } from '@/lib/cms-data'
 
 interface FirebaseService {
   id: string
@@ -51,6 +52,14 @@ export default function Contact() {
     message: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cms, setCms] = useState<CMSContactPage>(defaultContactPage)
+
+  // Fetch CMS data
+  useEffect(() => {
+    let m = true
+    getContactPage().then(d => { if (m) setCms(d) }).catch(() => {})
+    return () => { m = false }
+  }, [])
 
   // Fetch profile data from Firebase
   useEffect(() => {
@@ -220,11 +229,12 @@ export default function Contact() {
               Connect With Us
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
-              HAVE <br />
-              <span className="text-primary italic">QUESTIONS?</span>
+              {cms.heroTitle.split('\n').map((line, i) => (
+                <span key={i}>{i > 0 && <br />}{i === cms.heroTitle.split('\n').length - 1 ? <span className="text-primary italic">{line}</span> : line}{' '}</span>
+              ))}
             </h1>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium uppercase tracking-tight italic">
-              Have questions about our cleaning services in UAE? Don't forget to check out our FAQs before you contact us.
+              {cms.heroSubtitle}
             </p>
           </motion.div>
         </div>
@@ -290,16 +300,15 @@ export default function Contact() {
                 <div className="mt-12 pt-10 border-t border-white/5 flex flex-col gap-6">
                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Follow Our Work</div>
                   <div className="flex flex-wrap gap-4">
-                    {[
-                      { icon: Facebook, name: 'Facebook-f', link: '#' },
-                      { icon: Instagram, name: 'Instagram', link: '#' },
-                      { icon: Linkedin, name: 'Linkedin', link: '#' },
-                      { icon: Music2, name: 'Tiktok', link: '#' }
-                    ].map((social, i) => (
-                      <a key={i} href={social.link} title={social.name} className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 shadow-lg">
-                        <social.icon className="h-6 w-6" />
-                      </a>
-                    ))}
+                    {cms.socialLinks.map((social, i) => {
+                      const socialIcons: Record<string, typeof Facebook> = { Facebook, Instagram, Linkedin, Tiktok: Music2 }
+                      const SocialIcon = socialIcons[social.platform] || Share2
+                      return (
+                        <a key={i} href={social.url} title={social.platform} className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 shadow-lg">
+                          <SocialIcon className="h-6 w-6" />
+                        </a>
+                      )
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -450,7 +459,7 @@ export default function Contact() {
       <section className="relative h-[600px] w-full bg-slate-200">
         <div className="absolute inset-0 z-0">
           <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14441.977286395568!2d55.22879505!3d25.13840735!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f6a57065963a7%3A0x8670868f02930491!2sAl%20Quoz%20-%20Dubai!5e0!3m2!1sen!2sae!4v1716300000000!5m2!1sen!2sae" 
+            src={cms.mapEmbedUrl} 
             className="w-full h-full border-0 grayscale hover:grayscale-0 transition-all duration-1000"
             allowFullScreen={true}
             loading="lazy" 

@@ -6,10 +6,11 @@ import {
   Home, Building2, Wind, ShieldAlert, Utensils, Construction,
   Sofa, Layout, Waves, Dumbbell, Calendar, BookOpen, ArrowUpRight
 } from 'lucide-react'
-import { motion, useScroll, useInView } from 'framer-motion'
+import { motion, useScroll, useInView, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
+import { getHomePage, defaultHomePage, type CMSHomePage } from '@/lib/cms-data'
 
 // Reusable CTA Button Component
 interface CTAButtonProps {
@@ -60,31 +61,30 @@ export default function HomePage() {
   const [airQualityColor, setAirQualityColor] = useState("text-amber-500")
   const [loading, setLoading] = useState(true)
   const [textIndex, setTextIndex] = useState(0)
+  const [cmsData, setCmsData] = useState<CMSHomePage>(defaultHomePage)
 
-  const heroTexts = [
-    "We Clean\nYou Relax",
-    "Pure Air\nPure Health",
-    "Certified\nExcellence",
-    "Family\nSafe Always",
-    "Sparkle &\nShine Daily",
-    "Trust Our\nExpertise"
-  ]
+  const heroTexts = cmsData.hero.headings
 
   // Services data with Icons
-  const services = [
-    { title: "Residential Cleaning", href: "/services/residential-cleaning", icon: <Home className="h-7 w-7" />, description: "Regular hourly cleaning for homes", image: "https://images.unsplash.com/photo-1742483359033-13315b247c74?q=80&w=1288&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", tag: "Regular" },
-    { title: "Villa Deep Cleaning", href: "/services/villa-deep-cleaning", icon: <Building2 className="h-7 w-7" />, description: "Complete interior and exterior sanitization", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800", tag: "Deep" },
-    { title: "AC Duct Cleaning", href: "/services/ac-duct-cleaning", icon: <Wind className="h-7 w-7" />, description: "Professional air duct sterilization", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800", tag: "Technical" },
-    { title: "Office Deep Cleaning", href: "/services/office-deep-cleaning", icon: <ShieldAlert className="h-7 w-7" />, description: "Corporate space sanitization", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800", tag: "Deep" },
-    { title: "Kitchen Deep Cleaning", href: "/services/kitchen-deep-cleaning", icon: <Utensils className="h-7 w-7" />, description: "Heavy-duty degreasing and hood cleaning", image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=800", tag: "Deep" },
-    { title: "Apartment Deep Cleaning", href: "/services/apartment-deep-cleaning", icon: <Building2 className="h-7 w-7" />, description: "Move-in or move-out deep cleaning", image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800", tag: "Deep" },
-    { title: "Post Construction Cleaning", href: "/services/post-construction-cleaning", icon: <Construction className="h-7 w-7" />, description: "Remove dust and construction residue", image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=800", tag: "Specialist" },
-    { title: "Sofa Deep Cleaning", href: "/services/sofa-deep-cleaning", icon: <Sofa className="h-7 w-7" />, description: "Professional upholstery cleaning", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800", tag: "Specialist" },
-    { title: "Window Cleaning", href: "/services/window-cleaning", icon: <Layout className="h-7 w-7" />, description: "Interior and exterior window service", image: "https://images.unsplash.com/photo-1596204976717-1a9ff47f74ef?auto=format&fit=crop&q=80&w=800", tag: "Regular" },
-    { title: "Carpet Deep Cleaning", href: "/services/carpets-deep-cleaning", icon: <Sparkles className="h-7 w-7" />, description: "Professional carpet and rug cleaning", image: "https://plus.unsplash.com/premium_photo-1677234146637-99562eb0ac54?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", tag: "Deep" },
-    { title: "Water Tank Cleaning", href: "/services/water-tank-cleaning", icon: <Waves className="h-7 w-7" />, description: "Safe water tank sanitization", image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800", tag: "Technical" },
-    { title: "Gym Deep Cleaning", href: "/services/gym-deep-cleaning", icon: <Dumbbell className="h-7 w-7" />, description: "Equipment and facility sanitization", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800", tag: "Deep" }
-  ]
+  // Services data with Icons - merge CMS data with local icon mapping
+  const serviceIcons: Record<string, React.ReactNode> = {
+    "Residential Cleaning": <Home className="h-7 w-7" />,
+    "Villa Deep Cleaning": <Building2 className="h-7 w-7" />,
+    "AC Duct Cleaning": <Wind className="h-7 w-7" />,
+    "Office Deep Cleaning": <ShieldAlert className="h-7 w-7" />,
+    "Kitchen Deep Cleaning": <Utensils className="h-7 w-7" />,
+    "Apartment Deep Cleaning": <Building2 className="h-7 w-7" />,
+    "Post Construction Cleaning": <Construction className="h-7 w-7" />,
+    "Sofa Deep Cleaning": <Sofa className="h-7 w-7" />,
+    "Window Cleaning": <Layout className="h-7 w-7" />,
+    "Carpet Deep Cleaning": <Sparkles className="h-7 w-7" />,
+    "Water Tank Cleaning": <Waves className="h-7 w-7" />,
+    "Gym Deep Cleaning": <Dumbbell className="h-7 w-7" />,
+  }
+  const services = cmsData.services.map(s => ({
+    ...s,
+    icon: serviceIcons[s.title] || <Sparkles className="h-7 w-7" />,
+  }))
 
   // Blog posts data - using actual blog posts from database
   const blogs = INITIAL_BLOG_POSTS.slice(0, 6).map(post => ({
@@ -119,6 +119,9 @@ export default function HomePage() {
   useEffect(() => {
     setIsClient(true)
     let isMounted = true
+
+    // Fetch CMS data
+    getHomePage().then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
 
     const fetchAirQualityData = async () => {
       if (!isMounted) return
@@ -178,15 +181,54 @@ export default function HomePage() {
   return (
     <div ref={containerRef} className="flex flex-col overflow-hidden selection:bg-primary selection:text-white">
 
-      {/* Hero Section - Clean Premium */}
+      {/* Hero Section - Enhanced Premium */}
       <section
-        className="relative pt-16 pb-24 px-4 md:px-8 min-h-[88vh] flex items-center overflow-hidden"
+        className="relative pt-16 pb-24 px-4 md:px-8 min-h-[92vh] flex items-center overflow-hidden"
       >
-        {/* Subtle background */}
+        {/* Layered animated background */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50/80 to-pink-50/30" />
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#039ED9]/5 rounded-full blur-[100px]" />
+          <div className="absolute inset-0 bg-linear-to-br from-white via-slate-50/90 to-pink-50/40" />
+
+          {/* Large ambient orbs */}
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.07, 0.12, 0.07] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-20 -right-20 w-175 h-175 bg-primary rounded-full blur-[140px]"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.06, 0.1, 0.06] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute -bottom-25 -left-25 w-125 h-125 bg-[#039ED9] rounded-full blur-[120px]"
+          />
+          <motion.div
+            animate={{ x: [0, 30, 0], y: [0, -20, 0], opacity: [0.04, 0.08, 0.04] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute top-1/2 left-1/3 w-75 h-75 bg-rose-400 rounded-full blur-[100px]"
+          />
+
+          {/* Floating particles */}
+          {[
+            { top: "15%", left: "8%", size: 6, delay: 0, duration: 4 },
+            { top: "70%", left: "5%", size: 4, delay: 1, duration: 5 },
+            { top: "25%", left: "88%", size: 5, delay: 0.5, duration: 6 },
+            { top: "80%", left: "85%", size: 3, delay: 2, duration: 4.5 },
+            { top: "50%", left: "15%", size: 4, delay: 1.5, duration: 5.5 },
+            { top: "10%", left: "55%", size: 3, delay: 0.8, duration: 7 },
+          ].map((p, i) => (
+            <motion.div
+              key={i}
+              animate={{ y: [0, -18, 0], opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: p.duration, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+              className="absolute rounded-full bg-primary/40"
+              style={{ top: p.top, left: p.left, width: p.size, height: p.size }}
+            />
+          ))}
+
+          {/* Grid overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.025]"
+            style={{ backgroundImage: "linear-gradient(#039ED9 1px, transparent 1px), linear-gradient(90deg, #039ED9 1px, transparent 1px)", backgroundSize: "60px 60px" }}
+          />
         </div>
 
         <div className="container mx-auto relative z-20">
@@ -196,53 +238,119 @@ export default function HomePage() {
             <motion.div
               initial="hidden"
               animate="visible"
-              variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
+              variants={{ visible: { transition: { staggerChildren: 0.14 } } }}
               className="w-full lg:w-3/5 space-y-8"
             >
               <div>
-                <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 mb-6">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                  <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.12em]">Professional Cleaning Solutions</span>
+                {/* Animated badge with shimmer */}
+                <motion.div
+                  variants={fadeUp}
+                  className="relative inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/20 mb-6 overflow-hidden group cursor-default"
+                >
+                  <motion.div
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }}
+                    className="absolute inset-0 bg-linear-to-r from-transparent via-primary/15 to-transparent skew-x-[-20deg]"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="h-1.5 w-1.5 rounded-full bg-primary"
+                  />
+                  <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.12em] relative z-10">{cmsData.hero.badgeText}</span>
                 </motion.div>
 
-                <div className="relative">
-                  <motion.h1
-                    key={textIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-5xl md:text-7xl font-black text-[#039ED9] leading-[0.95] tracking-tight"
-                  >
-                    {heroTexts[textIndex].split('\n')[0]} <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-500">
-                      {heroTexts[textIndex].split('\n')[1]}
-                    </span>
-                  </motion.h1>
+                {/* Hero heading with AnimatePresence for smooth text swap */}
+                <div className="relative min-h-42 md:min-h-52">
+                  <AnimatePresence mode="wait">
+                    <motion.h1
+                      key={textIndex}
+                      initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
+                      transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      className="absolute top-0 left-0 text-5xl md:text-7xl font-black text-[#039ED9] leading-[0.95] tracking-tight"
+                    >
+                      {heroTexts[textIndex].split('\n')[0]} <br />
+                      <motion.span
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.2 }}
+                        className="text-transparent bg-clip-text bg-linear-to-r from-pink-500 via-rose-500 to-pink-600"
+                      >
+                        {heroTexts[textIndex].split('\n')[1]}
+                      </motion.span>
+                    </motion.h1>
+                  </AnimatePresence>
                 </div>
 
-                <motion.p variants={fadeUp} className="mt-6 text-base md:text-lg text-slate-500 max-w-lg leading-relaxed">
-                  Professional cleaning solutions for homes and offices across the UAE. Trusted by 20,000+ clients with eco-friendly products and expert teams.
+                <motion.p
+                  variants={fadeUp}
+                  className="mt-6 text-base md:text-lg text-slate-500 max-w-lg leading-relaxed"
+                >
+                  {cmsData.hero.subtitle}
                 </motion.p>
 
-                <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 mt-10">
-                  <CTAButton
-                    text="Get Started"
-                    href="/book-service"
-                    variant="primary"
-                    icon={ArrowUpRight}
-                  />
-                  <div className="flex -space-x-3">
-                    {[
-                      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150",
-                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150",
-                      "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=150&h=150",
-                      "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=150&h=150"
-                    ].map((src, i) => (
-                      <div key={i} className="w-10 h-10 rounded-full border-3 border-white overflow-hidden shadow-sm">
-                        <img src={src} alt="Happy client" className="w-full h-full object-cover" />
+                {/* Feature pills */}
+                <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mt-5">
+                  {cmsData.hero.featureTags.map((tag, i) => (
+                    <motion.span
+                      key={tag}
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.6 + i * 0.08, duration: 0.3 }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-[11px] font-semibold text-slate-600 shadow-sm"
+                    >
+                      <CheckCircle2 className="h-3 w-3 text-primary" />
+                      {tag}
+                    </motion.span>
+                  ))}
+                </motion.div>
+
+                <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 mt-8">
+                  <motion.a
+                    href={cmsData.hero.ctaLink}
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="relative px-8 py-3.5 rounded-full font-bold text-sm bg-primary text-white shadow-lg shadow-primary/30 inline-flex items-center gap-2 overflow-hidden group"
+                  >
+                    <motion.div
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 2.5 }}
+                      className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg]"
+                    />
+                    {cmsData.hero.ctaText}
+                    <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </motion.a>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-3">
+                      {cmsData.hero.avatarImages.map((src, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.8 + i * 0.08, duration: 0.3 }}
+                          className="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-sm"
+                        >
+                          <img src={src} alt="Happy client" className="w-full h-full object-cover" />
+                        </motion.div>
+                      ))}
+                      <motion.div
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 1.12, duration: 0.3 }}
+                        className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 shadow-sm"
+                      >
+                        20K+
+                      </motion.div>
+                    </div>
+                    <div>
+                      <div className="flex gap-0.5">
+                        {[1,2,3,4,5].map(s => <Star key={s} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
                       </div>
-                    ))}
-                    <div className="w-10 h-10 rounded-full border-3 border-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500">
-                      20K+
+                      <p className="text-[10px] text-slate-500 font-medium mt-0.5">Trusted by 20,000+</p>
                     </div>
                   </div>
                 </motion.div>
@@ -250,62 +358,104 @@ export default function HomePage() {
             </motion.div>
 
             {/* Right Content: Video Card & Widgets */}
-            <div className="w-full lg:w-2/5 relative">
-              <div className="relative aspect-square max-w-[460px] mx-auto">
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="w-full lg:w-2/5 relative"
+            >
+              {/* Floating glow ring */}
+              <motion.div
+                animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] rounded-full border border-primary/20 blur-[2px] z-0"
+              />
 
-                {/* Main Image Card */}
-                <div className="absolute inset-0 bg-slate-900 rounded-3xl overflow-hidden shadow-2xl z-20">
-                  <iframe
-                    src="https://www.youtube.com/embed/WvrSfqRtRwQ?autoplay=1&mute=1&loop=1&playlist=WvrSfqRtRwQ"
-                    title="HomeWork UAE Cleaning Services"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full object-cover"
-                    style={{ border: 'none' }}
-                  />
+              <div className="relative aspect-square max-w-115 mx-auto">
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                {/* Main Image Card — subtle float wraps outer only */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-0 z-20"
+                >
+                  <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/30">
+                    <iframe
+                      src={cmsData.hero.videoUrl}
+                      title="HomeWork UAE Cleaning Services"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full object-cover"
+                      style={{ border: 'none' }}
+                    />
 
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map((s) => <Star key={s} className="h-3 w-3 fill-primary text-primary" />)}
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+
+                    <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => <Star key={s} className="h-3 w-3 fill-primary text-primary" />)}
+                        </div>
+                        <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wider">Premium Rated</span>
                       </div>
-                      <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wider">Premium Rated</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Air Quality Widget */}
                 <motion.div
-                  initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.6, ease: 'easeOut' }}
-                  className="absolute -top-8 -right-8 w-40 h-40 bg-white rounded-2xl p-5 shadow-xl z-30 border border-slate-100"
+                  transition={{ duration: 0.6, delay: 0.7, type: "spring", stiffness: 260, damping: 20 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="absolute -top-8 -right-8 w-44 h-44 bg-white/95 backdrop-blur-sm rounded-2xl p-5 shadow-xl z-30 border border-slate-100/80 cursor-default"
                 >
                   <div className="flex flex-col justify-between h-full">
                     <div className="flex justify-between items-start">
-                      <Wind className="h-5 w-5 text-[#039ED9]" />
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <Wind className="h-5 w-5 text-[#039ED9]" />
+                      </motion.div>
+                      <motion.div
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="h-2 w-2 rounded-full bg-green-500"
+                      />
                     </div>
                     <div>
-                      <div className="text-2xl font-black text-slate-900 leading-none">{airQuality}</div>
+                      <motion.div
+                        key={airQuality}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                        className="text-3xl font-black text-slate-900 leading-none"
+                      >
+                        {airQuality}
+                      </motion.div>
                       <div className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Air Quality Index</div>
+                      <div className={`text-[9px] font-bold mt-0.5 ${airQualityColor}`}>{airQualityStatus}</div>
                     </div>
                   </div>
                 </motion.div>
 
                 {/* Verified Badge Widget */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.8, ease: 'easeOut' }}
-                  className="absolute -bottom-6 -left-6 bg-white rounded-xl p-4 shadow-xl z-30 border border-slate-100"
+                  transition={{ duration: 0.6, delay: 0.9, type: "spring", stiffness: 260, damping: 20 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl z-30 border border-slate-100/80 cursor-default"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <motion.div
+                      animate={{ boxShadow: ["0 0 0 0 rgba(236,72,153,0.3)", "0 0 0 8px rgba(236,72,153,0)", "0 0 0 0 rgba(236,72,153,0)"] }}
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"
+                    >
                       <ShieldCheck className="h-5 w-5" />
-                    </div>
+                    </motion.div>
                     <div>
                       <div className="text-sm font-bold text-slate-900">Verified Pros</div>
                       <div className="text-[10px] text-slate-500">Background Checked</div>
@@ -313,10 +463,25 @@ export default function HomePage() {
                   </div>
                 </motion.div>
 
+                {/* Live tag widget */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 1.1, type: "spring", stiffness: 260, damping: 20 }}
+                  className="absolute top-1/2 -right-10 -translate-y-1/2 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-xl z-30 border border-slate-100/80 flex items-center gap-2"
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.5, 1] }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
+                    className="h-2 w-2 rounded-full bg-rose-500"
+                  />
+                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Live Support</span>
+                </motion.div>
+
                 {/* Subtle Background Glow */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/10 rounded-full blur-[100px] z-0" />
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -331,20 +496,19 @@ export default function HomePage() {
           className="max-w-5xl mx-auto bg-slate-900 rounded-2xl p-8 md:p-10 shadow-xl text-white"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { label: "Satisfied Clients", value: "20,000+", icon: Users },
-              { label: "Service Rating", value: "4.9/5.0", icon: Star },
-              { label: "Expert Cleaners", value: "250+", icon: Award },
-              { label: "City Coverage", value: "100%", icon: Building2 },
-            ].map((stat, i) => (
-              <motion.div key={i} variants={fadeUp} custom={i} className="space-y-1.5">
-                <div className="flex items-center gap-2.5">
-                  <stat.icon className="h-4 w-4 text-[#039ED9]" />
-                  <span className="text-xl md:text-2xl font-black tracking-tight">{stat.value}</span>
-                </div>
-                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{stat.label}</div>
-              </motion.div>
-            ))}
+            {cmsData.trustBanner.stats.map((stat, i) => {
+              const icons = [Users, Star, Award, Building2]
+              const StatIcon = icons[i % icons.length]
+              return (
+                <motion.div key={i} variants={fadeUp} custom={i} className="space-y-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <StatIcon className="h-4 w-4 text-[#039ED9]" />
+                    <span className="text-xl md:text-2xl font-black tracking-tight">{stat.value}</span>
+                  </div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{stat.label}</div>
+                </motion.div>
+              )
+            })}
           </div>
         </motion.div>
       </section>
@@ -368,72 +532,36 @@ export default function HomePage() {
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-4xl mx-auto">
-            {/* Best Deep Cleaning Company 2025 */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={0}
-              className="relative p-6 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 text-center group hover:shadow-lg hover:shadow-amber-100 transition-all duration-300"
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider shadow-md">Award</span>
-              </div>
-              <div className="h-14 w-14 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 mx-auto mb-3">
-                <Star className="h-7 w-7 fill-amber-500 text-amber-500" />
-              </div>
-              <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">Best Deep Cleaning Company</h4>
-              <span className="text-xl font-black text-amber-600">2025</span>
-            </motion.div>
-
-            {/* Dubai Municipality Approved */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={1}
-              className="p-6 bg-white rounded-2xl border border-slate-100 text-center group hover:shadow-lg hover:border-primary/20 transition-all duration-300"
-            >
-              <div className="h-14 w-14 rounded-xl bg-primary/8 flex items-center justify-center text-primary mx-auto mb-3">
-                <ShieldCheck className="h-7 w-7" />
-              </div>
-              <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">Dubai Municipality</h4>
-              <span className="text-xs font-semibold text-primary">Approved</span>
-            </motion.div>
-
-            {/* ISO Certified */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={2}
-              className="p-6 bg-white rounded-2xl border border-slate-100 text-center group hover:shadow-lg hover:border-primary/20 transition-all duration-300"
-            >
-              <div className="h-14 w-14 rounded-xl bg-primary/8 flex items-center justify-center text-primary mx-auto mb-3">
-                <Shield className="h-7 w-7" />
-              </div>
-              <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">ISO Certified</h4>
-              <span className="text-xs font-semibold text-primary">Quality Standards</span>
-            </motion.div>
-
-            {/* 20+ Years Legacy */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={3}
-              className="p-6 bg-white rounded-2xl border border-slate-100 text-center group hover:shadow-lg hover:border-primary/20 transition-all duration-300"
-            >
-              <div className="h-14 w-14 rounded-xl bg-primary/8 flex items-center justify-center text-primary mx-auto mb-3">
-                <Award className="h-7 w-7" />
-              </div>
-              <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">E-Movers Legacy</h4>
-              <span className="text-xs font-semibold text-primary">20+ Years</span>
-            </motion.div>
+            {cmsData.certifications.map((cert, i) => {
+              const isAward = cert.type === 'award'
+              const certIcons = [Star, ShieldCheck, Shield, Award]
+              const CertIcon = certIcons[i % certIcons.length]
+              return (
+                <motion.div
+                  key={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={fadeUp}
+                  custom={i}
+                  className={isAward
+                    ? "relative p-6 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 text-center group hover:shadow-lg hover:shadow-amber-100 transition-all duration-300"
+                    : "p-6 bg-white rounded-2xl border border-slate-100 text-center group hover:shadow-lg hover:border-primary/20 transition-all duration-300"
+                  }
+                >
+                  {isAward && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider shadow-md">Award</span>
+                    </div>
+                  )}
+                  <div className={`h-14 w-14 rounded-xl ${isAward ? 'bg-amber-100 text-amber-600' : 'bg-primary/8 text-primary'} flex items-center justify-center mx-auto mb-3`}>
+                    <CertIcon className={`h-7 w-7 ${isAward ? 'fill-amber-500 text-amber-500' : ''}`} />
+                  </div>
+                  <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">{cert.title}</h4>
+                  <span className={isAward ? "text-xl font-black text-amber-600" : "text-xs font-semibold text-primary"}>{cert.subtitle}</span>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </section>
