@@ -380,13 +380,14 @@ export default function HomePage() {
                   className="absolute inset-0 z-20"
                 >
                   <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/30">
-                    <iframe
+                    <video
                       src={cmsData.hero.videoUrl}
                       title="HomeWork UAE Cleaning Services"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
                       className="w-full h-full object-cover"
-                      style={{ border: 'none' }}
                     />
 
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />

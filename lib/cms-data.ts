@@ -137,7 +137,7 @@ export const defaultHomePage: CMSHomePage = {
     badgeText: "Professional Cleaning Solutions",
     ctaText: "Get Started",
     ctaLink: "/book-service",
-    videoUrl: "https://www.youtube.com/embed/WvrSfqRtRwQ?autoplay=1&mute=1&loop=1&playlist=WvrSfqRtRwQ",
+    videoUrl: "https://www.pexels.com/download/video/6197558/",
     featureTags: ["Eco-Friendly", "Background Checked", "Same-Day Available", "Insured & Bonded"],
     avatarImages: [
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150",
