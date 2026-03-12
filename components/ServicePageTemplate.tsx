@@ -445,8 +445,8 @@ const FALLBACK: ServicePageContent = {
 
 export default function ServicePageTemplate({ slug }: { slug: string }) {
   const base = SERVICE_DEFAULTS[slug] ?? FALLBACK
+  // Render immediately with built-in defaults; Firestore overrides merge silently in background
   const [content, setContent] = useState<ServicePageContent>(base)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchOverrides = async () => {
@@ -465,21 +465,11 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
           }))
         }
       } catch {
-        // use built-in defaults
-      } finally {
-        setLoading(false)
+        // use built-in defaults on error
       }
     }
     fetchOverrides()
   }, [slug])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col overflow-hidden">
