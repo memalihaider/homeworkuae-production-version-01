@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function WindowCleaning() {
+  return <ServicePageTemplate slug="window-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Sun } from 'lucide-react'

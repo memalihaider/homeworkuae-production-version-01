@@ -1,9 +1,7 @@
-"use client"
-
-import { motion } from 'framer-motion'
-import { CheckCircle2, ArrowRight, Home } from 'lucide-react'
-
+import ServicePageTemplate from '@/components/ServicePageTemplate'
 export default function ResidentialCleaning() {
+  return <ServicePageTemplate slug="residential-cleaning" />
+}
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}

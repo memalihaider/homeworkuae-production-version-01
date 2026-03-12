@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function BalconyDeepCleaning() {
+  return <ServicePageTemplate slug="balcony-deep-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Wind } from 'lucide-react'

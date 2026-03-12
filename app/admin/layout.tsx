@@ -754,7 +754,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     Homework UAE
                   </span>
                   <span className="text-[10px] font-semibold text-[#039ED9] tracking-wider uppercase">
-                    Hygiene ERP
+                    Homework Hygiene
                   </span>
                 </div>
               </div>

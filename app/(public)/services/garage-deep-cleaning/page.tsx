@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function GarageDeepCleaning() {
+  return <ServicePageTemplate slug="garage-deep-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Warehouse } from 'lucide-react'

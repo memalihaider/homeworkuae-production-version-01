@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function GreaseTrapCleaning() {
+  return <ServicePageTemplate slug="grease-trap-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Droplets } from 'lucide-react'

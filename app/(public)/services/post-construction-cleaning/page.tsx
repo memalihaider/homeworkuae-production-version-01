@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function PostConstructionCleaning() {
+  return <ServicePageTemplate slug="post-construction-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react'

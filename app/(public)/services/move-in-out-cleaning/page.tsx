@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function MoveInOutCleaning() {
+  return <ServicePageTemplate slug="move-in-out-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Zap } from 'lucide-react'

@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function ACCoilCleaning() {
+  return <ServicePageTemplate slug="ac-coil-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Activity } from 'lucide-react'

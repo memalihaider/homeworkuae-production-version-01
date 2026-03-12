@@ -24,6 +24,7 @@ import {
 import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import WebsiteCMS from './website/page'
+import ServicePagesCMS from './service-pages/page'
 
 // Blog Post Type
 type BlogPost = {
@@ -699,6 +700,9 @@ You have the right to request access to the personal data we hold about you, to 
         </div>
         
         {/* Create Buttons */}
+        {activeTab === 'service-pages' && (
+          <span className="text-sm text-muted-foreground font-medium">Click Edit on any service to customize its content</span>
+        )}
         {activeTab === 'blog' && (
           <button 
             onClick={() => handleOpenModal()}
@@ -754,6 +758,7 @@ You have the right to request access to the personal data we hold about you, to 
         {[
           
           { id: 'website', label: 'Website CMS', icon: Globe },
+          { id: 'service-pages', label: 'Service Pages', icon: Layout },
           { id: 'blog', label: 'Blog Posts', icon: FileText },
           { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
           { id: 'faq', label: 'FAQs', icon: HelpCircle },
@@ -1159,6 +1164,13 @@ You have the right to request access to the personal data we hold about you, to 
           </div>
         )}
 
+        {/* Service Pages Tab */}
+        {activeTab === 'service-pages' && (
+          <div className="p-6">
+            <ServicePagesCMS />
+          </div>
+        )}
+
         {/* Website CMS Tab */}
         {activeTab === 'website' && (
           <div className="p-6">
@@ -1254,7 +1266,7 @@ You have the right to request access to the personal data we hold about you, to 
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]"
+                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-20"
                   placeholder="Enter short description"
                   rows={3}
                 />
@@ -1268,7 +1280,7 @@ You have the right to request access to the personal data we hold about you, to 
                   name="content"
                   value={formData.content}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[150px]"
+                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-37.5"
                   placeholder="Write your full blog content here..."
                   rows={6}
                   required
@@ -1417,7 +1429,7 @@ You have the right to request access to the personal data we hold about you, to 
                   name="description"
                   value={testimonialForm.description}
                   onChange={handleTestimonialInputChange}
-                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px]"
+                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-25"
                   placeholder="What did the customer say about your service?"
                   rows={4}
                   required
@@ -1606,7 +1618,7 @@ You have the right to request access to the personal data we hold about you, to 
                   name="answer"
                   value={faqForm.answer}
                   onChange={handleFAQInputChange}
-                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[200px]"
+                  className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-50"
                   placeholder="Enter the detailed answer..."
                   rows={8}
                   required
@@ -1699,7 +1711,7 @@ You have the right to request access to the personal data we hold about you, to 
             name="content"
             value={privacyForm.content}
             onChange={handlePrivacyInputChange}
-            className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-[300px] font-mono text-sm"
+            className="w-full px-4 py-2.5 bg-card border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none min-h-75 font-mono text-sm"
             placeholder={`Enter privacy policy content...
 
 IMPORTANT: To create headings in your content, follow these rules:

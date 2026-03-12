@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function OfficeDeepCleaning() {
+  return <ServicePageTemplate slug="office-deep-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Briefcase, ShieldCheck, Zap, Droplets } from 'lucide-react'

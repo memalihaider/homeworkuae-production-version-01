@@ -64,6 +64,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Service pages content — anyone can read, authenticated users can write
+    match /service-pages/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+
     // ─── Booking / Contact / Quote submissions ────────────────────────────
 
     // Bookings — anyone can create (public booking form), only auth users can read/update

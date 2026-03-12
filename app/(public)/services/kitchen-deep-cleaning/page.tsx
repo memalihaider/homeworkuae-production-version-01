@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function KitchenDeepCleaning() {
+  return <ServicePageTemplate slug="kitchen-deep-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Sparkles } from 'lucide-react'

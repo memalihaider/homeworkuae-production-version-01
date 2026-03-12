@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function CarpetsDeepCleaning() {
+  return <ServicePageTemplate slug="carpets-deep-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Layers } from 'lucide-react'

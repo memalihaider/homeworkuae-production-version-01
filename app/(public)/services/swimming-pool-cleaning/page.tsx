@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function SwimmingPoolCleaning() {
+  return <ServicePageTemplate slug="swimming-pool-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Droplets } from 'lucide-react'

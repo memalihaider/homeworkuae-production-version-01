@@ -1,4 +1,7 @@
-"use client"
+import ServicePageTemplate from '@/components/ServicePageTemplate'
+export default function GroutDeepCleaning() {
+  return <ServicePageTemplate slug="grout-deep-cleaning" />
+}
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight, Grid2x2 } from 'lucide-react'
