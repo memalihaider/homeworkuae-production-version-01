@@ -30,8 +30,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'REGULAR',
     heroTitleLine2: 'RESIDENTIAL CLEANING',
     heroSubtitle: "UAE's Trusted Residential Cleaning – Experience Pristine Living Spaces",
-    heroImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Home Cleaning Specialists',
     aboutHeading1: 'Expert Regular',
     aboutHeading2: 'Home Cleaning Service',
@@ -46,8 +46,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'REGULAR',
     heroTitleLine2: 'OFFICE CLEANING',
     heroSubtitle: "Transform Your Office with UAE's Expert Regular Office Cleaning Services",
-    heroImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Office Cleaning Specialists',
     aboutHeading1: 'Professional Office',
     aboutHeading2: 'Cleaning Service',
@@ -62,8 +62,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'CRYSTAL',
     heroTitleLine2: 'CLEAR WINDOWS',
     heroSubtitle: "Crystal Clear Window Cleaning Services in UAE – Stunning Views, Every Time",
-    heroImage: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Window Cleaning Specialists',
     aboutHeading1: 'Streak-Free',
     aboutHeading2: 'Window Cleaning',
@@ -78,8 +78,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'PRISTINE',
     heroTitleLine2: 'BALCONY CLEANING',
     heroSubtitle: "Pristine Balcony Deep Cleaning in UAE – Enjoy Your Outdoor Space",
-    heroImage: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Balcony Specialists',
     aboutHeading1: 'Restore Your',
     aboutHeading2: 'Outdoor Living Space',
@@ -94,8 +94,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'REVITALIZE',
     heroTitleLine2: 'YOUR SOFA',
     heroSubtitle: "Revitalize Your Sofa with UAE's Expert Deep Cleaning Services",
-    heroImage: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Upholstery Specialists',
     aboutHeading1: 'Like-New',
     aboutHeading2: 'Sofa Deep Cleaning',
@@ -110,8 +110,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'REVITALIZE',
     heroTitleLine2: 'YOUR CARPETS',
     heroSubtitle: "Revitalize Your Carpets with UAE's Expert Deep Cleaning Services",
-    heroImage: 'https://images.unsplash.com/photo-1558317374-067df5f15430?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1558317374-067df5f15430?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Carpet Specialists',
     aboutHeading1: 'Expert Carpet',
     aboutHeading2: 'Deep Extraction',
@@ -126,8 +126,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'SLEEP CLEAN &',
     heroTitleLine2: 'COMFORTABLE',
     heroSubtitle: "UAE's Premier Mattress Deep Cleaning for Better Sleep Hygiene",
-    heroImage: 'https://images.unsplash.com/photo-1632342527264-42620f2c62c9?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1632342527264-42620f2c62c9?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Mattress Specialists',
     aboutHeading1: 'Healthier Sleep,',
     aboutHeading2: 'Cleaner Mattress',
@@ -142,8 +142,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'REVITALIZE',
     heroTitleLine2: 'YOUR TILES',
     heroSubtitle: "Expert Grout Cleaning Services in UAE – Fresh and Disinfected",
-    heroImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Grout Specialists',
     aboutHeading1: 'Restore Your Tiles &',
     aboutHeading2: 'Grout Lines',
@@ -158,8 +158,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'PREMIUM',
     heroTitleLine2: 'GARAGE CLEANING',
     heroSubtitle: "Organized and Clean Spaces in UAE – Restore Your Garage Mastery",
-    heroImage: 'https://images.unsplash.com/photo-1590674899484-d5640e25ed30?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1590674899484-d5640e25ed30?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Garage Specialists',
     aboutHeading1: 'Transform Your',
     aboutHeading2: 'Garage Space',
@@ -174,8 +174,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'HYGIENIC',
     heroTitleLine2: 'KITCHEN PURITY',
     heroSubtitle: "Immaculate Kitchen Deep Cleaning in UAE – Hygienic and Spotless",
-    heroImage: 'https://images.unsplash.com/photo-1556911220-e150213ff337?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1556911220-e150213ff337?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Kitchen Specialists',
     aboutHeading1: 'Deep Kitchen',
     aboutHeading2: 'Sanitization & Degreasing',
@@ -190,8 +190,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'POST CONSTRUCTION',
     heroTitleLine2: 'CLEANING EXCELLENCE',
     heroSubtitle: "Post Construction Cleaning Excellence in UAE – Move In Ready Spaces",
-    heroImage: 'https://images.unsplash.com/photo-1503387762-592ecd58ea46?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1503387762-592ecd58ea46?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Construction Clean Specialists',
     aboutHeading1: 'Move-In Ready',
     aboutHeading2: 'Post-Build Cleaning',
@@ -206,8 +206,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'WORKSPACE',
     heroTitleLine2: 'TRANSFORMATION',
     heroSubtitle: "A deeper level of corporate hygiene. Specialized sanitization for high-traffic workspaces, conference rooms, and data centers.",
-    heroImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'B2B Hygiene Specialists',
     aboutHeading1: 'Corporate',
     aboutHeading2: 'Deep Sanitization',
@@ -222,8 +222,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'APARTMENT',
     heroTitleLine2: 'DEEP CLEANING',
     heroSubtitle: "Top Apartment Deep Cleaning in UAE – Sparkling Results Every Time",
-    heroImage: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Apartment Specialists',
     aboutHeading1: 'Complete Apartment',
     aboutHeading2: 'Deep Sanitization',
@@ -238,8 +238,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'STRESS-FREE',
     heroTitleLine2: 'MOVE IN / OUT',
     heroSubtitle: "Stress-Free Move In/Move Out Cleaning in UAE – Your Perfect Transition Partner",
-    heroImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Move Cleaning Specialists',
     aboutHeading1: 'Complete Move-Out',
     aboutHeading2: 'Deep Cleaning Service',
@@ -254,8 +254,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'VILLA',
     heroTitleLine2: 'DEEP CLEANING',
     heroSubtitle: "Transform Your Villa with UAE's Expert Deep Cleaning Services",
-    heroImage: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Villa Cleaning Specialists',
     aboutHeading1: 'Complete Villa',
     aboutHeading2: 'Deep Sanitization',
@@ -270,8 +270,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'BRILLIANT',
     heroTitleLine2: 'FLOOR RESTORE',
     heroSubtitle: "Professional machine scrubbing and polishing for all types of hard flooring. Bring back the shine to your marble, tile, and stone.",
-    heroImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Floor Specialists',
     aboutHeading1: 'Machine',
     aboutHeading2: 'Deep Scrubbing',
@@ -286,8 +286,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'AC DUCT',
     heroTitleLine2: 'CLEANING',
     heroSubtitle: "Breathe Easy with UAE's Professional AC Duct Cleaning Services",
-    heroImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Air Quality Specialists',
     aboutHeading1: 'Breathe Easy: Your Ultimate',
     aboutHeading2: 'Guide to AC Duct Cleaning',
@@ -302,8 +302,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'AC COIL',
     heroTitleLine2: 'CLEANING',
     heroSubtitle: "Efficient AC Coil Cleaning in UAE – Enhanced Cooling Efficiency",
-    heroImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'AC Coil Specialists',
     aboutHeading1: 'Keep Your Cool: A Comprehensive',
     aboutHeading2: 'Guide to AC Coil Cleaning',
@@ -318,8 +318,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'KITCHEN HOOD',
     heroTitleLine2: 'HYGIENE EXPERTS',
     heroSubtitle: "Expert Kitchen Hood Cleaning in UAE – Safe and Hygienic Kitchens",
-    heroImage: 'https://images.unsplash.com/photo-1556911220-e150213ff337?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1556911220-e150213ff337?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Hood Cleaning Specialists',
     aboutHeading1: 'Safety & Compliance:',
     aboutHeading2: 'Kitchen Exhaust Maintenance',
@@ -334,8 +334,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'GREASE TRAP',
     heroTitleLine2: 'CLEANING SOLUTIONS',
     heroSubtitle: "Reliable Grease Trap Cleaning in UAE – Keep Your Kitchen Flowing",
-    heroImage: 'https://images.unsplash.com/photo-1556911220-e150213ff337?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1556911220-e150213ff337?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'FOG Management Specialists',
     aboutHeading1: 'Prevent Costly Clogs:',
     aboutHeading2: 'Active Grease Management',
@@ -350,8 +350,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'RESTAURANT',
     heroTitleLine2: 'CLEANING SOLUTIONS',
     heroSubtitle: "Comprehensive Restaurant Cleaning in UAE – Spotless and Hygienic Dining",
-    heroImage: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'F&B Hygiene Specialists',
     aboutHeading1: 'Exceed Health Codes:',
     aboutHeading2: 'Master Kitchen & Dining Hygiene',
@@ -366,8 +366,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'PURE WATER',
     heroTitleLine2: 'STORAGE SOLUTIONS',
     heroSubtitle: "Top-Quality Water Tank Cleaning in UAE – Safe and Clean Water",
-    heroImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ec4?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Water Hygiene Specialists',
     aboutHeading1: 'Protect Your Health:',
     aboutHeading2: 'Tank Sanitization Experts',
@@ -382,8 +382,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'CRYSTAL CLEAR',
     heroTitleLine2: 'DIVE-IN WATERS',
     heroSubtitle: "Professional Swimming Pool Cleaning in UAE – Dive into Clean Waters",
-    heroImage: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Pool Care Specialists',
     aboutHeading1: 'Maintain Your Oasis:',
     aboutHeading2: 'Aquatic Health Mastery',
@@ -398,8 +398,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'HYGIENIC GYM',
     heroTitleLine2: 'ENVIRONMENTS',
     heroSubtitle: "Sanitized Gym Deep Cleaning in UAE – Protect Your Members & Reputation",
-    heroImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Gym Hygiene Specialists',
     aboutHeading1: 'Member Safety First:',
     aboutHeading2: 'Fitness Hygiene Mastery',
@@ -414,8 +414,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'IMPRESSIVE',
     heroTitleLine2: 'BUILDING EXTERIORS',
     heroSubtitle: "Sparkling Facade Cleaning in UAE – First Impressions That Last",
-    heroImage: 'https://images.unsplash.com/photo-1541888941295-1e3c83743aa1?auto=format&fit=crop&q=80&w=1600',
-    sectionImage: 'https://images.unsplash.com/photo-1541888941295-1e3c83743aa1?auto=format&fit=crop&q=80&w=1000',
+    heroImage: '',
+    sectionImage: '',
     specialistLabel: 'Facade Specialists',
     aboutHeading1: 'Pristine Skylines:',
     aboutHeading2: 'Master Facade Cleaning',
@@ -432,8 +432,8 @@ const FALLBACK: ServicePageContent = {
   heroTitleLine1: 'PROFESSIONAL',
   heroTitleLine2: 'CLEANING SERVICE',
   heroSubtitle: "UAE's Premier Cleaning Services – Quality You Can Trust",
-  heroImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1600',
-  sectionImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=1000',
+  heroImage: '',
+  sectionImage: '',
   specialistLabel: 'Cleaning Specialists',
   aboutHeading1: 'Expert Professional',
   aboutHeading2: 'Cleaning Service',
@@ -441,6 +441,35 @@ const FALLBACK: ServicePageContent = {
   features: ['Professional Cleaning Team', 'Eco-Friendly Products', 'Quality Guaranteed', 'Flexible Scheduling', 'Trained Specialists', 'Customer Satisfaction'],
   ctaTitle: 'Book a Professional Clean',
   ctaSubtitle: 'Contact us today for professional cleaning services.',
+}
+
+function SkeletonImg({
+  src,
+  alt,
+  imgClassName,
+  skeletonClassName,
+}: {
+  src: string
+  alt: string
+  imgClassName?: string
+  skeletonClassName?: string
+}) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <>
+      {(!loaded || !src) && (
+        <div className={`absolute inset-0 animate-pulse ${skeletonClassName ?? 'bg-slate-200'}`} />
+      )}
+      {src && (
+        <img
+          src={src}
+          alt={alt}
+          className={`${imgClassName ?? ''} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setLoaded(true)}
+        />
+      )}
+    </>
+  )
 }
 
 export default function ServicePageTemplate({ slug }: { slug: string }) {
@@ -475,12 +504,12 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-40">
-          <img
+        <div className="absolute inset-0 z-0">
+          <SkeletonImg
             src={content.heroImage}
             alt={content.name}
-            className="w-full h-full object-cover"
-            onError={(e) => { e.currentTarget.src = FALLBACK.heroImage }}
+            imgClassName="w-full h-full object-cover opacity-40"
+            skeletonClassName="bg-slate-800"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
         </div>
@@ -513,13 +542,13 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group"
+              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group aspect-4/3"
             >
-              <img
+              <SkeletonImg
                 src={content.sectionImage}
                 alt={content.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                onError={(e) => { e.currentTarget.src = FALLBACK.sectionImage }}
+                imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                skeletonClassName="bg-slate-200"
               />
             </motion.div>
 
