@@ -388,7 +388,7 @@ export default function HomePage() {
                         muted
                         loop
                         playsInline
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover pointer-events-none"
                       />
                     ) : (
                       <div className="w-full h-full bg-slate-800 animate-pulse" />
