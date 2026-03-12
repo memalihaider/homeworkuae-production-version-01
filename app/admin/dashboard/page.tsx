@@ -742,7 +742,7 @@ export default function AdminDashboard() {
           <p className="text-xs text-gray-500 mt-1">{quotations.length} total quotes</p>
         </Link>
 
-        <Link href="/admin/employees" className="group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all cursor-pointer">
+        <Link href="/admin/hr" className="group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
             <div className="p-3 rounded-xl bg-orange-100 text-orange-600 group-hover:scale-110 transition-transform">
               <UserCog className="h-6 w-6" />
@@ -754,7 +754,7 @@ export default function AdminDashboard() {
           <p className="text-xs text-gray-500 mt-1">{employees.length} total Employee</p>
         </Link>
 
-        <Link href="/admin/services" className="group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-pink-300 transition-all cursor-pointer">
+        <Link href="/admin/products" className="group bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-pink-300 transition-all cursor-pointer">
           <div className="flex items-start justify-between mb-4">
             <div className="p-3 rounded-xl bg-pink-100 text-pink-600 group-hover:scale-110 transition-transform">
               <Package className="h-6 w-6" />

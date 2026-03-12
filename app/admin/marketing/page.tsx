@@ -30,7 +30,11 @@ import {
   Save,
   Bell,
   Phone,
-  Video
+  Video,
+  AlarmClock,
+  Timer,
+  Check,
+  RefreshCw
 } from 'lucide-react'
 
 // Firebase imports
@@ -111,6 +115,21 @@ type FollowUpMessage = {
   createdAt?: any
 }
 
+type Reminder = {
+  id: string
+  title: string
+  description: string
+  dueDate: string
+  dueTime: string
+  priority: 'high' | 'medium' | 'low'
+  status: 'pending' | 'completed' | 'snoozed'
+  linkedLeadId?: string
+  linkedLeadName?: string
+  notificationSent?: boolean
+  createdAt?: any
+  updatedAt?: any
+}
+
 export default function MarketingDashboard() {
   // State declarations
   const [activeTab, setActiveTab] = useState<'leads' | 'campaigns' | 'emails' | 'analytics' | 'followup'>('leads')
@@ -134,6 +153,20 @@ export default function MarketingDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [scheduledEmails, setScheduledEmails] = useState<ScheduledEmail[]>([])
   const [followUps, setFollowUps] = useState<FollowUpMessage[]>([])
+  const [reminders, setReminders] = useState<Reminder[]>([])
+
+  // Reminder UI state
+  const [showReminderModal, setShowReminderModal] = useState(false)
+  const [reminderFilter, setReminderFilter] = useState<'all' | 'pending' | 'today' | 'overdue' | 'completed'>('all')
+  const [reminderForm, setReminderForm] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    dueTime: '09:00',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    linkedLeadId: '',
+    linkedLeadName: ''
+  })
 
   // Form states
   const [leadForm, setLeadForm] = useState({
@@ -224,6 +257,15 @@ export default function MarketingDashboard() {
       setFollowUps(followUpsData)
     })
 
+    // Listen to reminders collection
+    const remindersUnsubscribe = onSnapshot(collection(db, 'reminders'), (snapshot) => {
+      const remindersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Reminder))
+      setReminders(remindersData)
+    })
+
     // Set loading to false after a short delay
     setTimeout(() => setIsLoading(false), 1000)
 
@@ -233,6 +275,7 @@ export default function MarketingDashboard() {
       campaignsUnsubscribe()
       emailsUnsubscribe()
       followUpsUnsubscribe()
+      remindersUnsubscribe()
     }
   }
 
@@ -561,6 +604,156 @@ export default function MarketingDashboard() {
       message: '',
       scheduledDate: ''
     })
+  }
+
+  // ======================
+  // REMINDER OPERATIONS
+  // ======================
+
+  const pushReminderNotification = (reminder: Reminder) => {
+    try {
+      const existing: any[] = JSON.parse(localStorage.getItem('notifications') || '[]')
+      const notifId = `reminder-${reminder.id}`
+      if (existing.some((n: any) => n.id === notifId)) return
+      const newNotif = {
+        id: notifId,
+        type: 'reminder',
+        title: `⏰ Reminder Due: ${reminder.title}`,
+        message: reminder.description || (reminder.linkedLeadName ? `Follow up with ${reminder.linkedLeadName}` : 'Task reminder'),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        read: false,
+        link: '/admin/marketing'
+      }
+      const updated = [newNotif, ...existing].slice(0, 20)
+      localStorage.setItem('notifications', JSON.stringify(updated))
+      window.dispatchEvent(new StorageEvent('storage', { key: 'notifications', newValue: JSON.stringify(updated) }))
+    } catch (e) {
+      console.error('Failed to push reminder notification', e)
+    }
+  }
+
+  // Check for due/overdue reminders and fire notifications
+  useEffect(() => {
+    if (reminders.length === 0) return
+    reminders.forEach(reminder => {
+      if (reminder.status !== 'pending') return
+      if (reminder.notificationSent) return
+      if (!reminder.dueDate) return
+      const dueDateTime = new Date(`${reminder.dueDate}T${reminder.dueTime || '09:00'}`)
+      if (dueDateTime <= new Date()) {
+        pushReminderNotification(reminder)
+        updateDoc(doc(db, 'reminders', reminder.id), { notificationSent: true }).catch(console.error)
+      }
+    })
+  }, [reminders])
+
+  const handleAddReminder = async () => {
+    if (!reminderForm.title || !reminderForm.dueDate) {
+      alert('Please fill in the title and due date.')
+      return
+    }
+    try {
+      const reminderData = {
+        title: reminderForm.title,
+        description: reminderForm.description,
+        dueDate: reminderForm.dueDate,
+        dueTime: reminderForm.dueTime || '09:00',
+        priority: reminderForm.priority,
+        status: 'pending',
+        linkedLeadId: reminderForm.linkedLeadId || '',
+        linkedLeadName: reminderForm.linkedLeadName || '',
+        notificationSent: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }
+      await addDoc(collection(db, 'reminders'), reminderData)
+      setShowReminderModal(false)
+      resetReminderForm()
+    } catch (error) {
+      console.error('Error adding reminder:', error)
+      alert('Error adding reminder. Please try again.')
+    }
+  }
+
+  const handleCompleteReminder = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'reminders', id), {
+        status: 'completed',
+        updatedAt: serverTimestamp()
+      })
+    } catch (error) {
+      console.error('Error completing reminder:', error)
+    }
+  }
+
+  const handleSnoozeReminder = async (id: string, currentDueDate: string) => {
+    try {
+      const due = new Date(currentDueDate)
+      due.setDate(due.getDate() + 1)
+      await updateDoc(doc(db, 'reminders', id), {
+        dueDate: due.toISOString().split('T')[0],
+        status: 'snoozed',
+        notificationSent: false,
+        updatedAt: serverTimestamp()
+      })
+    } catch (error) {
+      console.error('Error snoozing reminder:', error)
+    }
+  }
+
+  const handleDeleteReminder = async (id: string) => {
+    if (!confirm('Delete this reminder?')) return
+    try {
+      await deleteDoc(doc(db, 'reminders', id))
+    } catch (error) {
+      console.error('Error deleting reminder:', error)
+    }
+  }
+
+  const resetReminderForm = () => {
+    setReminderForm({
+      title: '',
+      description: '',
+      dueDate: '',
+      dueTime: '09:00',
+      priority: 'medium',
+      linkedLeadId: '',
+      linkedLeadName: ''
+    })
+  }
+
+  const getFilteredReminders = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return reminders.filter(r => {
+      if (reminderFilter === 'pending') return r.status === 'pending' || r.status === 'snoozed'
+      if (reminderFilter === 'today') return r.dueDate === today && r.status !== 'completed'
+      if (reminderFilter === 'overdue') return r.dueDate < today && r.status !== 'completed'
+      if (reminderFilter === 'completed') return r.status === 'completed'
+      return true
+    }).sort((a, b) => {
+      if (a.status === 'completed' && b.status !== 'completed') return 1
+      if (a.status !== 'completed' && b.status === 'completed') return -1
+      return a.dueDate.localeCompare(b.dueDate)
+    })
+  }
+
+  const getReminderUrgency = (reminder: Reminder) => {
+    if (reminder.status === 'completed') return 'completed'
+    const today = new Date().toISOString().split('T')[0]
+    if (reminder.dueDate < today) return 'overdue'
+    if (reminder.dueDate === today) return 'today'
+    return 'upcoming'
+  }
+
+  const getReminderCounts = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return {
+      total: reminders.length,
+      pending: reminders.filter(r => r.status === 'pending' || r.status === 'snoozed').length,
+      today: reminders.filter(r => r.dueDate === today && r.status !== 'completed').length,
+      overdue: reminders.filter(r => r.dueDate < today && r.status !== 'completed').length,
+      completed: reminders.filter(r => r.status === 'completed').length,
+    }
   }
 
   // ======================
@@ -990,10 +1183,209 @@ export default function MarketingDashboard() {
       {/* Follow-up System */}
       {activeTab === 'followup' && (
         <div className="space-y-6">
+
+          {/* ===== REMINDERS SECTION ===== */}
           <div className="bg-white p-8 rounded-[32px] border border-gray-300 shadow-lg">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-black text-black">Follow-up Communication System</h2>
+                <h2 className="text-2xl font-black text-black flex items-center gap-3">
+                  <AlarmClock className="h-7 w-7 text-amber-500" />
+                  Reminders & Tasks
+                </h2>
+                <p className="text-gray-600 font-medium mt-1">Personal reminders for admins — get notified when tasks are due</p>
+              </div>
+              <button
+                onClick={() => setShowReminderModal(true)}
+                className="flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-white rounded-xl font-bold transition-all shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Plus className="h-4 w-4" />
+                New Reminder
+              </button>
+            </div>
+
+            {/* Stats Bar */}
+            {(() => {
+              const counts = getReminderCounts()
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
+                    <p className="text-2xl font-black text-black">{counts.total}</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Total</p>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 text-center">
+                    <p className="text-2xl font-black text-blue-700">{counts.pending}</p>
+                    <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mt-1">Pending</p>
+                  </div>
+                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-center">
+                    <p className="text-2xl font-black text-amber-700">{counts.today}</p>
+                    <p className="text-xs font-bold text-amber-500 uppercase tracking-widest mt-1">Due Today</p>
+                  </div>
+                  <div className="p-4 bg-red-50 rounded-2xl border border-red-200 text-center">
+                    <p className="text-2xl font-black text-red-700">{counts.overdue}</p>
+                    <p className="text-xs font-bold text-red-500 uppercase tracking-widest mt-1">Overdue</p>
+                  </div>
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
+                    <p className="text-2xl font-black text-emerald-700">{counts.completed}</p>
+                    <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mt-1">Completed</p>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Filter Tabs */}
+            <div className="flex gap-2 flex-wrap mb-6">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'pending', label: 'Pending' },
+                { id: 'today', label: 'Due Today' },
+                { id: 'overdue', label: 'Overdue' },
+                { id: 'completed', label: 'Completed' }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setReminderFilter(f.id as any)}
+                  className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+                    reminderFilter === f.id
+                      ? 'bg-amber-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Reminder Cards */}
+            <div className="space-y-3">
+              {getFilteredReminders().length === 0 ? (
+                <div className="text-center py-12">
+                  <AlarmClock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 font-medium">No reminders found</p>
+                  <p className="text-gray-400 text-sm mt-1">Click "New Reminder" to create your first reminder</p>
+                </div>
+              ) : (
+                getFilteredReminders().map(reminder => {
+                  const urgency = getReminderUrgency(reminder)
+                  const borderClass = urgency === 'overdue' ? 'border-red-300 bg-red-50' :
+                                      urgency === 'today' ? 'border-amber-300 bg-amber-50' :
+                                      urgency === 'completed' ? 'border-emerald-200 bg-emerald-50 opacity-75' :
+                                      'border-gray-200 bg-white'
+                  const priorityConfig = {
+                    high: { color: 'bg-red-100 text-red-700 border-red-300', label: 'High' },
+                    medium: { color: 'bg-amber-100 text-amber-700 border-amber-300', label: 'Medium' },
+                    low: { color: 'bg-blue-100 text-blue-700 border-blue-300', label: 'Low' }
+                  }
+                  const pCfg = priorityConfig[reminder.priority] || priorityConfig.medium
+
+                  return (
+                    <div key={reminder.id} className={`flex items-start gap-4 p-5 rounded-2xl border-2 transition-all ${borderClass}`}>
+                      <div className={`shrink-0 h-10 w-10 rounded-xl flex items-center justify-center ${
+                        urgency === 'overdue' ? 'bg-red-100' :
+                        urgency === 'today' ? 'bg-amber-100' :
+                        urgency === 'completed' ? 'bg-emerald-100' : 'bg-gray-100'
+                      }`}>
+                        {urgency === 'completed' ? (
+                          <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        ) : urgency === 'overdue' ? (
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                        ) : (
+                          <AlarmClock className={`h-5 w-5 ${urgency === 'today' ? 'text-amber-600' : 'text-gray-600'}`} />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3 mb-1">
+                          <h4 className={`font-black text-sm ${urgency === 'completed' ? 'text-gray-400 line-through' : 'text-black'}`}>
+                            {reminder.title}
+                          </h4>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${pCfg.color}`}>
+                              {pCfg.label}
+                            </span>
+                            {urgency === 'overdue' && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-red-600 text-white">
+                                Overdue
+                              </span>
+                            )}
+                            {urgency === 'today' && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white">
+                                Due Today
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {reminder.description && (
+                          <p className="text-gray-600 text-sm mb-2">{reminder.description}</p>
+                        )}
+
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {reminder.dueDate}
+                            {reminder.dueTime && ` at ${reminder.dueTime}`}
+                          </span>
+                          {reminder.linkedLeadName && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {reminder.linkedLeadName}
+                            </span>
+                          )}
+                          {reminder.status === 'snoozed' && (
+                            <span className="flex items-center gap-1 text-amber-600 font-bold">
+                              <Timer className="h-3 w-3" />
+                              Snoozed
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {urgency !== 'completed' && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleCompleteReminder(reminder.id)}
+                            title="Mark complete"
+                            className="p-2 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition-colors"
+                          >
+                            <Check className="h-4 w-4 text-emerald-700" />
+                          </button>
+                          <button
+                            onClick={() => handleSnoozeReminder(reminder.id, reminder.dueDate)}
+                            title="Snooze +1 day"
+                            className="p-2 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors"
+                          >
+                            <RefreshCw className="h-4 w-4 text-amber-700" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReminder(reminder.id)}
+                            title="Delete"
+                            className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-700" />
+                          </button>
+                        </div>
+                      )}
+                      {urgency === 'completed' && (
+                        <button
+                          onClick={() => handleDeleteReminder(reminder.id)}
+                          title="Delete"
+                          className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-gray-500" />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
+          {/* ===== FOLLOW-UP COMMUNICATION SECTION ===== */}
+          <div className="bg-white p-8 rounded-[32px] border border-gray-300 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-black text-black">Follow-up Communication</h2>
                 <p className="text-gray-600 font-medium">Track and manage all follow-up communications with leads</p>
               </div>
             </div>
@@ -1073,6 +1465,12 @@ export default function MarketingDashboard() {
                   </div>
                 )
               })}
+              {leads.length === 0 && (
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500">No leads yet. Add leads from the Lead Management tab.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1231,6 +1629,125 @@ export default function MarketingDashboard() {
       {/* Modals remain exactly the same as your original code */}
       {/* I'm keeping all modal code exactly as you provided */}
       {/* Only the onSubmit functions are connected to Firebase */}
+
+      {/* New Reminder Modal */}
+      {showReminderModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[32px] p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-black text-black flex items-center gap-3">
+                <AlarmClock className="h-6 w-6 text-amber-500" />
+                New Reminder
+              </h3>
+              <button onClick={() => { setShowReminderModal(false); resetReminderForm() }} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Title *</label>
+                <input
+                  type="text"
+                  value={reminderForm.title}
+                  onChange={(e) => setReminderForm({...reminderForm, title: e.target.value})}
+                  placeholder="e.g., Call back Ahmed Al-Mansouri"
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={reminderForm.description}
+                  onChange={(e) => setReminderForm({...reminderForm, description: e.target.value})}
+                  placeholder="Additional details about this task..."
+                  rows={3}
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Due Date *</label>
+                  <input
+                    type="date"
+                    value={reminderForm.dueDate}
+                    onChange={(e) => setReminderForm({...reminderForm, dueDate: e.target.value})}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Due Time</label>
+                  <input
+                    type="time"
+                    value={reminderForm.dueTime}
+                    onChange={(e) => setReminderForm({...reminderForm, dueTime: e.target.value})}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Priority</label>
+                <div className="flex gap-3">
+                  {(['high', 'medium', 'low'] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setReminderForm({...reminderForm, priority: p})}
+                      className={`flex-1 py-2 rounded-xl font-bold text-sm capitalize transition-all border-2 ${
+                        reminderForm.priority === p
+                          ? p === 'high' ? 'bg-red-500 text-white border-red-500'
+                            : p === 'medium' ? 'bg-amber-500 text-white border-amber-500'
+                            : 'bg-blue-500 text-white border-blue-500'
+                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Link to Lead (Optional)</label>
+                <select
+                  value={reminderForm.linkedLeadId}
+                  onChange={(e) => {
+                    const lead = leads.find(l => l.id === e.target.value)
+                    setReminderForm({
+                      ...reminderForm,
+                      linkedLeadId: e.target.value,
+                      linkedLeadName: lead ? lead.name : ''
+                    })
+                  }}
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  <option value="">— No lead linked —</option>
+                  {leads.map(lead => (
+                    <option key={lead.id} value={lead.id}>{lead.name} ({lead.status})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={() => { setShowReminderModal(false); resetReminderForm() }}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddReminder}
+                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-white rounded-xl font-bold transition-all shadow-lg shadow-amber-500/20"
+                >
+                  <AlarmClock className="h-4 w-4 inline mr-2" />
+                  Save Reminder
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Lead Modal */}
       {showNewLeadModal && (

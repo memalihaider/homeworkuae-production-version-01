@@ -24,7 +24,7 @@ export default function ClientSummaryPage() {
       npsScores: [9, 9, 8, 9, 9],
       qualityScore: 4.8,
       referralTrigger: true,
-      referralReward: 'Sent $50 Bonus',
+        referralReward: 'Sent AED 50 Bonus',
       repeatServiceSuggestion: {
         service: 'Deep Cleaning',
         daysUntilDue: 15,
@@ -88,7 +88,7 @@ export default function ClientSummaryPage() {
       npsScores: [10, 10, 9, 10],
       qualityScore: 4.9,
       referralTrigger: true,
-      referralReward: 'Eligible for $100 bonus',
+        referralReward: 'Eligible for AED 100 bonus',
       repeatServiceSuggestion: {
         service: 'Maintenance Cleaning',
         daysUntilDue: 30,
@@ -155,11 +155,11 @@ export default function ClientSummaryPage() {
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Total Revenue</p>
-          <p className="text-2xl font-bold text-purple-600">${stats.totalRevenue.toFixed(0)}</p>
+          <p className="text-2xl font-bold text-purple-600">AED {stats.totalRevenue.toFixed(0)}</p>
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Avg Client Value</p>
-          <p className="text-2xl font-bold text-blue-600">${stats.avgClientValue}</p>
+          <p className="text-2xl font-bold text-blue-600">AED {stats.avgClientValue}</p>
         </div>
       </div>
 
@@ -288,11 +288,11 @@ export default function ClientSummaryPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Spent</p>
-                <p className="text-2xl font-bold text-blue-600">${selectedClient.totalSpent.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-blue-600">AED {selectedClient.totalSpent.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Monthly Average</p>
-                <p className="text-lg font-bold text-purple-600">${selectedClient.monthlyAverage.toFixed(2)}</p>
+                <p className="text-lg font-bold text-purple-600">AED {selectedClient.monthlyAverage.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Payment Reliability</p>
@@ -310,7 +310,7 @@ export default function ClientSummaryPage() {
                       <p className="text-gray-600 text-xs">{service.date}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">${service.cost.toFixed(2)}</p>
+                      <p className="font-bold text-gray-900">AED {service.cost.toFixed(2)}</p>
                       <p className="text-yellow-600">{'⭐'.repeat(service.rating)}</p>
                     </div>
                   </div>
@@ -374,7 +374,7 @@ export default function ClientSummaryPage() {
                 <div className="text-xs text-gray-500 font-semibold whitespace-nowrap">{service.date}</div>
                 <div className="flex-1">
                   <p className="font-semibold text-sm">{service.service}</p>
-                  <p className="text-xs text-gray-600">Cost: ${service.cost.toFixed(2)}</p>
+                  <p className="text-xs text-gray-600">Cost: AED {service.cost.toFixed(2)}</p>
                 </div>
                 <div className="text-right">
                   <div className="text-yellow-600">{'⭐'.repeat(service.rating)}</div>

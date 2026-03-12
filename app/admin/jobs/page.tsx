@@ -2257,7 +2257,7 @@ interface Job {
   title: string
   client: string
   clientId: string
-  status: 'Pending' | 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled'
+  status: 'Pending' | 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled' | 'Expired'
   priority: 'Low' | 'Medium' | 'High' | 'Critical'
   scheduledDate: string | null
   scheduledTime?: string
@@ -2292,6 +2292,8 @@ interface Job {
   overtimeReason?: string
   overtimeApproved?: boolean
   tasks?: JobTask[]
+  listingDurationDays?: number
+  listingExpiresAt?: string
 }
 
 interface JobService {
@@ -2404,6 +2406,7 @@ interface NewJobForm {
   selectedEquipment: string[]
   selectedPermits: string[]
   selectedServices: string[]
+  listingDurationDays: number
 }
 
 export default function JobsPage() {
@@ -2452,7 +2455,8 @@ export default function JobsPage() {
     tasks: [],
     selectedEquipment: [],
     selectedPermits: [],
-    selectedServices: []
+    selectedServices: [],
+    listingDurationDays: 0
   })
 
   // Fetch jobs, employees, clients, equipment, permits and services from Firebase
@@ -2504,10 +2508,26 @@ export default function JobsPage() {
             overtimeRequired: data.overtimeRequired || false,
             overtimeHours: data.overtimeHours || 0,
             overtimeReason: data.overtimeReason || '',
-            overtimeApproved: data.overtimeApproved || false
+            overtimeApproved: data.overtimeApproved || false,
+            listingDurationDays: data.listingDurationDays || 0,
+            listingExpiresAt: data.listingExpiresAt || ''
           } as Job
         })
-        
+
+        // Auto-expire jobs whose listingExpiresAt has passed
+        const today = new Date().toISOString().split('T')[0]
+        const expiredJobs = jobsData.filter(
+          j => j.listingExpiresAt && j.listingExpiresAt < today && j.status !== 'Expired' && j.status !== 'Completed' && j.status !== 'Cancelled'
+        )
+        for (const expiredJob of expiredJobs) {
+          try {
+            await updateDoc(doc(db, 'jobs', expiredJob.id), { status: 'Expired', updatedAt: new Date().toISOString() })
+            expiredJob.status = 'Expired' as any
+          } catch (e) {
+            console.error('Failed to expire job', expiredJob.id, e)
+          }
+        }
+
         setJobs(jobsData)
 
         // Fetch employees
@@ -2696,7 +2716,8 @@ export default function JobsPage() {
           tasks: jobData.tasks || [],
           selectedEquipment: selectedEquipment,
           selectedPermits: selectedPermits,
-          selectedServices: selectedServices
+          selectedServices: selectedServices,
+          listingDurationDays: jobData.listingDurationDays || 0
         })
         
         setEditingJobId(jobId)
@@ -2790,7 +2811,11 @@ export default function JobsPage() {
         assignedEmployees: selectedEmployeesDetails,
         jobCreatedBy: newJobForm.jobCreatedBy, // 👈 NEW FIELD SAVED TO FIREBASE
         actualCost: 0,
-        reminderEnabled: false
+        reminderEnabled: false,
+        listingDurationDays: newJobForm.listingDurationDays || 0,
+        listingExpiresAt: newJobForm.listingDurationDays > 0
+          ? (() => { const d = new Date(); d.setDate(d.getDate() + newJobForm.listingDurationDays); return d.toISOString().split('T')[0] })()
+          : ''
       }
 
       if (editingJobId) {
@@ -2910,7 +2935,8 @@ export default function JobsPage() {
       tasks: [],
       selectedEquipment: [],
       selectedPermits: [],
-      selectedServices: []
+      selectedServices: [],
+      listingDurationDays: 0
     })
     setShowNewJobModal(true)
   }
@@ -3816,6 +3842,24 @@ export default function JobsPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">Listing Duration (days)</label>
+                  <p className="text-xs text-gray-500 mb-2">Job will be automatically marked as <strong>Expired</strong> after this many days. Set to 0 for no expiry.</p>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newJobForm.listingDurationDays || ''}
+                    onChange={(e) => setNewJobForm({...newJobForm, listingDurationDays: parseInt(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g., 30"
+                  />
+                  {newJobForm.listingDurationDays > 0 && (
+                    <p className="text-xs text-blue-600 mt-1 font-medium">
+                      Expires on: {(() => { const d = new Date(); d.setDate(d.getDate() + newJobForm.listingDurationDays); return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) })()}
+                    </p>
+                  )}
                 </div>
               </div>
 

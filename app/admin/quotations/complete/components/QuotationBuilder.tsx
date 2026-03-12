@@ -1222,38 +1222,47 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
   const [isEditing, setIsEditing] = useState(false);
   const [quotationId, setQuotationId] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<any>({
-    quoteNumber: `#QT-${Date.now().toString().slice(-4)}-${new Date().getFullYear()}`,
-    clientId: '',
-    client: '',
-    company: '',
-    email: '',
-    phone: '',
-    location: '',
-    date: new Date().toISOString().split('T')[0],
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    currency: 'AED',
-    taxRate: 5,
-    discount: 0,
-    discountType: 'percentage',
-    template: 'professional',
-    status: 'Draft',
-    services: [],
-    products: [],
-    notes: '',
-    terms: '',
-    createdBy: '', // Store employee ID for dropdown selection
-    createdByName: '', // Store employee name for Firebase
-    confirmationLetter: '',
-    bankDetails: {
-      accountName: 'HOMEWORK CLEANING SERVICES LLC',
-      accountNumber: '1234567890123',
-      bankName: 'Emirates NBD',
-      swiftCode: 'EBILAEAD',
-      iban: 'AE180260001234567890123'
-    },
-    paymentMethods: ['bank-transfer']
+  const [formData, setFormData] = useState<any>(() => {
+    let saved: any = {}
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('quotationDefaults')
+        if (raw) saved = JSON.parse(raw)
+      } catch {}
+    }
+    return {
+      quoteNumber: `#QT-${Date.now().toString().slice(-4)}-${new Date().getFullYear()}`,
+      clientId: '',
+      client: '',
+      company: '',
+      email: '',
+      phone: '',
+      location: '',
+      date: new Date().toISOString().split('T')[0],
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      currency: 'AED',
+      taxRate: 5,
+      discount: 0,
+      discountType: 'percentage',
+      template: 'professional',
+      status: 'Draft',
+      services: [],
+      products: [],
+      notes: saved.notes ?? '',
+      terms: saved.terms ?? '',
+      createdBy: '', // Store employee ID for dropdown selection
+      createdByName: '', // Store employee name for Firebase
+      confirmationLetter: saved.confirmationLetter ?? '',
+      bankDetails: saved.bankDetails ?? {
+        accountName: 'HOMEWORK CLEANING SERVICES LLC',
+        accountNumber: '1234567890123',
+        bankName: 'Emirates NBD',
+        swiftCode: 'EBILAEAD',
+        iban: 'AE180260001234567890123'
+      },
+      paymentMethods: ['bank-transfer']
+    }
   })
 
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -1553,7 +1562,17 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         console.log("Quotation saved with ID: ", docRef.id);
         alert(`✅ Quotation saved successfully`);
       }
-      
+
+      // Persist Payment Terms, T&C, Bank Details, and Confirmation Letter as defaults for new quotations
+      try {
+        localStorage.setItem('quotationDefaults', JSON.stringify({
+          notes: quotationData.notes ?? '',
+          terms: quotationData.terms ?? '',
+          confirmationLetter: quotationData.confirmationLetter ?? '',
+          bankDetails: quotationData.bankDetails ?? {}
+        }))
+      } catch {}
+
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
       
@@ -2075,6 +2094,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                       const selectedService = services.find(s => s.name === e.target.value)
                       if (selectedService) {
                         handleUpdateService(service.id, 'unitPrice', selectedService.price)
+                        handleUpdateService(service.id, 'description', selectedService.description || '')
                       }
                       handleUpdateService(service.id, 'name', e.target.value)
                     }}
@@ -2088,10 +2108,10 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                       </option>
                     ))}
                    </select>
-                   <input 
-                    type="text"
-                    placeholder="Brief description..."
-                    className="w-full text-[10px] border-none p-1 focus:ring-0 text-gray-500 italic"
+                   <textarea 
+                    placeholder="Service description (auto-filled from catalog, editable)..."
+                    className="w-full text-[10px] border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-blue-200 focus:outline-none text-gray-600 bg-gray-50 resize-none leading-relaxed"
+                    rows={2}
                     value={service.description}
                     onChange={(e) => handleUpdateService(service.id, 'description', e.target.value)}
                    />

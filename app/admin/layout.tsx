@@ -404,6 +404,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }, [notifications]);
 
+  // Listen for notifications written by other pages (e.g., marketing reminder page)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "notifications" && e.newValue) {
+        try {
+          const updated = JSON.parse(e.newValue) as Notification[];
+          setNotifications(updated);
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   // Save processed booking IDs to localStorage
   const saveProcessedBookingIds = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -737,7 +751,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div>
                   <span className="font-bold text-base tracking-tight block leading-none">
-                    HOMEWARE
+                    Homework UAE
                   </span>
                   <span className="text-[10px] font-semibold text-[#039ED9] tracking-wider uppercase">
                     Hygiene ERP

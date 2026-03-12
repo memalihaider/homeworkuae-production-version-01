@@ -631,7 +631,8 @@ export default function SimpleEmployeeChatPage() {
   };
 
   // ============================================
-  // FIXED: Fetch messages WITHOUT orderBy to avoid index error
+  // FIXED: Use shared closure variables to avoid race condition
+  // where two listeners reading from prev-state overwrite each other
   // ============================================
   useEffect(() => {
     if (!selectedEmployeeId) {
@@ -639,57 +640,51 @@ export default function SimpleEmployeeChatPage() {
       return;
     }
 
-    console.log('🔍 Setting up messages for employee:', selectedEmployeeId);
+    // Shared closure variables — each listener owns its slice
+    let currentEmployeeMsgs: Message[] = [];
+    let currentAdminReplies: Message[] = [];
 
-    // Messages from employee - WITHOUT orderBy (to avoid index error)
-    const employeeMessagesQuery = query(
-      collection(db, 'employeeMessages'),
-      where('senderId', '==', selectedEmployeeId)
+    const mergeAndSet = () => {
+      const combined = [...currentEmployeeMsgs, ...currentAdminReplies].sort(
+        (a, b) => (a.timestamp instanceof Date ? a.timestamp.getTime() : 0)
+               - (b.timestamp instanceof Date ? b.timestamp.getTime() : 0)
+      );
+      setMessages(combined);
+    };
+
+    const unsubscribeEmployeeMessages = onSnapshot(
+      query(collection(db, 'employeeMessages'), where('senderId', '==', selectedEmployeeId)),
+      (snapshot) => {
+        currentEmployeeMsgs = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp?.toDate() || new Date(),
+            collection: 'employeeMessages'
+          } as Message;
+        });
+        mergeAndSet();
+      },
+      (error) => console.error('❌ employeeMessages listener error:', error)
     );
 
-    // Replies from admin - WITHOUT orderBy (to avoid index error)
-    const adminRepliesQuery = query(
-      collection(db, 'employeeReplies'),
-      where('recipientId', '==', selectedEmployeeId)
+    const unsubscribeAdminReplies = onSnapshot(
+      query(collection(db, 'employeeReplies'), where('recipientId', '==', selectedEmployeeId)),
+      (snapshot) => {
+        currentAdminReplies = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp?.toDate() || new Date(),
+            collection: 'employeeReplies'
+          } as Message;
+        });
+        mergeAndSet();
+      },
+      (error) => console.error('❌ employeeReplies listener error:', error)
     );
-
-    const unsubscribeEmployeeMessages = onSnapshot(employeeMessagesQuery, (snapshot) => {
-      const employeeMsgs = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          timestamp: data.timestamp?.toDate() || new Date(),
-          collection: 'employeeMessages'
-        };
-      }) as Message[];
-      
-      setMessages(prev => {
-        const replies = prev.filter(m => m.collection === 'employeeReplies');
-        // Client-side sorting
-        const allMsgs = [...employeeMsgs, ...replies];
-        return allMsgs.sort((a, b) => a.timestamp - b.timestamp);
-      });
-    });
-
-    const unsubscribeAdminReplies = onSnapshot(adminRepliesQuery, (snapshot) => {
-      const replyMsgs = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          timestamp: data.timestamp?.toDate() || new Date(),
-          collection: 'employeeReplies'
-        };
-      }) as Message[];
-      
-      setMessages(prev => {
-        const employeeMsgs = prev.filter(m => m.collection === 'employeeMessages');
-        // Client-side sorting
-        const allMsgs = [...employeeMsgs, ...replyMsgs];
-        return allMsgs.sort((a, b) => a.timestamp - b.timestamp);
-      });
-    });
 
     return () => {
       unsubscribeEmployeeMessages();

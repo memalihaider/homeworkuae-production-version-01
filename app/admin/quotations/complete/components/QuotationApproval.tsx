@@ -390,9 +390,9 @@ export default function QuotationApproval() {
                             {q.services?.map((service, index) => (
                               <tr key={service.id || index}>
                                 <td className="px-3 py-2">
-                                  <p className="text-[11px] font-bold text-gray-700">{service.name}</p>
+                                  <p className="text-[11px] font-bold text-gray-800">{service.name}</p>
                                   {service.description && (
-                                    <p className="text-[10px] text-gray-500">{service.description}</p>
+                                    <p className="text-[10px] text-gray-500 italic mt-0.5 leading-relaxed">{service.description}</p>
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-center text-[11px] font-bold">{service.quantity}</td>

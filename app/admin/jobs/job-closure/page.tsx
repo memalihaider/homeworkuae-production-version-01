@@ -161,7 +161,7 @@ function JobClosureContent() {
         </div>
         <div className="bg-white rounded-lg p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Total Revenue</p>
-          <p className="text-2xl font-bold text-purple-600">${stats.totalRevenue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-purple-600">AED {stats.totalRevenue.toFixed(2)}</p>
         </div>
       </div>
 
@@ -255,25 +255,25 @@ function JobClosureContent() {
             <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Materials</span>
-                <span className="font-semibold">${selectedJob.materialCost.toFixed(2)}</span>
+                <span className="font-semibold">AED {selectedJob.materialCost.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Labor</span>
-                <span className="font-semibold">${selectedJob.laborCost.toFixed(2)}</span>
+                <span className="font-semibold">AED {selectedJob.laborCost.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>
-                <span className="font-semibold">${selectedJob.tax.toFixed(2)}</span>
+                <span className="font-semibold">AED {selectedJob.tax.toFixed(2)}</span>
               </div>
               {selectedJob.additionalCharges > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Additional Charges</span>
-                  <span className="font-semibold">${selectedJob.additionalCharges.toFixed(2)}</span>
+                  <span className="font-semibold">AED {selectedJob.additionalCharges.toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between text-lg">
                 <span className="font-bold">Total</span>
-                <span className="font-bold text-green-600">${selectedJob.invoiceAmount.toFixed(2)}</span>
+                <span className="font-bold text-green-600">AED {selectedJob.invoiceAmount.toFixed(2)}</span>
               </div>
             </div>
 

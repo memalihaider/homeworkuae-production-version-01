@@ -41,7 +41,7 @@ export default function QuotationBuilder() {
     shippingAddress: '', // Added shipping address
     referenceNumber: '', // Added PO/Ref number
     projectName: '', // Added project name
-    currency: 'USD', // Added currency
+    currency: 'AED', // Added currency
     depositPercentage: 0, // Added deposit
     validUntil: '',
     paymentTerms: '30',
@@ -416,7 +416,7 @@ export default function QuotationBuilder() {
                 </div>
                 <div className="col-span-2 text-right">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 mr-1">Total</label>
-                  <p className="text-sm font-bold text-slate-900 pr-1">${item.total.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-slate-900 pr-1">AED {item.total.toFixed(2)}</p>
                 </div>
                 <div className="col-span-1 text-right">
                   <button
@@ -462,10 +462,10 @@ export default function QuotationBuilder() {
               onChange={(e) => setQuotationData({ ...quotationData, currency: e.target.value })}
               className="bg-slate-800 border-none rounded-lg px-3 py-1 text-xs text-white focus:ring-1 focus:ring-blue-500"
             >
+              <option value="AED">AED (د.إ)</option>
               <option value="USD">USD ($)</option>
               <option value="EUR">EUR (€)</option>
               <option value="GBP">GBP (£)</option>
-              <option value="AED">AED (د.إ)</option>
             </select>
           </div>
           <div className="space-y-4">
