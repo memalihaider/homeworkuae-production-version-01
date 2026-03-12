@@ -98,7 +98,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="container mx-auto flex h-18 items-center justify-between px-6">
           <a href="/" className="flex items-center">
-            <div className="h-34 w-34">
+            <div className="h-24 w-24">
               <img 
                 src="/logo.jpeg" 
                 alt="Logo" 
