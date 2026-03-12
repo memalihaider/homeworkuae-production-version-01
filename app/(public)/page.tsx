@@ -46,12 +46,12 @@ export default function HomePage() {
 
   // Light scroll-reveal animation variants
   const fadeUp = {
-    hidden: { opacity: 0, y: 24 },
-    visible: (i: number = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: i * 0.1, ease: 'easeOut' as const } })
+    hidden: { opacity: 0, y: 18 },
+    visible: (i: number = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.3, delay: i * 0.07, ease: 'easeOut' as const } })
   }
   const fadeIn = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.6, ease: 'easeOut' as const } }
+    visible: { opacity: 1, transition: { duration: 0.3, ease: 'easeOut' as const } }
   }
 
   const [isClient, setIsClient] = useState(false)
@@ -238,7 +238,7 @@ export default function HomePage() {
             <motion.div
               initial="hidden"
               animate="visible"
-              variants={{ visible: { transition: { staggerChildren: 0.14 } } }}
+              variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
               className="w-full lg:w-3/5 space-y-8"
             >
               <div>
@@ -265,10 +265,10 @@ export default function HomePage() {
                   <AnimatePresence mode="wait">
                     <motion.h1
                       key={textIndex}
-                      initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+                      initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
                       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                      exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
-                      transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+                      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
                       className="absolute top-0 left-0 text-5xl md:text-7xl font-black text-[#039ED9] leading-[0.95] tracking-tight"
                     >
                       {heroTexts[textIndex].split('\n')[0]} <br />
@@ -361,7 +361,7 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 0.35, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="w-full lg:w-2/5 relative"
             >
               {/* Floating glow ring */}
@@ -380,15 +380,19 @@ export default function HomePage() {
                   className="absolute inset-0 z-20"
                 >
                   <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/30">
-                    <video
-                      src={cmsData.hero.videoUrl}
-                      title="HomeWork UAE Cleaning Services"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
+                    {cmsData.hero.videoUrl ? (
+                      <video
+                        key={cmsData.hero.videoUrl}
+                        src={cmsData.hero.videoUrl}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-800 animate-pulse" />
+                    )}
 
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
 
@@ -515,7 +519,7 @@ export default function HomePage() {
       </section>
 
       {/* Certifications & Awards Section */}
-      <section className="py-16 bg-gradient-to-b from-white to-slate-50/30 relative">
+      <section className="py-16 bg-linear-to-b from-white to-slate-50/30 relative">
         <div className="container mx-auto px-4">
           <motion.div
             initial="hidden"
@@ -546,7 +550,7 @@ export default function HomePage() {
                   variants={fadeUp}
                   custom={i}
                   className={isAward
-                    ? "relative p-6 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 text-center group hover:shadow-lg hover:shadow-amber-100 transition-all duration-300"
+                    ? "relative p-6 bg-linear-to-br from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 text-center group hover:shadow-lg hover:shadow-amber-100 transition-all duration-300"
                     : "p-6 bg-white rounded-2xl border border-slate-100 text-center group hover:shadow-lg hover:border-primary/20 transition-all duration-300"
                   }
                 >
@@ -568,7 +572,7 @@ export default function HomePage() {
       </section>
 
       {/* Quick Service Icons - Static Grid */}
-      <section className="py-20 px-4 bg-gradient-to-b from-white to-slate-50/50 relative">
+      <section className="py-20 px-4 bg-linear-to-b from-white to-slate-50/50 relative">
         <div className="container mx-auto relative z-10">
           <motion.div
             initial="hidden"
@@ -724,7 +728,7 @@ export default function HomePage() {
                     alt={service.title}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-slate-900/30 to-transparent" />
 
                   <div className="absolute top-4 left-4 z-10">
                     <span className="px-3 py-1 rounded-full bg-primary/90 text-[10px] font-semibold uppercase tracking-wider text-white">
@@ -843,7 +847,7 @@ export default function HomePage() {
                   </div>
                   <a
                     href="https://wa.me/80046639675"
-                    className="block w-full h-12 bg-white text-slate-900 rounded-xl text-center leading-[3rem] font-bold text-sm hover:bg-slate-100 transition-colors"
+                    className="block w-full h-12 bg-white text-slate-900 rounded-xl text-center leading-12 font-bold text-sm hover:bg-slate-100 transition-colors"
                   >
                     Chat via WhatsApp
                   </a>
@@ -896,7 +900,7 @@ export default function HomePage() {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               {blogs.map((blog, i) => (
-                <article key={i} className="relative w-[360px] rounded-2xl overflow-hidden shadow-sm border border-slate-100 shrink-0 bg-white group hover:shadow-lg transition-shadow duration-300">
+                <article key={i} className="relative w-90 rounded-2xl overflow-hidden shadow-sm border border-slate-100 shrink-0 bg-white group hover:shadow-lg transition-shadow duration-300">
                   <a href={blog.href} className="block cursor-pointer">
                     <div className="relative h-48 overflow-hidden">
                       <img
@@ -984,7 +988,7 @@ export default function HomePage() {
               {[...testimonials, ...testimonials].map((testimonial, i) => (
                 <div
                   key={i}
-                  className="w-[360px] rounded-2xl shrink-0 bg-white border border-slate-100 p-7 flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300"
+                  className="w-90 rounded-2xl shrink-0 bg-white border border-slate-100 p-7 flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <div className="flex text-primary mb-4 gap-0.5">
                     {[...Array(testimonial.rating)].map((_, idx) => <Star key={idx} className="h-3.5 w-3.5 fill-current" />)}
@@ -1008,8 +1012,8 @@ export default function HomePage() {
             </motion.div>
 
             {/* Edge Fades */}
-            <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10" />
+            <div className="absolute left-0 top-0 bottom-0 w-20 bg-linear-to-r from-slate-50 to-transparent pointer-events-none z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-linear-to-l from-slate-50 to-transparent pointer-events-none z-10" />
           </div>
         </div>
       </section>
@@ -1022,7 +1026,7 @@ export default function HomePage() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="bg-gradient-to-br from-primary to-pink-700 rounded-2xl p-12 md:p-16 relative overflow-hidden shadow-xl"
+            className="bg-linear-to-br from-primary to-pink-700 rounded-2xl p-12 md:p-16 relative overflow-hidden shadow-xl"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1),transparent_70%)]" />
 
