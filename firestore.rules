@@ -234,6 +234,18 @@ service cloud.firestore {
       allow write: if isAuth();
     }
 
+    // ─── Departments / Supervisors ───────────────────────────────────────
+
+    match /departments/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    match /supervisors/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
     // ─── Fallback — deny everything else ─────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

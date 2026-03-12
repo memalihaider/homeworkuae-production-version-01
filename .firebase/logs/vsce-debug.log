@@ -204,3 +204,72 @@ I0311 15:59:34.660643   22267 dev.go:104] Listening on address (HTTP + gRPC): 12
 [debug] [2026-03-11T23:40:26.786Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
 [debug] [2026-03-11T23:40:26.789Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
 [debug] [2026-03-11T23:40:26.789Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 
+[debug] [2026-03-12T09:11:18.637Z] [Firebase Plugin] Activating Firebase extension.
+[debug] [2026-03-12T09:11:28.248Z] [Firebase Plugin] requireAuthWrapper
+[debug] [2026-03-12T09:11:28.249Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-12T09:11:28.250Z] > authorizing via signed-in user (largifysolutions@gmail.com)
+[debug] [2026-03-12T09:11:28.254Z] Checked if tokens are valid: false, expires at: 1773304951972
+[debug] [2026-03-12T09:11:28.255Z] Checked if tokens are valid: false, expires at: 1773304951972
+[debug] [2026-03-12T09:11:28.255Z] > refreshing access token with scopes: []
+[debug] [2026-03-12T09:11:28.257Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-12T09:11:28.258Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[info] [Firebase Plugin] Starting Data Connect toolkit (version 3.2.1) on port 50001
+[debug] [2026-03-12T09:11:29.059Z] I0312 14:11:29.043160   13874 control.go:100] [projects/emulator/locations/emulator/services/homeworkv01 5b8f] UpdateResources(): done
+Main schema: sources: schema/schema.gql [1992B] 
+Connector "example": sources: example/mutations.gql [1243B] example/queries.gql [1801B] 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.043160   13874 control.go:100] [projects/emulator/locations/emulator/services/homeworkv01 5b8f] UpdateResources(): done\nMain schema: sources: schema/schema.gql [1992B] \nConnector \"example\": sources: example/mutations.gql [1243B] example/queries.gql [1801B] \n"}}
+[debug] [2026-03-12T09:11:29.060Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"dataconnect"},"message":"Ignoring unsupported arg: auto_download"}}
+[debug] [2026-03-12T09:11:29.060Z] Ignoring unsupported arg: port {"metadata":{"emulator":{"name":"dataconnect"},"message":"Ignoring unsupported arg: port"}}
+[debug] [2026-03-12T09:11:29.060Z] Starting Data Connect Emulator with command {"binary":"/Users/macbookpro/.cache/firebase/emulators/dataconnect-emulator-3.2.1","args":["--logtostderr","-v=2","dev","--listen=localhost:50001","--config_dir=/Users/macbookpro/Desktop/homework_01/dataconnect","--enable_output_schema_extensions=true","--enable_output_generated_sdk=true"],"optionalArgs":["listen","config_dir","enable_output_schema_extensions","enable_output_generated_sdk"],"joinArgs":true,"shell":false,"port":9399} {"metadata":{"emulator":{"name":"dataconnect"},"message":"Starting Data Connect Emulator with command {\"binary\":\"/Users/macbookpro/.cache/firebase/emulators/dataconnect-emulator-3.2.1\",\"args\":[\"--logtostderr\",\"-v=2\",\"dev\",\"--listen=localhost:50001\",\"--config_dir=/Users/macbookpro/Desktop/homework_01/dataconnect\",\"--enable_output_schema_extensions=true\",\"--enable_output_generated_sdk=true\"],\"optionalArgs\":[\"listen\",\"config_dir\",\"enable_output_schema_extensions\",\"enable_output_generated_sdk\"],\"joinArgs\":true,\"shell\":false,\"port\":9399}"}}
+[info] i  dataconnect: Data Connect Emulator logging to dataconnect-debug.log {"metadata":{"emulator":{"name":"dataconnect"},"message":"Data Connect Emulator logging to dataconnect-debug.log"}}
+[debug] [2026-03-12T09:11:29.142Z] I0312 14:11:29.125103   13875 load.go:31] Reloading schema and connectors...
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.125103   13875 load.go:31] Reloading schema and connectors...\n"}}
+[debug] [2026-03-12T09:11:29.206Z] I0312 14:11:29.199186   13875 control.go:100] [projects/emulator/locations/emulator/services/homeworkv01 b645] UpdateResources(): done
+Main schema: sources: schema/schema.gql [1992B] 
+Connector "example": sources: example/mutations.gql [1243B] example/queries.gql [1801B] 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.199186   13875 control.go:100] [projects/emulator/locations/emulator/services/homeworkv01 b645] UpdateResources(): done\nMain schema: sources: schema/schema.gql [1992B] \nConnector \"example\": sources: example/mutations.gql [1243B] example/queries.gql [1801B] \n"}}
+[debug] [2026-03-12T09:11:29.308Z] I0312 14:11:29.273686   13875 codegen.go:80] [connector "example" javascriptSdk] Generating sources into "/Users/macbookpro/Desktop/homework_01/src/dataconnect-generated"
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.273686   13875 codegen.go:80] [connector \"example\" javascriptSdk] Generating sources into \"/Users/macbookpro/Desktop/homework_01/src/dataconnect-generated\"\n"}}
+[debug] [2026-03-12T09:11:29.316Z] I0312 14:11:29.308478   13875 collector.go:107] schema extensions wrote into "/Users/macbookpro/Desktop/homework_01/dataconnect/.dataconnect/schema"
+Generated sources: main/mutation.gql [13679B] prelude.gql [80731B] main/implicit.gql [1261B] main/input.gql [28173B] main/relation.gql [14318B] main/query.gql [5099B] 
+I0312 14:11:29.316466   13875 collector.go:107] connector "example" javascriptSdk wrote into "/Users/macbookpro/Desktop/homework_01/src/dataconnect-generated"
+Generated sources: react/index.d.ts [3961B] react/esm/package.json [17B] react/README.md [48299B] index.d.ts [8025B] esm/package.json [17B] react/package.json [460B] esm/index.esm.js [3561B] package.json [863B] README.md [40931B] react/esm/index.esm.js [3269B] .guides/config.json [236B] react/index.cjs.js [3439B] .guides/setup.md [1682B] .guides/usage.md [3489B] index.cjs.js [4051B] 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.308478   13875 collector.go:107] schema extensions wrote into \"/Users/macbookpro/Desktop/homework_01/dataconnect/.dataconnect/schema\"\nGenerated sources: main/mutation.gql [13679B] prelude.gql [80731B] main/implicit.gql [1261B] main/input.gql [28173B] main/relation.gql [14318B] main/query.gql [5099B] \nI0312 14:11:29.316466   13875 collector.go:107] connector \"example\" javascriptSdk wrote into \"/Users/macbookpro/Desktop/homework_01/src/dataconnect-generated\"\nGenerated sources: react/index.d.ts [3961B] react/esm/package.json [17B] react/README.md [48299B] index.d.ts [8025B] esm/package.json [17B] react/package.json [460B] esm/index.esm.js [3561B] package.json [863B] README.md [40931B] react/esm/index.esm.js [3269B] .guides/config.json [236B] react/index.cjs.js [3439B] .guides/setup.md [1682B] .guides/usage.md [3489B] index.cjs.js [4051B] \n"}}
+[debug] [2026-03-12T09:11:29.336Z] I0312 14:11:29.323790   13875 installsdk.go:55] Package @dataconnect/generated is already installed. Skipping installation
+I0312 14:11:29.323967   13875 load.go:109] Finished reloading
+I0312 14:11:29.329183   13875 dev.go:104] Listening on address (HTTP + gRPC): 127.0.0.1:50001
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.323790   13875 installsdk.go:55] Package @dataconnect/generated is already installed. Skipping installation\nI0312 14:11:29.323967   13875 load.go:109] Finished reloading\nI0312 14:11:29.329183   13875 dev.go:104] Listening on address (HTTP + gRPC): 127.0.0.1:50001\n"}}
+[debug] [2026-03-12T09:11:29.515Z] I0312 14:11:29.443084   13875 engine.go:210] [projects/emulator/locations/emulator/services/homeworkv01 b645] ExecuteGraphqlRead query IntrospectionQuery: succeeded. 
+ {"metadata":{"emulator":{"name":"dataconnect"},"message":"I0312 14:11:29.443084   13875 engine.go:210] [projects/emulator/locations/emulator/services/homeworkv01 b645] ExecuteGraphqlRead query IntrospectionQuery: succeeded. \n"}}
+[debug] [2026-03-12T09:11:29.640Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-12T09:11:29.640Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-12T09:11:29.737Z] [Firebase Plugin] User found:  largifysolutions@gmail.com
+[info] [Firebase Plugin] (Core:Project) New user detected, fetching projects
+[debug] [2026-03-12T09:11:29.738Z] Checked if tokens are valid: true, expires at: 1773310288641
+[debug] [2026-03-12T09:11:29.739Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-03-12T09:11:31.087Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-03-12T09:11:31.087Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-03-12T09:13:44.184Z] [Firebase Plugin] Value of process.env.MONOSPACE_ENV: undefined
+[debug] [2026-03-12T09:13:44.185Z] [Firebase Plugin] requireAuthWrapper
+[debug] [2026-03-12T09:13:44.186Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-12T09:13:44.186Z] > authorizing via signed-in user (largifysolutions@gmail.com)
+[debug] [2026-03-12T09:13:44.187Z] Checked if tokens are valid: true, expires at: 1773310288641
+[debug] [2026-03-12T09:13:44.187Z] [Firebase Plugin] User found:  largifysolutions@gmail.com
+[info] [Firebase Plugin] (Core:Project) New user detected, fetching projects
+[debug] [2026-03-12T09:13:44.188Z] Checked if tokens are valid: true, expires at: 1773310288641
+[debug] [2026-03-12T09:13:44.190Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-03-12T09:13:44.198Z] [Firebase Plugin] Value of process.env.MONOSPACE_ENV: undefined
+[debug] [2026-03-12T09:13:44.198Z] [Firebase Plugin] requireAuthWrapper
+[debug] [2026-03-12T09:13:44.199Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-12T09:13:44.199Z] > authorizing via signed-in user (largifysolutions@gmail.com)
+[debug] [2026-03-12T09:13:44.200Z] Checked if tokens are valid: true, expires at: 1773310288641
+[debug] [2026-03-12T09:13:44.200Z] [Firebase Plugin] User found:  largifysolutions@gmail.com
+[info] [Firebase Plugin] (Core:Project) New user detected, fetching projects
+[debug] [2026-03-12T09:13:44.201Z] Checked if tokens are valid: true, expires at: 1773310288641
+[debug] [2026-03-12T09:13:44.201Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-03-12T09:13:44.940Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-03-12T09:13:44.940Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-03-12T09:13:45.064Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-03-12T09:13:45.064Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]

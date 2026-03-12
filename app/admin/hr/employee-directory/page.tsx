@@ -17,6 +17,8 @@ export default function EmployeeDirectory() {
   // Department aur Supervisor modals
   const [showDepartmentModal, setShowDepartmentModal] = useState(false)
   const [showSupervisorModal, setShowSupervisorModal] = useState(false)
+  const [editingDepartmentId, setEditingDepartmentId] = useState<string | null>(null)
+  const [editingSupervisorId, setEditingSupervisorId] = useState<string | null>(null)
   
   // Tables ke liye active tab
   const [activeTable, setActiveTable] = useState<'employees' | 'departments' | 'supervisors'>('employees')
@@ -303,6 +305,7 @@ export default function EmployeeDirectory() {
 
   // Add department modal
   const handleAddDepartment = useCallback(() => {
+    setEditingDepartmentId(null)
     setDepartmentForm({
       name: '',
       description: '',
@@ -318,6 +321,7 @@ export default function EmployeeDirectory() {
 
   // Edit department
   const handleEditDepartment = useCallback((dept: any) => {
+    setEditingDepartmentId(dept.id)
     setDepartmentForm({
       name: dept.name || '',
       description: dept.description || '',
@@ -333,6 +337,7 @@ export default function EmployeeDirectory() {
 
   // Add supervisor modal
   const handleAddSupervisor = useCallback(() => {
+    setEditingSupervisorId(null)
     setSupervisorForm({
       name: '',
       email: '',
@@ -349,6 +354,7 @@ export default function EmployeeDirectory() {
 
   // Edit supervisor
   const handleEditSupervisor = useCallback((sup: any) => {
+    setEditingSupervisorId(sup.id)
     setSupervisorForm({
       name: sup.name || '',
       email: sup.email || '',
@@ -443,13 +449,17 @@ export default function EmployeeDirectory() {
         ...departmentForm,
         employeeCount: employeeCount,
         updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
       }
 
-      await addDoc(collection(db, 'departments'), departmentData)
+      if (editingDepartmentId) {
+        await updateDoc(doc(db, 'departments', editingDepartmentId), departmentData)
+      } else {
+        await addDoc(collection(db, 'departments'), { ...departmentData, createdAt: new Date().toISOString() })
+      }
       alert('Department saved successfully')
       await fetchDepartments()
       setShowDepartmentModal(false)
+      setEditingDepartmentId(null)
       setDepartmentForm({
         name: '',
         description: '',
@@ -481,13 +491,17 @@ export default function EmployeeDirectory() {
         ...supervisorForm,
         assignedEmployees: assignedEmployees,
         updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
       }
 
-      await addDoc(collection(db, 'supervisors'), supervisorData)
+      if (editingSupervisorId) {
+        await updateDoc(doc(db, 'supervisors', editingSupervisorId), supervisorData)
+      } else {
+        await addDoc(collection(db, 'supervisors'), { ...supervisorData, createdAt: new Date().toISOString() })
+      }
       alert('Supervisor saved successfully')
       await fetchSupervisors()
       setShowSupervisorModal(false)
+      setEditingSupervisorId(null)
       setSupervisorForm({
         name: '',
         email: '',
