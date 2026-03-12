@@ -284,11 +284,11 @@ export default function EmployeeProfilePage() {
         {/* Content */}
         <div className="p-6 max-w-7xl mx-auto space-y-6">
           {/* Profile Header Card */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 p-8">
+          <div className="bg-linear-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 p-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/20">
+                <div className="w-24 h-24 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/20">
                   <span className="text-4xl font-bold text-white">
                     {getUserInitials()}
                   </span>

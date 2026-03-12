@@ -63,7 +63,7 @@ export default function JobList({ jobs, onUpdateStatus, onDelete }: JobListProps
             <button
               key={stat}
               onClick={() => setStatusFilter(stat as any)}
-              className={`px-4 py-1.5 text-[10px] font-black tracking-[0.1em] transition-all uppercase ${
+              className={`px-4 py-1.5 text-[10px] font-black tracking-widest transition-all uppercase ${
                 statusFilter === stat 
                   ? 'bg-black text-white' 
                   : 'text-gray-400 hover:text-black'

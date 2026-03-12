@@ -135,7 +135,7 @@ export default function QuotationsPage() {
       </div>
 
       {/* Content Area */}
-      <div className="min-h-[600px]">
+      <div className="min-h-150">
         {activeTab === 'dashboard' && <QuotationDashboard />}
         {activeTab === 'list' && (
           <QuotationList 

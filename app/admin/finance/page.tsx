@@ -1146,7 +1146,7 @@ export default function UnifiedFinancePage() {
       {showInvoiceModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-blue-600/10 to-purple-600/10 border-b">
               <h2 className="text-2xl font-black">Create Invoice</h2>
               <button onClick={() => setShowInvoiceModal(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="h-5 w-5" />
@@ -1329,7 +1329,7 @@ export default function UnifiedFinancePage() {
       {showClientModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-2xl w-full">
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-purple-600/10 to-pink-600/10 border-b">
               <h2 className="text-2xl font-black">Add New Client</h2>
               <button onClick={() => setShowClientModal(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="h-5 w-5" />
@@ -1427,7 +1427,7 @@ export default function UnifiedFinancePage() {
       {showExpenseModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-2xl w-full">
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-orange-600/10 to-red-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-orange-600/10 to-red-600/10 border-b">
               <h2 className="text-2xl font-black">Record Expense</h2>
               <button onClick={() => setShowExpenseModal(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="h-5 w-5" />
@@ -1518,7 +1518,7 @@ export default function UnifiedFinancePage() {
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-2xl w-full">
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-green-600/10 to-emerald-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-green-600/10 to-emerald-600/10 border-b">
               <h2 className="text-2xl font-black">Record Payment</h2>
               <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="h-5 w-5" />

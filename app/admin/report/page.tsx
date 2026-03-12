@@ -3359,7 +3359,7 @@ export default function FinanceReportPage() {
                     <div key={month} className="flex-1 flex flex-col items-center gap-2">
                       <div className="relative w-full group">
                         <div 
-                          className="w-full bg-gradient-to-t from-primary to-pink-400 rounded-t-lg transition-all group-hover:opacity-80 cursor-pointer"
+                          className="w-full bg-linear-to-t from-primary to-pink-400 rounded-t-lg transition-all group-hover:opacity-80 cursor-pointer"
                           style={{ height: `${height}px` }}
                         >
                           <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">

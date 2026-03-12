@@ -719,7 +719,7 @@ export default function SimpleEmployeeChatPage() {
     <div className="bg-white border-b border-gray-200/80 px-6 py-5 shrink-0">
       <div className="flex items-start gap-5">
         <Avatar className="w-14 h-14 rounded-2xl border-4 border-white shadow-xl">
-          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-serif">
+          <AvatarFallback className="bg-linear-to-br from-blue-500 to-blue-700 text-white text-2xl font-serif">
             {employee.name?.charAt(0) || 'E'}
           </AvatarFallback>
         </Avatar>
@@ -798,7 +798,7 @@ export default function SimpleEmployeeChatPage() {
 
   // Main Render
   return (
-    <div className="h-screen flex overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="h-screen flex overflow-hidden bg-linear-to-br from-gray-50 to-gray-100">
       
       {/* Chats Sidebar */}
       <div className={cn(
@@ -849,8 +849,8 @@ export default function SimpleEmployeeChatPage() {
                           <AvatarFallback className={cn(
                             "text-white text-lg font-serif",
                             selectedEmployeeId === chat.employeeId
-                              ? "bg-gradient-to-br from-blue-500 to-blue-700"
-                              : "bg-gradient-to-br from-gray-400 to-gray-600"
+                              ? "bg-linear-to-br from-blue-500 to-blue-700"
+                              : "bg-linear-to-br from-gray-400 to-gray-600"
                           )}>
                             {chat.employeeName?.charAt(0) || 'E'}
                           </AvatarFallback>
@@ -874,7 +874,7 @@ export default function SimpleEmployeeChatPage() {
                           </div>
                           
                           <div className="flex items-center justify-between">
-                            <p className="text-xs text-gray-400 truncate max-w-[140px]">
+                            <p className="text-xs text-gray-400 truncate max-w-35">
                               {chat.lastMessage ? (
                                 <>
                                   {chat.lastMessage.senderRole === 'admin' ? 'You: ' : ''}
@@ -906,7 +906,7 @@ export default function SimpleEmployeeChatPage() {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute left-[72px] top-20 z-40 h-8 w-8 rounded-full bg-white shadow-md hover:bg-gray-100"
+          className="absolute left-18 top-20 z-40 h-8 w-8 rounded-full bg-white shadow-md hover:bg-gray-100"
           onClick={() => setChatsSidebarOpen(true)}
         >
           <ChevronRight className="h-4 w-4" />
@@ -931,7 +931,7 @@ export default function SimpleEmployeeChatPage() {
               
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
                     <Briefcase className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -956,7 +956,7 @@ export default function SimpleEmployeeChatPage() {
             
             <div className="flex-1 flex flex-col min-h-0">
               
-              <div className="bg-gradient-to-r from-white to-gray-50/80 px-6 py-5 border-b border-gray-200/80 shrink-0">
+              <div className="bg-linear-to-r from-white to-gray-50/80 px-6 py-5 border-b border-gray-200/80 shrink-0">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex-1">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-2 block">
@@ -966,7 +966,7 @@ export default function SimpleEmployeeChatPage() {
                       value={selectedEmployeeId} 
                       onValueChange={setSelectedEmployeeId}
                     >
-                      <SelectTrigger className="w-full md:w-[400px] h-14 border-2 border-gray-200/80 hover:border-blue-500/50 focus:ring-2 focus:ring-blue-500/30 rounded-2xl bg-white/80">
+                      <SelectTrigger className="w-full md:w-100 h-14 border-2 border-gray-200/80 hover:border-blue-500/50 focus:ring-2 focus:ring-blue-500/30 rounded-2xl bg-white/80">
                         <SelectValue placeholder={
                           <div className="flex items-center gap-3 text-gray-500">
                             <User className="w-5 h-5 text-blue-500" />
@@ -986,7 +986,7 @@ export default function SimpleEmployeeChatPage() {
                             />
                           </div>
                         </div>
-                        <ScrollArea className="h-[280px]">
+                        <ScrollArea className="h-70">
                           {filteredEmployees.length > 0 ? (
                             filteredEmployees.map(emp => (
                               <SelectItem 
@@ -996,7 +996,7 @@ export default function SimpleEmployeeChatPage() {
                               >
                                 <div className="flex items-start gap-3">
                                   <Avatar className="w-8 h-8 mt-1">
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500/20 to-blue-700/10 text-blue-600 text-xs">
+                                    <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-blue-700/10 text-blue-600 text-xs">
                                       {emp.name?.charAt(0) || 'E'}
                                     </AvatarFallback>
                                   </Avatar>
@@ -1034,7 +1034,7 @@ export default function SimpleEmployeeChatPage() {
               </div>
 
               {selectedEmployeeId && selectedEmployeeDetails ? (
-                <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-gray-50 to-white">
+                <div className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-gray-50 to-white">
                   
                   {/* Employee Details Card */}
                   <EmployeeDetailsCard employee={selectedEmployeeDetails} />
@@ -1047,8 +1047,8 @@ export default function SimpleEmployeeChatPage() {
                     >
                       <div className="px-6 py-6">
                         {visibleMessages.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center h-[300px]">
-                            <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-blue-700/10 rounded-3xl flex items-center justify-center mb-4">
+                          <div className="flex flex-col items-center justify-center h-75">
+                            <div className="w-24 h-24 bg-linear-to-br from-blue-500/20 to-blue-700/10 rounded-3xl flex items-center justify-center mb-4">
                               <MessageCircle className="w-12 h-12 text-blue-600" />
                             </div>
                             <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">No messages yet</h3>
@@ -1075,7 +1075,7 @@ export default function SimpleEmployeeChatPage() {
                                         
                                         {!isMe && (
                                           <Avatar className="w-8 h-8 ring-2 ring-white shadow-md">
-                                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs">
+                                            <AvatarFallback className="bg-linear-to-br from-blue-500 to-blue-700 text-white text-xs">
                                               {msg.senderName?.charAt(0) || 'E'}
                                             </AvatarFallback>
                                           </Avatar>
@@ -1085,7 +1085,7 @@ export default function SimpleEmployeeChatPage() {
                                           <div className={cn(
                                             "px-4 py-2.5 rounded-2xl text-sm shadow-sm relative group/message",
                                             isMe 
-                                              ? "bg-gradient-to-br from-[#dcf8c6] to-[#c8e6b5] text-gray-800 rounded-br-none" 
+                                              ? "bg-linear-to-br from-[#dcf8c6] to-[#c8e6b5] text-gray-800 rounded-br-none" 
                                               : "bg-white text-gray-800 rounded-bl-none border border-gray-100"
                                           )}>
                                             {!isMe && (
@@ -1125,7 +1125,7 @@ export default function SimpleEmployeeChatPage() {
                                             ) : (
                                               <>
                                                 {msg.content && (
-                                                  <p className="whitespace-pre-wrap break-words leading-relaxed mb-2">
+                                                  <p className="whitespace-pre-wrap wrap-break-word leading-relaxed mb-2">
                                                     {msg.content}
                                                     {msg.edited && (
                                                       <span className="text-[10px] text-gray-500 ml-1 italic">
@@ -1196,7 +1196,7 @@ export default function SimpleEmployeeChatPage() {
                                         
                                         {isMe && (
                                           <Avatar className="w-8 h-8 ring-2 ring-white shadow-md">
-                                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white text-xs">
+                                            <AvatarFallback className="bg-linear-to-br from-blue-600 to-blue-800 text-white text-xs">
                                               A
                                             </AvatarFallback>
                                           </Avatar>
@@ -1272,7 +1272,7 @@ export default function SimpleEmployeeChatPage() {
                       <Button 
                         onClick={handleSendMessage} 
                         disabled={!newMessage.trim() && !selectedImage || isSending}
-                        className="h-12 px-6 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-2xl shadow-lg"
+                        className="h-12 px-6 bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-2xl shadow-lg"
                       >
                         <Send className="w-4 h-4 mr-2" />
                         {isSending ? 'Sending...' : 'Send'}
@@ -1281,9 +1281,9 @@ export default function SimpleEmployeeChatPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
+                <div className="flex-1 flex items-center justify-center bg-linear-to-b from-gray-50 to-white">
                   <div className="text-center max-w-md px-6">
-                    <div className="w-28 h-28 bg-gradient-to-br from-blue-500/20 to-blue-700/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <div className="w-28 h-28 bg-linear-to-br from-blue-500/20 to-blue-700/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
                       <Briefcase className="w-14 h-14 text-blue-600/40" />
                     </div>
                     <h3 className="text-2xl font-serif font-bold text-gray-900 mb-3">

@@ -480,7 +480,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                         <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                           {cat.items.map((item, i) => (
                             <div key={i} className="flex gap-3 md:gap-4 group">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
+                              <div className="h-5 w-5 rounded-full bg-primary/10 flex shrink-0 items-center justify-center text-primary mt-1 group-hover:bg-primary group-hover:text-white transition-all">
                                 <CheckCircle2 className="h-3 w-3" />
                               </div>
                               <div>
@@ -528,12 +528,12 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                           {service.name}
                         </span>
                         {service.isFirebase && (
-                          <span className="text-[8px] bg-green-500 text-white px-1.5 py-0.5 rounded uppercase flex-shrink-0">
+                          <span className="text-[8px] bg-green-500 text-white px-1.5 py-0.5 rounded uppercase shrink-0">
                             LIVE
                           </span>
                         )}
                       </div>
-                      <ArrowRight className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                      <ArrowRight className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
                     </Link>
                   ))}
                 </div>

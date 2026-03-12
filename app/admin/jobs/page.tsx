@@ -1417,7 +1417,7 @@
 //                   </div>
 //                   <div>
 //                     <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Members</label>
-//                     <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+//                     <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
 //                       {getSelectedEmployeeNames().length > 0 ? (
 //                         <div className="flex flex-wrap gap-1">
 //                           {getSelectedEmployeeNames().map((name, idx) => (
@@ -1624,7 +1624,7 @@
 
 //                 <div>
 //                   <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Equipment</label>
-//                   <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+//                   <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
 //                     {getSelectedEquipmentNames().length > 0 ? (
 //                       <div className="flex flex-wrap gap-1">
 //                         {getSelectedEquipmentNames().map((name, idx) => (
@@ -1691,7 +1691,7 @@
 
 //                 <div>
 //                   <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Permits/Licenses</label>
-//                   <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+//                   <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
 //                     {getSelectedPermitNames().length > 0 ? (
 //                       <div className="flex flex-wrap gap-1">
 //                         {getSelectedPermitNames().map((name, idx) => (
@@ -1770,7 +1770,7 @@
 
 //                 <div>
 //                   <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Services</label>
-//                   <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+//                   <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
 //                     {getSelectedServiceNames().length > 0 ? (
 //                       <div className="flex flex-wrap gap-1">
 //                         {getSelectedServiceNames().map((name, idx) => (
@@ -3520,7 +3520,7 @@ export default function JobsPage() {
           ></div>
           <div className="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
+            <div className="sticky top-0 bg-linear-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">{editingJobId ? 'Edit Job' : 'Create New Job'}</h2>
                 <p className="text-blue-100 text-sm mt-1">Complete all job details</p>
@@ -3678,7 +3678,7 @@ export default function JobsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Members</label>
-                    <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+                    <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
                       {getSelectedEmployeeNames().length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {getSelectedEmployeeNames().map((name, idx) => (
@@ -3902,7 +3902,7 @@ export default function JobsPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Equipment</label>
-                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
                     {getSelectedEquipmentNames().length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {getSelectedEquipmentNames().map((name, idx) => (
@@ -3969,7 +3969,7 @@ export default function JobsPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Permits/Licenses</label>
-                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
                     {getSelectedPermitNames().length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {getSelectedPermitNames().map((name, idx) => (
@@ -4048,7 +4048,7 @@ export default function JobsPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Selected Services</label>
-                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-[42px]">
+                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-300 min-h-10.5">
                     {getSelectedServiceNames().length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {getSelectedServiceNames().map((name, idx) => (

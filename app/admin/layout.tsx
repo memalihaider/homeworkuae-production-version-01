@@ -746,7 +746,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {sidebarOpen && (
             <>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#039ED9] to-[#0280b0] flex items-center justify-center text-white font-bold text-lg">
+                <div className="h-10 w-10 rounded-xl bg-linear-to-br from-[#039ED9] to-[#0280b0] flex items-center justify-center text-white font-bold text-lg">
                   H
                 </div>
                 <div>
@@ -761,7 +761,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </>
           )}
           {!sidebarOpen && (
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#039ED9] to-[#0280b0] flex items-center justify-center text-white font-bold text-lg">
+            <div className="h-10 w-10 rounded-xl bg-linear-to-br from-[#039ED9] to-[#0280b0] flex items-center justify-center text-white font-bold text-lg">
               H
             </div>
           )}
@@ -907,7 +907,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {sidebarOpen && (
             <div className="bg-muted/50 rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#039ED9] to-[#0280b0] flex items-center justify-center text-white font-semibold shrink-0">
+                <div className="h-10 w-10 rounded-full bg-linear-to-br from-[#039ED9] to-[#0280b0] flex items-center justify-center text-white font-semibold shrink-0">
                   {userSession.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">

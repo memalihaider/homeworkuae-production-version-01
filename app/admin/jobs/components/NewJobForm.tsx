@@ -144,7 +144,7 @@ export default function NewJobForm({ onClose, onSave }: NewJobFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-end">
-      <div className="w-full md:w-[600px] h-screen md:h-[95vh] bg-white shadow-2xl overflow-y-auto flex flex-col">
+      <div className="w-full md:w-150 h-screen md:h-[95vh] bg-white shadow-2xl overflow-y-auto flex flex-col">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <h2 className="text-lg font-black uppercase tracking-tighter">Create New Job</h2>

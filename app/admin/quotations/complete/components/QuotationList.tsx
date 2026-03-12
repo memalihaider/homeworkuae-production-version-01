@@ -811,7 +811,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-bold text-[13px] text-black mb-0.5">{q.client}</p>
-                      <p className="text-[11px] text-gray-500 flex items-center gap-1.5 font-medium truncate max-w-[200px]">
+                      <p className="text-[11px] text-gray-500 flex items-center gap-1.5 font-medium truncate max-w-50">
                         {q.company}
                       </p>
                       <p className="text-[10px] text-gray-400 font-medium truncate">{q.email}</p>

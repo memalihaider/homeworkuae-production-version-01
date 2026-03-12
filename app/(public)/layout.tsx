@@ -63,7 +63,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* Top Bar - Premium */}
-      <div className="bg-gradient-to-r from-[#039ED9] via-[#0388be] to-[#039ED9] text-white py-2.5 hidden md:block">
+      <div className="bg-linear-to-r from-[#039ED9] via-[#0388be] to-[#039ED9] text-white py-2.5 hidden md:block">
         <div className="container mx-auto px-6 flex justify-between items-center text-xs font-semibold">
           <div className="flex items-center gap-8">
             <a 
@@ -116,7 +116,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               </a>
               
               {/* Mega Menu */}
-              <div className="absolute top-full -left-80 w-[720px] bg-white border border-slate-200/80 shadow-xl rounded-2xl p-8 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50">
+              <div className="absolute top-full -left-80 w-180 bg-white border border-slate-200/80 shadow-xl rounded-2xl p-8 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50">
                 <div className="grid grid-cols-3 gap-8">
                   {/* Normal Cleaning Section */}
                   <div>
@@ -355,7 +355,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* Floating Action Buttons - Clean & Minimal */}
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3">
+      <div className="fixed bottom-6 right-6 z-9999 flex flex-col gap-3">
         {/* WhatsApp */}
         <a 
           href="https://wa.me/971507177059" 

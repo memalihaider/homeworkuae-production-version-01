@@ -587,7 +587,7 @@ export default function EmployeeChatPage() {
                 <Mail className="w-4 h-4 text-violet-400" />
                 <span className="text-sm text-violet-300">{session?.user.email}</span>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
                 {getUserInitials()}
               </div>
             </div>
@@ -608,7 +608,7 @@ export default function EmployeeChatPage() {
                   
                   <div className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-xl border border-violet-500/30">
                     <Avatar className="w-16 h-16 rounded-xl border-2 border-violet-500/30">
-                      <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-2xl">
+                      <AvatarFallback className="bg-linear-to-br from-violet-500 to-purple-600 text-white text-2xl">
                         {loggedInEmployee.name?.charAt(0) || 'E'}
                       </AvatarFallback>
                     </Avatar>
@@ -650,8 +650,8 @@ export default function EmployeeChatPage() {
               >
                 <div className="px-6 py-6">
                   {visibleMessages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-[300px]">
-                      <div className="w-24 h-24 bg-gradient-to-br from-violet-500/20 to-purple-600/20 rounded-3xl flex items-center justify-center mb-4">
+                    <div className="flex flex-col items-center justify-center h-75">
+                      <div className="w-24 h-24 bg-linear-to-br from-violet-500/20 to-purple-600/20 rounded-3xl flex items-center justify-center mb-4">
                         <MessageCircle className="w-12 h-12 text-violet-400" />
                       </div>
                       <h3 className="text-xl font-bold text-white mb-2">No messages yet</h3>
@@ -678,7 +678,7 @@ export default function EmployeeChatPage() {
                                   
                                   {!isMe && (
                                     <Avatar className="w-8 h-8 ring-2 ring-slate-700 shrink-0">
-                                      <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-xs">
+                                      <AvatarFallback className="bg-linear-to-br from-violet-500 to-purple-600 text-white text-xs">
                                         A
                                       </AvatarFallback>
                                     </Avatar>
@@ -688,7 +688,7 @@ export default function EmployeeChatPage() {
                                     <div className={cn(
                                       "px-4 py-2.5 rounded-2xl text-sm shadow-sm relative group/message",
                                       isMe 
-                                        ? "bg-gradient-to-br from-violet-600 to-purple-600 text-white rounded-br-none" 
+                                        ? "bg-linear-to-br from-violet-600 to-purple-600 text-white rounded-br-none" 
                                         : "bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700"
                                     )}>
                                       {!isMe && (
@@ -728,7 +728,7 @@ export default function EmployeeChatPage() {
                                       ) : (
                                         <>
                                           {msg.content && (
-                                            <p className="whitespace-pre-wrap break-words leading-relaxed mb-2">
+                                            <p className="whitespace-pre-wrap wrap-break-word leading-relaxed mb-2">
                                               {msg.content}
                                               {msg.edited && (
                                                 <span className="text-[10px] text-slate-400 ml-1 italic">
@@ -802,7 +802,7 @@ export default function EmployeeChatPage() {
                                   
                                   {isMe && (
                                     <Avatar className="w-8 h-8 ring-2 ring-slate-700 shrink-0">
-                                      <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-xs">
+                                      <AvatarFallback className="bg-linear-to-br from-violet-500 to-purple-600 text-white text-xs">
                                         {loggedInEmployee.name?.charAt(0) || 'E'}
                                       </AvatarFallback>
                                     </Avatar>
@@ -878,7 +878,7 @@ export default function EmployeeChatPage() {
                 <Button 
                   onClick={handleSendMessage} 
                   disabled={!newMessage.trim() && !selectedImage || isSending}
-                  className="h-12 px-6 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 rounded-2xl shadow-lg shadow-violet-600/20 shrink-0"
+                  className="h-12 px-6 bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 rounded-2xl shadow-lg shadow-violet-600/20 shrink-0"
                 >
                   <Send className="w-4 h-4 mr-2" />
                   {isSending ? 'Sending...' : 'Send'}
