@@ -143,7 +143,14 @@ export default function CategoryManager() {
       resetForm()
     } catch (error) {
       console.error('❌ Error saving category:', error)
-      alert('Error saving category. Please try again.')
+      const errorCode = (error as { code?: string })?.code
+      const errorMessage = (error as { message?: string })?.message
+
+      if (errorCode === 'permission-denied') {
+        alert('Permission denied while saving category. Please verify admin access and Firestore rules.')
+      } else {
+        alert(`Error saving category (${errorCode || 'unknown-error'}). ${errorMessage || 'Please try again.'}`)
+      }
     }
   }
 

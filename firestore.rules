@@ -174,8 +174,91 @@ service cloud.firestore {
       allow write: if isAuth();
     }
 
+    // Product categories used by product builder/dashboard/category manager
+    match /categories/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
     match /finance/{docId} {
       allow read, write: if isAuth();
+    }
+
+    // Finance module collections
+    match /invoices/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /record-expense/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /record-payment/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Payroll records
+    match /payroll/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Leave management records (admin HR module)
+    match /leave-management/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Job expense manager
+    match /job-expenses/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Equipment & permits module
+    match /equipment/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /permits_licenses/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /materials/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /tracking/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Employee feedback module
+    match /feedbacks/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /complaints/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Admin settings documents
+    match /profile-setting/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /tax/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
     }
 
     // ─── Surveys ─────────────────────────────────────────────────────────
@@ -199,6 +282,12 @@ service cloud.firestore {
 
     // Meeting calendar entries used by admin meetings calendar/detail pages
     match /meetingCalendar/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Legacy/typo collection still referenced in some pages
+    match /meetingCalender/{docId} {
       allow read: if isAuth();
       allow write: if isAdmin();
     }
@@ -249,6 +338,12 @@ service cloud.firestore {
 
     // ─── Marketing ────────────────────────────────────────────────────────
 
+    // CRM communications timeline
+    match /communications/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
     match /leads/{docId} {
       allow read, write: if isAuth();
     }
@@ -267,6 +362,19 @@ service cloud.firestore {
 
     match /reminders/{docId} {
       allow read, write: if isAuth();
+    }
+
+    // Process inquiry module
+    match /process-inquiry/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Survey submissions collection used in admin survey workflows
+    match /survey_submissions/{docId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     // ─── User roles (admin management) ───────────────────────────────────
