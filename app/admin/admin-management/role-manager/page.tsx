@@ -65,6 +65,17 @@ const ALL_PAGES = [
   'Employee Chat'
 ]
 
+const ensureAdminQuotationAccess = (portal: 'admin' | 'employee', pages: string[]) => {
+  if (portal !== 'admin') return ['Employee Chat']
+
+  const normalizedPages = Array.from(new Set(pages))
+  if (!normalizedPages.includes('Quotations')) {
+    normalizedPages.push('Quotations')
+  }
+
+  return normalizedPages
+}
+
 // Portal Types
 const PORTALS = [
   { id: 'admin', name: 'Admin Portal', icon: Shield },
@@ -207,10 +218,7 @@ export default function RoleManager() {
     try {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
-      // For employee portal, always give them ONLY chat access
-      const allowedPages = newUser.portal === 'employee' 
-        ? ['Employee Chat']
-        : newUser.allowedPages
+      const allowedPages = ensureAdminQuotationAccess(newUser.portal, newUser.allowedPages)
       
       console.log('📝 Creating user with data:', {
         email: newUser.email,
@@ -296,10 +304,7 @@ export default function RoleManager() {
     try {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
-      // For employee portal, always give them ONLY chat access
-      const allowedPages = newUser.portal === 'employee' 
-        ? ['Employee Chat']
-        : newUser.allowedPages
+      const allowedPages = ensureAdminQuotationAccess(newUser.portal, newUser.allowedPages)
       
       console.log('📝 Updating user:', { 
         id: editingUserId, 

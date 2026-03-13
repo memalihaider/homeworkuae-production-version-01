@@ -552,6 +552,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         allAllowedPages.push("Process Inquiry");
       }
 
+      if (session.portal === "admin" && !allAllowedPages.includes("Quotations")) {
+        allAllowedPages.push("Quotations");
+      }
+
       // ✅ FIXED: Make sure Employee Chat is included in allowed pages
       if (
         !allAllowedPages.includes("Employee Chat") &&
