@@ -377,22 +377,48 @@ export default function EmployeeDirectory() {
     }
 
     try {
+      const sanitizedDocuments = documents.map((document) => {
+        const sanitizedDocument: {
+          id: string
+          name: string
+          fileName: string
+          uploadDate: string
+          validDate?: string
+        } = {
+          id: document.id,
+          name: document.name,
+          fileName: document.fileName,
+          uploadDate: document.uploadDate
+        }
+
+        if (document.validDate) {
+          sanitizedDocument.validDate = document.validDate
+        }
+
+        return sanitizedDocument
+      })
+
       const employeeData = {
         ...formData,
-        documents: documents,
+        documents: sanitizedDocuments,
         team: formData.team || [],
         rating: formData.rating || 4.5,
         burnoutRisk: formData.burnoutRisk || 'Low',
-        lastUpdated: new Date().toISOString(),
-        createdAt: isEditing ? selectedEmployee.createdAt : new Date().toISOString()
+        lastUpdated: new Date().toISOString()
       }
 
       if (isEditing && selectedEmployee) {
         const employeeDoc = doc(db, 'employees', selectedEmployee.id)
-        await updateDoc(employeeDoc, employeeData)
+        const employeeUpdatePayload = selectedEmployee.createdAt
+          ? { ...employeeData, createdAt: selectedEmployee.createdAt }
+          : employeeData
+        await updateDoc(employeeDoc, employeeUpdatePayload)
         alert('Employee updated successfully')
       } else {
-        await addDoc(collection(db, 'employees'), employeeData)
+        await addDoc(collection(db, 'employees'), {
+          ...employeeData,
+          createdAt: new Date().toISOString()
+        })
         alert('Employee added successfully')
       }
 
@@ -1921,7 +1947,7 @@ export default function EmployeeDirectory() {
                                 name: documentName,
                                 fileName: documentName + ' - No file uploaded',
                                 uploadDate: new Date().toISOString().split('T')[0],
-                                validDate: documentValidDate || undefined
+                                ...(documentValidDate ? { validDate: documentValidDate } : {})
                               }
                               setDocuments([...documents, newDoc])
                               setDocumentName('')
@@ -1949,7 +1975,7 @@ export default function EmployeeDirectory() {
                                 name: documentName,
                                 fileName: file.name,
                                 uploadDate: new Date().toISOString().split('T')[0],
-                                validDate: documentValidDate || undefined
+                                ...(documentValidDate ? { validDate: documentValidDate } : {})
                               }
                               setDocuments([...documents, newDoc])
                               setDocumentName('')
