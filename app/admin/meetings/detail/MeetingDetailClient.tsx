@@ -333,7 +333,7 @@ export default function MeetingDetail() {
 
   // Handle back to calendar
   const handleBack = () => {
-    router.push('/admin/meeting-calendar')
+    router.push('/admin/meetings/calendar')
   }
 
   // Filter meetings based on selected date and status
@@ -407,7 +407,7 @@ export default function MeetingDetail() {
           <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-600">No meetings scheduled yet</p>
           <button 
-            onClick={() => router.push('/admin/meeting-calendar')} 
+            onClick={() => router.push('/admin/meetings/calendar')} 
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Schedule a Meeting

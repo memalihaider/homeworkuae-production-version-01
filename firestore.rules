@@ -191,6 +191,28 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Meeting calendar entries used by admin meetings calendar/detail pages
+    match /meetingCalendar/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Meeting collaboration artifacts
+    match /notes/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /decisions/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /actionItems/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
     match /announcements/{docId} {
       allow read: if isAuth();
       allow write: if isAdmin();
