@@ -10,10 +10,24 @@ service cloud.firestore {
 
     // Helper: is the requesting user an admin?
     // Requires a custom claim or a check against an admins collection.
+    function isAdminFromUsersCollection() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isAdminFromUsersRoleCollection() {
+      return exists(/databases/$(database)/documents/users-role/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.portal == 'admin' ||
+        get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.roleName == 'admin'
+      );
+    }
+
     function isAdmin() {
       return isAuth() && (
         request.auth.token.role == 'admin' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        request.auth.token.portal == 'admin' ||
+        isAdminFromUsersCollection() ||
+        isAdminFromUsersRoleCollection()
       );
     }
 

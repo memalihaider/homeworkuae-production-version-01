@@ -408,6 +408,9 @@ export default function EmployeeDirectory() {
       }
 
       if (isEditing && selectedEmployee) {
+        if (!selectedEmployee.id) {
+          throw new Error('Missing employee id for update')
+        }
         const employeeDoc = doc(db, 'employees', selectedEmployee.id)
         const employeeUpdatePayload = selectedEmployee.createdAt
           ? { ...employeeData, createdAt: selectedEmployee.createdAt }
@@ -457,11 +460,12 @@ export default function EmployeeDirectory() {
     } catch (error) {
       console.error('Error saving employee:', error)
       const errorCode = (error as { code?: string })?.code
+      const errorMessage = (error as { message?: string })?.message
 
       if (errorCode === 'permission-denied') {
         alert('Permission denied while saving employee. Please verify your admin access in Firestore rules.')
       } else {
-        alert('Failed to save employee. Please check required fields and try again.')
+        alert(`Failed to save employee (${errorCode || 'unknown-error'}). ${errorMessage || 'Please check required fields and try again.'}`)
       }
     }
   }
