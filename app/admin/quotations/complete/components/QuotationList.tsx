@@ -770,8 +770,8 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-300 rounded overflow-hidden shadow-none">
+      {/* Desktop Table */}
+      <div className="hidden md:block bg-white border border-gray-300 rounded overflow-hidden shadow-none">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
@@ -908,6 +908,82 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="bg-white border border-gray-300 rounded p-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <FileText className="w-8 h-8 text-gray-300" />
+              <p className="text-sm text-gray-500">No quotations found</p>
+              <p className="text-xs text-gray-400">
+                {searchTerm || statusFilter !== 'All' ? 'Try changing your search/filter' : 'Create your first quotation'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          filtered.map((q) => (
+            <div key={q.id} className="bg-white border border-gray-300 rounded p-4 shadow-none space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold text-[13px] text-black">{q.quoteNumber}</p>
+                  <p className="text-[11px] text-gray-500 font-medium">{q.client}</p>
+                  <p className="text-[10px] text-gray-400">{q.company}</p>
+                </div>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
+                  {getStatusIcon(q.status)}
+                  {q.status || 'Draft'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <p className="text-gray-500">Amount</p>
+                <p className="text-right font-bold text-black">{q.total?.toLocaleString()} {q.currency || 'AED'}</p>
+                <p className="text-gray-500">Date</p>
+                <p className="text-right font-bold text-gray-700">{formatDate(q.date)}</p>
+                <p className="text-gray-500">Created By</p>
+                <p className="text-right font-bold text-gray-700">{q.createdBy || 'N/A'}</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <button
+                  onClick={() => handleDownloadPDF(q)}
+                  disabled={downloadingId === q.id}
+                  className={`col-span-3 flex items-center justify-center gap-2 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight transition-colors ${
+                    downloadingId === q.id
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                  }`}
+                >
+                  {downloadingId === q.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                  Download PDF
+                </button>
+
+                <button
+                  onClick={() => handleEditClick(q)}
+                  className="flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => handleDelete(q.id)}
+                  disabled={deletingId === q.id}
+                  className={`col-span-2 flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight transition-colors ${
+                    deletingId === q.id
+                      ? 'bg-red-100 text-red-400 cursor-not-allowed'
+                      : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                  }`}
+                >
+                  {deletingId === q.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Footer with count */}

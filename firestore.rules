@@ -12,20 +12,27 @@ service cloud.firestore {
     // Requires a custom claim or a check against an admins collection.
     function isAdminFromUsersCollection() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin'
+        );
     }
 
     function isAdminFromUsersRoleCollection() {
       return exists(/databases/$(database)/documents/users-role/$(request.auth.uid)) && (
         get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.portal == 'admin' ||
-        get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.roleName == 'admin'
+        get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.portal == 'Admin' ||
+        get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.roleName == 'admin' ||
+        get(/databases/$(database)/documents/users-role/$(request.auth.uid)).data.roleName == 'Admin'
       );
     }
 
     function isAdmin() {
       return isAuth() && (
         request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'Admin' ||
         request.auth.token.portal == 'admin' ||
+        request.auth.token.portal == 'Admin' ||
         isAdminFromUsersCollection() ||
         isAdminFromUsersRoleCollection()
       );
