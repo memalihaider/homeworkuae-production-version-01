@@ -430,7 +430,13 @@ export default function EmployeeDirectory() {
       })
     } catch (error) {
       console.error('Error saving employee:', error)
-      alert('Failed to save employee')
+      const errorCode = (error as { code?: string })?.code
+
+      if (errorCode === 'permission-denied') {
+        alert('Permission denied while saving employee. Please verify your admin access in Firestore rules.')
+      } else {
+        alert('Failed to save employee. Please check required fields and try again.')
+      }
     }
   }
 

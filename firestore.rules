@@ -11,7 +11,10 @@ service cloud.firestore {
     // Helper: is the requesting user an admin?
     // Requires a custom claim or a check against an admins collection.
     function isAdmin() {
-      return isAuth() && request.auth.token.role == 'admin';
+      return isAuth() && (
+        request.auth.token.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
     }
 
     // ─── Public read collections ───────────────────────────────────────────
