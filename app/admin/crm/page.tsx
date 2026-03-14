@@ -251,7 +251,7 @@ export default function UnifiedCRMDashboard() {
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [dateFilterType, setDateFilterType] = useState<'joinDate' | 'lastContact' | 'createdAt'>('joinDate')
-  const [calendarView, setCalendarView] = useState<'month' | 'year'>('month')
+  const [calendarView, setCalendarView] = useState<'day' | 'month' | 'year'>('month')
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
 
@@ -399,8 +399,15 @@ export default function UnifiedCRMDashboard() {
       if (selectedDate && dateFilterType) {
         const leadDate = new Date(lead[dateFilterType])
         const filterDate = new Date(selectedDate)
+
+        const isSameDay =
+          leadDate.getFullYear() === filterDate.getFullYear() &&
+          leadDate.getMonth() === filterDate.getMonth() &&
+          leadDate.getDate() === filterDate.getDate()
         
-        if (calendarView === 'month') {
+        if (calendarView === 'day') {
+          matchesDate = isSameDay
+        } else if (calendarView === 'month') {
           matchesDate = 
             leadDate.getFullYear() === filterDate.getFullYear() &&
             leadDate.getMonth() === filterDate.getMonth()
@@ -894,6 +901,18 @@ export default function UnifiedCRMDashboard() {
     setCurrentYear(year)
   }
 
+  const handleDaySelect = (dateString: string) => {
+    if (!dateString) return
+
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+
+    setSelectedDate(date)
+    setCalendarView('day')
+    setCurrentYear(year)
+    setCurrentMonth(month - 1)
+  }
+
   // Navigate years
   const navigateYears = (direction: 'prev' | 'next') => {
     if (direction === 'prev') {
@@ -1085,9 +1104,11 @@ export default function UnifiedCRMDashboard() {
             >
               <CalendarIcon className="h-5 w-5 text-blue-600" />
               {selectedDate ? 
-                calendarView === 'month' ? 
-                  `${months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}` : 
-                  `Year ${selectedDate.getFullYear()}`
+                calendarView === 'day'
+                  ? selectedDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+                  : calendarView === 'month'
+                    ? `${months[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`
+                    : `Year ${selectedDate.getFullYear()}`
                 : 'Filter by Date'
               }
               {showCalendar ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -1112,6 +1133,12 @@ export default function UnifiedCRMDashboard() {
                 
                 <div className="mb-3 flex gap-2">
                   <button
+                    onClick={() => setCalendarView('day')}
+                    className={`flex-1 px-3 py-1.5 text-sm rounded-lg ${calendarView === 'day' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                  >
+                    Day
+                  </button>
+                  <button
                     onClick={() => setCalendarView('month')}
                     className={`flex-1 px-3 py-1.5 text-sm rounded-lg ${calendarView === 'month' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
                   >
@@ -1125,7 +1152,40 @@ export default function UnifiedCRMDashboard() {
                   </button>
                 </div>
                 
-                {calendarView === 'month' ? (
+                {calendarView === 'day' ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 uppercase block mb-2">
+                        Select Day:
+                      </label>
+                      <input
+                        type="date"
+                        value={selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` : ''}
+                        onChange={(e) => handleDaySelect(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleDaySelect(new Date().toISOString().split('T')[0])}
+                        className="px-3 py-2 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded-lg border border-green-200"
+                      >
+                        Today
+                      </button>
+                      <button
+                        onClick={() => {
+                          const yesterday = new Date()
+                          yesterday.setDate(yesterday.getDate() - 1)
+                          handleDaySelect(yesterday.toISOString().split('T')[0])
+                        }}
+                        className="px-3 py-2 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg border border-blue-200"
+                      >
+                        Yesterday
+                      </button>
+                    </div>
+                  </div>
+                ) : calendarView === 'month' ? (
                   <div className="space-y-3">
                     {/* Month Navigation */}
                     <div className="flex items-center justify-between">

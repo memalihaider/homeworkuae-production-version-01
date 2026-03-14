@@ -2249,7 +2249,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, where, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 
 interface Job {
@@ -2367,6 +2367,7 @@ interface Employee {
   email: string
   department: string
   position: string
+  role?: string
   status: string
 }
 
@@ -2409,6 +2410,9 @@ interface NewJobForm {
   listingDurationDays: number
 }
 
+const JOB_TAX_RATE = 0.05
+type AccessRole = 'admin' | 'sales' | 'operations' | 'other'
+
 export default function JobsPage() {
   const router = useRouter()
   const [jobs, setJobs] = useState<Job[]>([])
@@ -2429,6 +2433,9 @@ export default function JobsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showTasksSection, setShowTasksSection] = useState(false)
+  const [currentAccessRole, setCurrentAccessRole] = useState<AccessRole>('admin')
+  const [currentEmployeeId, setCurrentEmployeeId] = useState('')
+  const [currentUserEmail, setCurrentUserEmail] = useState('')
 
   const [newJobForm, setNewJobForm] = useState<NewJobForm>({
     title: '',
@@ -2458,6 +2465,51 @@ export default function JobsPage() {
     selectedServices: [],
     listingDurationDays: 0
   })
+
+  useEffect(() => {
+    const resolveAccessRole = async () => {
+      try {
+        const storedSession = typeof window !== 'undefined'
+          ? localStorage.getItem('userSession')
+          : null
+
+        const parsedSession = storedSession ? JSON.parse(storedSession) : null
+        const sessionUid = parsedSession?.user?.uid || auth.currentUser?.uid || ''
+        const sessionEmail = parsedSession?.user?.email || auth.currentUser?.email || ''
+        let resolvedRole: AccessRole = 'admin'
+        let resolvedEmployeeId = parsedSession?.employeeId || ''
+
+        if (sessionUid) {
+          const userRoleDoc = await getDoc(doc(db, 'users-role', sessionUid))
+          if (userRoleDoc.exists()) {
+            const roleData = userRoleDoc.data()
+            const roleName = String(roleData.roleName || '').toLowerCase()
+            const portal = String(roleData.portal || parsedSession?.portal || '').toLowerCase()
+
+            if (roleName.includes('sales')) {
+              resolvedRole = 'sales'
+            } else if (roleName.includes('operation')) {
+              resolvedRole = 'operations'
+            } else if (roleName.includes('admin') || portal === 'admin') {
+              resolvedRole = 'admin'
+            } else {
+              resolvedRole = 'other'
+            }
+
+            resolvedEmployeeId = roleData.employeeId || resolvedEmployeeId
+          }
+        }
+
+        setCurrentAccessRole(resolvedRole)
+        setCurrentEmployeeId(resolvedEmployeeId || '')
+        setCurrentUserEmail(sessionEmail || '')
+      } catch (error) {
+        console.error('Error resolving jobs access role:', error)
+      }
+    }
+
+    resolveAccessRole()
+  }, [])
 
   // Fetch jobs, employees, clients, equipment, permits and services from Firebase
   useEffect(() => {
@@ -2542,6 +2594,7 @@ export default function JobsPage() {
             email: data.email || '',
             department: data.department || '',
             position: data.position || '',
+            role: data.role || '',
             status: data.status || 'Active'
           } as Employee
         })
@@ -2783,6 +2836,10 @@ export default function JobsPage() {
         .filter(p => newJobForm.selectedPermits.includes(p.id))
         .map(p => p.name)
 
+      const enteredBudget = Math.max(0, Number(newJobForm.budget) || 0)
+      const taxAmount = Number((enteredBudget * JOB_TAX_RATE).toFixed(2))
+      const budgetWithTax = Number((enteredBudget + taxAmount).toFixed(2))
+
       const jobData = {
         title: newJobForm.title,
         client: newJobForm.client,
@@ -2793,7 +2850,10 @@ export default function JobsPage() {
         endTime: newJobForm.endTime,
         location: newJobForm.location,
         teamRequired: newJobForm.teamRequired,
-        budget: newJobForm.budget,
+        budget: editingJobId ? enteredBudget : budgetWithTax,
+        baseBudget: enteredBudget,
+        taxRate: JOB_TAX_RATE,
+        taxAmount,
         description: newJobForm.description,
         riskLevel: newJobForm.riskLevel,
         slaDeadline: newJobForm.slaDeadline,
@@ -2863,19 +2923,53 @@ export default function JobsPage() {
     }
   }, [newJobForm, jobs, editingJobId, employees, equipment, permits])
 
+  const visibleJobs = useMemo(() => {
+    const employeeById = new Map(employees.map(emp => [emp.id, emp]))
+
+    const employeeIdByEmail = currentUserEmail
+      ? employees.find(emp => emp.email.toLowerCase() === currentUserEmail.toLowerCase())?.id || ''
+      : ''
+
+    const resolvedEmployeeId = currentEmployeeId || employeeIdByEmail
+
+    if (currentAccessRole === 'sales') {
+      if (!resolvedEmployeeId) return []
+      return jobs.filter(job => job.jobCreatedBy === resolvedEmployeeId)
+    }
+
+    if (currentAccessRole === 'operations') {
+      return jobs.filter(job => {
+        const creator = employeeById.get(job.jobCreatedBy)
+        if (!creator) return false
+
+        const searchable = `${creator.department} ${creator.position} ${creator.role || ''}`.toLowerCase()
+        return searchable.includes('operation')
+      })
+    }
+
+    return jobs
+  }, [jobs, employees, currentAccessRole, currentEmployeeId, currentUserEmail])
+
   const stats = useMemo(() => ({
-    total: jobs.length,
-    pending: jobs.filter(j => j.status === 'Pending').length,
-    scheduled: jobs.filter(j => j.status === 'Scheduled').length,
-    inProgress: jobs.filter(j => j.status === 'In Progress').length,
-    completed: jobs.filter(j => j.status === 'Completed').length,
-    totalBudget: jobs.reduce((sum, j) => sum + j.budget, 0),
-    totalActualCost: jobs.reduce((sum, j) => sum + j.actualCost, 0),
-    critical: jobs.filter(j => j.priority === 'Critical').length
-  }), [jobs])
+    total: visibleJobs.length,
+    pending: visibleJobs.filter(j => j.status === 'Pending').length,
+    scheduled: visibleJobs.filter(j => j.status === 'Scheduled').length,
+    inProgress: visibleJobs.filter(j => j.status === 'In Progress').length,
+    completed: visibleJobs.filter(j => j.status === 'Completed').length,
+    totalBudget: visibleJobs.reduce((sum, j) => sum + j.budget, 0),
+    totalActualCost: visibleJobs.reduce((sum, j) => sum + j.actualCost, 0),
+    critical: visibleJobs.filter(j => j.priority === 'Critical').length
+  }), [visibleJobs])
+
+  const budgetTaxPreview = useMemo(() => {
+    const base = Math.max(0, Number(newJobForm.budget) || 0)
+    const tax = Number((base * JOB_TAX_RATE).toFixed(2))
+    const total = Number((base + tax).toFixed(2))
+    return { base, tax, total }
+  }, [newJobForm.budget])
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
+    return visibleJobs.filter(job => {
       const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            job.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            job.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -2885,7 +2979,7 @@ export default function JobsPage() {
 
       return matchesSearch && matchesStatus && matchesPriority
     })
-  }, [jobs, searchTerm, statusFilter, priorityFilter])
+  }, [visibleJobs, searchTerm, statusFilter, priorityFilter])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -3871,14 +3965,23 @@ export default function JobsPage() {
                 </h3>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Budget (AED) *</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    {editingJobId ? 'Budget (AED) *' : 'Job Price (AED) *'}
+                  </label>
                   <input
                     type="number"
                     value={newJobForm.budget}
-                    onChange={(e) => setNewJobForm({...newJobForm, budget: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setNewJobForm({...newJobForm, budget: parseFloat(e.target.value) || 0})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     min="0"
+                    step="0.01"
                   />
+                  {!editingJobId && budgetTaxPreview.base > 0 && (
+                    <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-2 text-xs text-blue-800">
+                      <p>Auto Tax (5%): AED {budgetTaxPreview.tax.toLocaleString()}</p>
+                      <p className="font-bold">Total with tax: AED {budgetTaxPreview.total.toLocaleString()}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

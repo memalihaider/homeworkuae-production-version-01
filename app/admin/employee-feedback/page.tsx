@@ -30,7 +30,8 @@ import {
   doc,
   query,
   orderBy,
-  Timestamp 
+  Timestamp,
+  onSnapshot
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
@@ -129,11 +130,99 @@ export default function EmployeeFeedbackAndComplaints() {
     resolution: ''
   })
 
-  // Fetch all data from Firebase
+  // Real-time listeners for all collections
   useEffect(() => {
-    fetchEmployees()
-    fetchFeedbacks()
-    fetchComplaints()
+    const employeesQuery = query(collection(db, 'employees'))
+    const feedbacksQuery = query(collection(db, 'feedbacks'), orderBy('submissionDate', 'desc'))
+    const complaintsQuery = query(collection(db, 'complaints'), orderBy('submissionDate', 'desc'))
+
+    const unsubscribeEmployees = onSnapshot(employeesQuery, (snapshot) => {
+      const employeesList: FirebaseEmployee[] = []
+
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        employeesList.push({
+          id: doc.id,
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          department: data.department || '',
+          position: data.position || '',
+          role: data.role || '',
+          status: data.status || '',
+          supervisor: data.supervisor || '',
+          salary: data.salary || 0,
+          salaryStructure: data.salaryStructure || '',
+          bankName: data.bankName || '',
+          bankAccount: data.bankAccount || '',
+          joinDate: data.joinDate || '',
+          createdAt: data.createdAt || '',
+          lastUpdated: data.lastUpdated || ''
+        })
+      })
+
+      setEmployees(employeesList)
+    })
+
+    const unsubscribeFeedbacks = onSnapshot(feedbacksQuery, (snapshot) => {
+      const feedbacksList: FirebaseFeedback[] = []
+
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        feedbacksList.push({
+          id: doc.id,
+          employeeId: data.employeeId || '',
+          employeeName: data.employeeName || '',
+          employeeRole: data.employeeRole || '',
+          submittedBy: data.submittedBy || 'Admin',
+          submissionDate: data.submissionDate || '',
+          rating: data.rating || 0,
+          category: data.category || '',
+          title: data.title || '',
+          content: data.content || '',
+          status: data.status || 'Active',
+          tags: data.tags || [],
+          createdAt: data.createdAt || '',
+          updatedAt: data.updatedAt || ''
+        })
+      })
+
+      setFeedbacks(feedbacksList)
+    })
+
+    const unsubscribeComplaints = onSnapshot(complaintsQuery, (snapshot) => {
+      const complaintsList: FirebaseComplaint[] = []
+
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        complaintsList.push({
+          id: doc.id,
+          employeeId: data.employeeId || '',
+          employeeName: data.employeeName || '',
+          employeeRole: data.employeeRole || '',
+          filedBy: data.filedBy || 'Employee',
+          submissionDate: data.submissionDate || '',
+          category: data.category || '',
+          priority: data.priority || 'Medium',
+          title: data.title || '',
+          description: data.description || '',
+          status: data.status || 'Open',
+          assignedTo: data.assignedTo || 'Unassigned',
+          resolution: data.resolution || '',
+          attachments: data.attachments || [],
+          createdAt: data.createdAt || '',
+          updatedAt: data.updatedAt || ''
+        })
+      })
+
+      setComplaints(complaintsList)
+    })
+
+    return () => {
+      unsubscribeEmployees()
+      unsubscribeFeedbacks()
+      unsubscribeComplaints()
+    }
   }, [])
 
   const fetchEmployees = async () => {

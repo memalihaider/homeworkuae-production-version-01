@@ -73,7 +73,8 @@ import {
   orderBy,
   Timestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  onSnapshot
 } from 'firebase/firestore'
 import { db, storage } from '@/lib/firebase'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
@@ -97,8 +98,12 @@ export default function JobDetailPage() {
   const [executionTime, setExecutionTime] = useState({
     elapsedHours: 0,
     elapsedMinutes: 0,
+    elapsedTotalMinutes: 0,
     estimatedCompletion: 0,
-    lastUpdate: ''
+    lastUpdate: '',
+    startedAt: '',
+    endedAt: '',
+    isRunning: false
   })
   const [executionNotes, setExecutionNotes] = useState('')
   const [executionPhotos, setExecutionPhotos] = useState<any[]>([])
@@ -173,6 +178,37 @@ const [milestones, setMilestones] = useState<Array<{
       return timestamp
     }
     return new Date().toISOString()
+  }
+
+  const getEstimatedHours = (duration: string): number => {
+    const match = duration?.toString().match(/\d+/)
+    return match ? parseInt(match[0], 10) : 0
+  }
+
+  const buildExecutionClock = (
+    startedAt: string,
+    endedAt: string,
+    estimatedHours: number,
+    running: boolean,
+    lastUpdate: string
+  ) => {
+    const startDate = startedAt ? new Date(startedAt) : null
+    const endDate = endedAt ? new Date(endedAt) : (running ? new Date() : null)
+
+    const totalMinutes = startDate && endDate
+      ? Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60)))
+      : 0
+
+    return {
+      elapsedHours: Math.floor(totalMinutes / 60),
+      elapsedMinutes: totalMinutes % 60,
+      elapsedTotalMinutes: totalMinutes,
+      estimatedCompletion: estimatedHours,
+      lastUpdate,
+      startedAt,
+      endedAt,
+      isRunning: running
+    }
   }
 
   // Fetch REAL job data from Firebase
@@ -390,6 +426,23 @@ const [milestones, setMilestones] = useState<Array<{
           setExecutionPhotos(jobData.executionPhotos || [])
         }
 
+        const tracking = jobData.executionTracking || {}
+        const startedAtIso = tracking.startedAt ? convertTimestamp(tracking.startedAt) : ''
+        const endedAtIso = tracking.endedAt ? convertTimestamp(tracking.endedAt) : ''
+        const estimatedHours = getEstimatedHours(jobData.estimatedDuration || '')
+        const isRunning = Boolean(tracking.isRunning && startedAtIso && !endedAtIso)
+        const trackingLastUpdate = tracking.lastUpdated ? convertTimestamp(tracking.lastUpdated) : ''
+
+        setExecutionTime(
+          buildExecutionClock(
+            startedAtIso,
+            endedAtIso,
+            estimatedHours,
+            isRunning,
+            trackingLastUpdate
+          )
+        )
+
         // Set default data for other sections
         setChecklistItems([
           { id: '1', item: 'Job requirements reviewed', status: false },
@@ -468,12 +521,10 @@ const [milestones, setMilestones] = useState<Array<{
         
         setEmployeeReports(reports)
 
-        // Set default feedback if none
+        // No fallback employee feedback. Show only real Firebase data.
         if (!jobData.employeeFeedback || jobData.employeeFeedback.length === 0) {
-          setEmployeeFeedback([
-            { id: '1', employee: 'Ahmed Hassan', jobId: jobId, date: new Date().toISOString(), rating: 5, feedback: 'Excellent coordination with team. High quality work delivered on time.', category: 'performance' },
-            { id: '2', employee: 'Fatima Al-Mazrouei', jobId: jobId, date: new Date().toISOString(), rating: 4, feedback: 'Good work quality. Communication could be improved.', category: 'performance' }
-          ])
+          setAllEmployeeFeedback([])
+          setEmployeeFeedback([])
         }
 
         // Fetch employees from Firebase employees collection
@@ -488,6 +539,77 @@ const [milestones, setMilestones] = useState<Array<{
       fetchJobData()
     }
   }, [jobId, router])
+
+  useEffect(() => {
+    if (!jobId) return
+
+    const unsubscribe = onSnapshot(doc(db, 'jobs', jobId), (snapshot) => {
+      if (!snapshot.exists()) return
+
+      const data = snapshot.data()
+
+      // Real-time employee feedback updates
+      if (Array.isArray(data.employeeFeedback)) {
+        setAllEmployeeFeedback(data.employeeFeedback)
+        setEmployeeFeedback(
+          data.employeeFeedback.map((feedback: any) => ({
+            id: feedback.id || `feedback-${Math.random()}`,
+            employee: feedback.employee || '',
+            title: feedback.title || '',
+            description: feedback.description || '',
+            rating: feedback.rating || 5,
+            category: feedback.category || 'performance',
+            date: feedback.date ? convertTimestamp(feedback.date) : new Date().toISOString(),
+            feedback: feedback.feedback || feedback.description || '',
+            author: feedback.author || 'System'
+          }))
+        )
+      } else {
+        setAllEmployeeFeedback([])
+        setEmployeeFeedback([])
+      }
+
+      // Real-time execution tracking updates
+      const tracking = data.executionTracking || {}
+      const startedAtIso = tracking.startedAt ? convertTimestamp(tracking.startedAt) : ''
+      const endedAtIso = tracking.endedAt ? convertTimestamp(tracking.endedAt) : ''
+      const estimatedHours = getEstimatedHours(data.estimatedDuration || job?.estimatedDuration || '')
+      const isRunning = Boolean(tracking.isRunning && startedAtIso && !endedAtIso)
+      const trackingLastUpdate = tracking.lastUpdated ? convertTimestamp(tracking.lastUpdated) : ''
+
+      setExecutionTime(
+        buildExecutionClock(
+          startedAtIso,
+          endedAtIso,
+          estimatedHours,
+          isRunning,
+          trackingLastUpdate
+        )
+      )
+    })
+
+    return () => unsubscribe()
+  }, [jobId, job?.estimatedDuration])
+
+  useEffect(() => {
+    if (!executionTime.isRunning || !executionTime.startedAt) return
+
+    const timer = setInterval(() => {
+      setExecutionTime((prev) => {
+        if (!prev.startedAt || !prev.isRunning) return prev
+
+        return buildExecutionClock(
+          prev.startedAt,
+          '',
+          prev.estimatedCompletion,
+          true,
+          new Date().toISOString()
+        )
+      })
+    }, 30000)
+
+    return () => clearInterval(timer)
+  }, [executionTime.isRunning, executionTime.startedAt])
 
   // NEW: Fetch all employees from Firebase
   const fetchAllEmployees = async () => {
@@ -582,6 +704,13 @@ const [milestones, setMilestones] = useState<Array<{
         executionNotes: executionNotes,
         executionPhotos: executionPhotos,
         tasks: updatedTasks,
+        executionTracking: {
+          startedAt: executionTime.startedAt ? Timestamp.fromDate(new Date(executionTime.startedAt)) : null,
+          endedAt: executionTime.endedAt ? Timestamp.fromDate(new Date(executionTime.endedAt)) : null,
+          isRunning: executionTime.isRunning,
+          elapsedMinutes: executionTime.elapsedTotalMinutes,
+          lastUpdated: Timestamp.fromDate(new Date())
+        },
         // Save execution data
         executionData: {
           notes: executionNotes,
@@ -1193,6 +1322,99 @@ const handleDeleteMilestone = async (milestoneId: string) => {
     if (executionNotes.trim()) {
       addActivityLog('Execution Notes', executionNotes)
       setExecutionNotes('')
+    }
+  }
+
+  const handleStartExecutionTime = async () => {
+    if (executionTime.isRunning) {
+      alert('Execution timer is already running.')
+      return
+    }
+
+    try {
+      const now = new Date()
+      const jobRef = doc(db, 'jobs', jobId)
+
+      await updateDoc(jobRef, {
+        executionTracking: {
+          startedAt: Timestamp.fromDate(now),
+          endedAt: null,
+          isRunning: true,
+          elapsedMinutes: 0,
+          lastUpdated: Timestamp.fromDate(now)
+        },
+        updatedAt: Timestamp.fromDate(now),
+        executionLogs: arrayUnion({
+          type: 'EXECUTION_START',
+          timestamp: Timestamp.fromDate(now),
+          notes: 'Execution timer started by supervisor/admin'
+        })
+      })
+
+      setExecutionTime(
+        buildExecutionClock(
+          now.toISOString(),
+          '',
+          executionTime.estimatedCompletion,
+          true,
+          now.toISOString()
+        )
+      )
+
+      addActivityLog('Execution Started', `Execution timer started at ${now.toLocaleTimeString()}`)
+    } catch (error) {
+      console.error('Error starting execution timer:', error)
+      alert('Error starting execution timer')
+    }
+  }
+
+  const handleEndExecutionTime = async () => {
+    if (!executionTime.startedAt) {
+      alert('Please start execution time first.')
+      return
+    }
+
+    if (!executionTime.isRunning) {
+      alert('Execution timer is not currently running.')
+      return
+    }
+
+    try {
+      const now = new Date()
+      const startedAtDate = new Date(executionTime.startedAt)
+      const elapsedMinutes = Math.max(0, Math.floor((now.getTime() - startedAtDate.getTime()) / (1000 * 60)))
+      const jobRef = doc(db, 'jobs', jobId)
+
+      await updateDoc(jobRef, {
+        executionTracking: {
+          startedAt: Timestamp.fromDate(startedAtDate),
+          endedAt: Timestamp.fromDate(now),
+          isRunning: false,
+          elapsedMinutes,
+          lastUpdated: Timestamp.fromDate(now)
+        },
+        updatedAt: Timestamp.fromDate(now),
+        executionLogs: arrayUnion({
+          type: 'EXECUTION_END',
+          timestamp: Timestamp.fromDate(now),
+          notes: `Execution timer ended. Total duration: ${Math.floor(elapsedMinutes / 60)}h ${elapsedMinutes % 60}m`
+        })
+      })
+
+      setExecutionTime(
+        buildExecutionClock(
+          executionTime.startedAt,
+          now.toISOString(),
+          executionTime.estimatedCompletion,
+          false,
+          now.toISOString()
+        )
+      )
+
+      addActivityLog('Execution Ended', `Execution timer ended at ${now.toLocaleTimeString()}`)
+    } catch (error) {
+      console.error('Error ending execution timer:', error)
+      alert('Error ending execution timer')
     }
   }
 
@@ -2308,7 +2530,7 @@ const downloadJobPDF = () => {
               {/* Firebase Job Details Display */}
               <div className="bg-white border border-gray-300 rounded-3xl p-8 space-y-6 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <FileText className="w-5 w-5 text-indigo-600" />
+                  <FileText className="w-5 h-5 text-indigo-600" />
                   Job Overview 
                 </h3>
                 
@@ -2752,6 +2974,57 @@ const downloadJobPDF = () => {
               </div>
 
               <div className="space-y-8">
+                {/* Execution Timer Controls */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <h4 className="text-lg font-bold text-blue-900">Execution Time Control</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Start and end execution timing to track real job performance time.
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleStartExecutionTime}
+                        disabled={executionTime.isRunning}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <PlayCircle className="w-4 h-4" />
+                        Start Time
+                      </button>
+                      <button
+                        onClick={handleEndExecutionTime}
+                        disabled={!executionTime.isRunning}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        End Time
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div className="rounded-xl border border-blue-200 bg-white p-3">
+                      <p className="text-xs font-bold text-gray-500 uppercase">Start Time</p>
+                      <p className="text-sm font-bold text-gray-900 mt-1">
+                        {executionTime.startedAt ? new Date(executionTime.startedAt).toLocaleString() : 'Not started'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-blue-200 bg-white p-3">
+                      <p className="text-xs font-bold text-gray-500 uppercase">End Time</p>
+                      <p className="text-sm font-bold text-gray-900 mt-1">
+                        {executionTime.endedAt ? new Date(executionTime.endedAt).toLocaleString() : 'Running / Not ended'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-blue-200 bg-white p-3">
+                      <p className="text-xs font-bold text-gray-500 uppercase">Actual Duration</p>
+                      <p className="text-sm font-bold text-gray-900 mt-1">
+                        {executionTime.elapsedHours}h {executionTime.elapsedMinutes}m
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Current Tasks (Real Tasks from Firebase) */}
                 <div className="bg-white border border-gray-300 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-gray-900 mb-4">Current Tasks</h4>

@@ -180,6 +180,8 @@ interface NewJobForm {
   selectedServices: string[]
 }
 
+const JOB_TAX_RATE = 0.05
+
 export default function JobsPage() {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -519,6 +521,10 @@ export default function JobsPage() {
         .filter(p => newJobForm.selectedPermits.includes(p.id))
         .map(p => p.name)
 
+      const enteredBudget = Math.max(0, Number(newJobForm.budget) || 0)
+      const taxAmount = Number((enteredBudget * JOB_TAX_RATE).toFixed(2))
+      const budgetWithTax = Number((enteredBudget + taxAmount).toFixed(2))
+
       const jobData = {
         title: newJobForm.title,
         client: newJobForm.client,
@@ -529,7 +535,10 @@ export default function JobsPage() {
         endTime: newJobForm.endTime,
         location: newJobForm.location,
         teamRequired: newJobForm.teamRequired,
-        budget: newJobForm.budget,
+        budget: editingJobId ? enteredBudget : budgetWithTax,
+        baseBudget: enteredBudget,
+        taxRate: JOB_TAX_RATE,
+        taxAmount,
         description: newJobForm.description,
         riskLevel: newJobForm.riskLevel,
         slaDeadline: newJobForm.slaDeadline,
@@ -605,6 +614,13 @@ export default function JobsPage() {
     totalActualCost: jobs.reduce((sum, j) => sum + j.actualCost, 0),
     critical: jobs.filter(j => j.priority === 'Critical').length
   }), [jobs])
+
+  const budgetTaxPreview = useMemo(() => {
+    const base = Math.max(0, Number(newJobForm.budget) || 0)
+    const tax = Number((base * JOB_TAX_RATE).toFixed(2))
+    const total = Number((base + tax).toFixed(2))
+    return { base, tax, total }
+  }, [newJobForm.budget])
 
   // Filter jobs
   const filteredJobs = useMemo(() => {
@@ -1425,14 +1441,23 @@ export default function JobsPage() {
                 </h3>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Budget (AED) *</label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                    {editingJobId ? 'Budget (AED) *' : 'Job Price (AED) *'}
+                  </label>
                   <input
                     type="number"
                     value={newJobForm.budget}
-                    onChange={(e) => setNewJobForm({...newJobForm, budget: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setNewJobForm({...newJobForm, budget: parseFloat(e.target.value) || 0})}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-violet-500"
                     min="0"
+                    step="0.01"
                   />
+                  {!editingJobId && budgetTaxPreview.base > 0 && (
+                    <div className="mt-2 rounded-lg border border-violet-700 bg-violet-900/20 p-2 text-xs text-violet-200">
+                      <p>Auto Tax (5%): AED {budgetTaxPreview.tax.toLocaleString()}</p>
+                      <p className="font-bold">Total with tax: AED {budgetTaxPreview.total.toLocaleString()}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
