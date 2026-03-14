@@ -2091,24 +2091,19 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                 <div className="col-span-4 space-y-1">
                    <select 
                     onChange={(e) => {
-                      const selectedService = services.find(s => s.id === e.target.value)
-                      if (!selectedService) {
-                        handleUpdateService(service.id, 'name', '')
-                        handleUpdateService(service.id, 'unitPrice', 0)
-                        handleUpdateService(service.id, 'description', '')
-                        return
+                      const selectedService = services.find(s => s.name === e.target.value)
+                      if (selectedService) {
+                        handleUpdateService(service.id, 'unitPrice', selectedService.price)
+                        handleUpdateService(service.id, 'description', selectedService.description || '')
                       }
-
-                      handleUpdateService(service.id, 'name', selectedService.name)
-                      handleUpdateService(service.id, 'unitPrice', Number(selectedService.price) || 0)
-                      handleUpdateService(service.id, 'description', selectedService.description || '')
+                      handleUpdateService(service.id, 'name', e.target.value)
                     }}
                     className="w-full text-xs font-bold border-none p-1 focus:ring-0 bg-gray-50 rounded"
-                    value={services.find(s => s.name === service.name)?.id || ''}
+                    value={service.name}
                    >
                     <option value="">Choose Service...</option>
                     {services.map(svc => (
-                      <option key={svc.id} value={svc.id}>
+                      <option key={svc.id} value={svc.name}>
                         {svc.name} - AED {svc.price}
                       </option>
                     ))}

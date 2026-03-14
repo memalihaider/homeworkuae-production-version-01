@@ -34,7 +34,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, where, getDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
+import { db } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import { EmployeeSidebar } from '../_components/sidebar'
 
@@ -203,8 +203,6 @@ export default function JobsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showTasksSection, setShowTasksSection] = useState(false)
-  const [currentEmployeeId, setCurrentEmployeeId] = useState('')
-  const [currentUserEmail, setCurrentUserEmail] = useState('')
 
   const [newJobForm, setNewJobForm] = useState<NewJobForm>({
     title: '',
@@ -232,27 +230,6 @@ export default function JobsPage() {
     selectedPermits: [],
     selectedServices: []
   })
-
-  useEffect(() => {
-    const resolveCurrentEmployee = async () => {
-      try {
-        const storedSession = typeof window !== 'undefined'
-          ? localStorage.getItem('userSession')
-          : null
-
-        const parsedSession = storedSession ? JSON.parse(storedSession) : null
-        const sessionEmployeeId = parsedSession?.employeeId || ''
-        const sessionEmail = parsedSession?.user?.email || auth.currentUser?.email || ''
-
-        setCurrentEmployeeId(sessionEmployeeId)
-        setCurrentUserEmail(sessionEmail)
-      } catch (error) {
-        console.error('Error resolving employee session for jobs visibility:', error)
-      }
-    }
-
-    resolveCurrentEmployee()
-  }, [])
 
   // Fetch data from Firebase
   useEffect(() => {
@@ -626,38 +603,17 @@ export default function JobsPage() {
     }
   }, [newJobForm, jobs, editingJobId, employees, equipment, permits])
 
-  const visibleJobs = useMemo(() => {
-    const employeeIdByEmail = currentUserEmail
-      ? employees.find(emp => emp.email.toLowerCase() === currentUserEmail.toLowerCase())?.id || ''
-      : ''
-
-    const resolvedEmployeeId = currentEmployeeId || employeeIdByEmail
-
-    if (!resolvedEmployeeId && !currentUserEmail) {
-      return []
-    }
-
-    return jobs.filter(job => {
-      const assignedById = (job.assignedEmployees || []).some(emp => emp.id === resolvedEmployeeId)
-      const assignedByEmail = currentUserEmail
-        ? (job.assignedEmployees || []).some(emp => (emp.email || '').toLowerCase() === currentUserEmail.toLowerCase())
-        : false
-
-      return assignedById || assignedByEmail
-    })
-  }, [jobs, employees, currentEmployeeId, currentUserEmail])
-
   // Calculate statistics
   const stats = useMemo(() => ({
-    total: visibleJobs.length,
-    pending: visibleJobs.filter(j => j.status === 'Pending').length,
-    scheduled: visibleJobs.filter(j => j.status === 'Scheduled').length,
-    inProgress: visibleJobs.filter(j => j.status === 'In Progress').length,
-    completed: visibleJobs.filter(j => j.status === 'Completed').length,
-    totalBudget: visibleJobs.reduce((sum, j) => sum + j.budget, 0),
-    totalActualCost: visibleJobs.reduce((sum, j) => sum + j.actualCost, 0),
-    critical: visibleJobs.filter(j => j.priority === 'Critical').length
-  }), [visibleJobs])
+    total: jobs.length,
+    pending: jobs.filter(j => j.status === 'Pending').length,
+    scheduled: jobs.filter(j => j.status === 'Scheduled').length,
+    inProgress: jobs.filter(j => j.status === 'In Progress').length,
+    completed: jobs.filter(j => j.status === 'Completed').length,
+    totalBudget: jobs.reduce((sum, j) => sum + j.budget, 0),
+    totalActualCost: jobs.reduce((sum, j) => sum + j.actualCost, 0),
+    critical: jobs.filter(j => j.priority === 'Critical').length
+  }), [jobs])
 
   const budgetTaxPreview = useMemo(() => {
     const base = Math.max(0, Number(newJobForm.budget) || 0)
@@ -668,7 +624,7 @@ export default function JobsPage() {
 
   // Filter jobs
   const filteredJobs = useMemo(() => {
-    return visibleJobs.filter(job => {
+    return jobs.filter(job => {
       const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            job.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            job.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -678,7 +634,7 @@ export default function JobsPage() {
 
       return matchesSearch && matchesStatus && matchesPriority
     })
-  }, [visibleJobs, searchTerm, statusFilter, priorityFilter])
+  }, [jobs, searchTerm, statusFilter, priorityFilter])
 
   const handleAddJob = () => {
     setEditingJobId(null)

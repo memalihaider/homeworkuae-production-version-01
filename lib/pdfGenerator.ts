@@ -279,7 +279,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       index + 1,
       { 
         content: item.description ? `${item.name}\n${item.description}` : item.name,
-        styles: { valign: 'top', fontStyle: 'normal' }
+        styles: { valign: 'top' }
       },
       item.quantity,
       { 
@@ -305,23 +305,63 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     },
     styles: { 
       fontSize: 6.5,
-      cellPadding: { top: 2.2, right: 2.5, bottom: 2.2, left: 2.5 },
+      cellPadding: 2.5,
       overflow: 'linebreak',
-      valign: 'middle',
       lineColor: [230, 230, 230],
       lineWidth: 0.1
     },
     columnStyles: {
       0: { cellWidth: 23, halign: 'center' },
-      1: { cellWidth: 88, halign: 'left', valign: 'top', minCellHeight: 12 },
+      1: { cellWidth: 88, halign: 'left' },
       2: { cellWidth: 23, halign: 'center' },
       3: { cellWidth: 23, halign: 'right' },
       4: { cellWidth: 23, halign: 'right' }
     },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
+      // Style description column: bold name on first line, italic gray for description
       if (data.section === 'body' && data.column.index === 1) {
-        data.cell.styles.textColor = [45, 45, 45];
+        const rowIndex = data.row.index;
+        const item = allItems[rowIndex];
+        if (item && item.description) {
+          // Name line: bold
+          if (data.cell.raw && typeof data.cell.raw === 'object' && (data.cell.raw as any).content) {
+            data.cell.styles.fontStyle = 'bold';
+          }
+        } else {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
+    didDrawCell: (data) => {
+      // Draw description text separately in a lighter style
+      if (data.section === 'body' && data.column.index === 1) {
+        const rowIndex = data.row.index;
+        const item = allItems[rowIndex];
+        if (item && item.description) {
+          const lines = item.description.split('\n');
+          const cellX = data.cell.x + 2.5;
+          const nameLineHeight = 4;
+          // Name is drawn by autoTable in bold; draw description below it
+          const descY = data.cell.y + nameLineHeight + 2;
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(5.8);
+          doc.setTextColor(110, 110, 110);
+          const maxWidth = data.cell.width - 5;
+          let lineY = descY;
+          lines.forEach(line => {
+            const wrapped = doc.splitTextToSize(line, maxWidth);
+            wrapped.forEach((wl: string) => {
+              if (lineY < data.cell.y + data.cell.height - 1) {
+                doc.text(wl, cellX, lineY);
+                lineY += 3.2;
+              }
+            });
+          });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.5);
+          doc.setTextColor(40, 40, 40);
+        }
       }
     },
     didDrawPage: (data) => {
