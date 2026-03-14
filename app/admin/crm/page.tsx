@@ -177,6 +177,16 @@ interface AIPersona {
   goals: string;
 }
 
+const LEAD_SOURCE_OPTIONS = ['Meta Ads', 'Google Ads', 'E - Movers', 'Email', 'Others'] as const
+
+const sanitizeLeadSources = (sources: string[]): string[] => {
+  const validSources = sources.filter((source): source is (typeof LEAD_SOURCE_OPTIONS)[number] =>
+    LEAD_SOURCE_OPTIONS.includes(source as (typeof LEAD_SOURCE_OPTIONS)[number])
+  )
+
+  return validSources.length > 0 ? validSources : ['Others']
+}
+
 export default function UnifiedCRMDashboard() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
@@ -199,24 +209,7 @@ export default function UnifiedCRMDashboard() {
     sources: [] as string[],
     surveyType: '' // New field for survey type
   })
-  const [availableSources] = useState([
-    'Social Media',
-    'Google Ads',
-    'Facebook Ads',
-    'E-Movers ',
-    'sister companies ',
-    'LinkedIn Ads',
-    'Website Inquiry',
-    'Referral',
-    'Cold Call',
-    'Trade Show',
-    'Email Campaign',
-    'Direct Mail',
-    'Partnership',
-    'SEO',
-    'Content Marketing',
-    'Other'
-  ])
+  const availableSources = LEAD_SOURCE_OPTIONS
   const [enhancedData, setEnhancedData] = useState<EnhancedData>({
     selectedLeadId: null,
     address: '',
@@ -476,6 +469,8 @@ export default function UnifiedCRMDashboard() {
   }
 
   try {
+    const selectedSources = sanitizeLeadSources(formData.sources)
+
     const newLeadData = {
       name: formData.name,
       company: formData.company,
@@ -489,7 +484,7 @@ export default function UnifiedCRMDashboard() {
       joinDate: new Date().toISOString().split('T')[0],
       address: '',
       industry: '',
-      source: formData.sources.length > 0 ? formData.sources : ['Manual Entry'],
+      source: selectedSources,
       lastContact: new Date().toISOString().split('T')[0],
       notes: '',
       website: '',
@@ -777,7 +772,7 @@ export default function UnifiedCRMDashboard() {
         priority: editFormData.priority,
         email: editFormData.email,
         phone: editFormData.phone,
-        source: editFormData.sources.length > 0 ? editFormData.sources : ['Manual Entry'],
+        source: sanitizeLeadSources(editFormData.sources),
         surveyType: editFormData.surveyType, // Update surveyType in Firebase
         updatedAt: serverTimestamp()
       })
@@ -794,7 +789,7 @@ export default function UnifiedCRMDashboard() {
               priority: editFormData.priority,
               email: editFormData.email,
               phone: editFormData.phone,
-              source: editFormData.sources,
+              source: sanitizeLeadSources(editFormData.sources),
               surveyType: editFormData.surveyType // Update local state
             }
           : l
@@ -1292,7 +1287,7 @@ export default function UnifiedCRMDashboard() {
               <div 
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stageData)}
-                className="space-y-2 min-h-87.5 rounded-lg bg-gray-50 border-2 border-dashed border-gray-300 p-3 transition-all hover:border-blue-400 hover:bg-blue-50"
+                className="space-y-2 h-140 overflow-y-auto rounded-lg bg-gray-50 border-2 border-dashed border-gray-300 p-3 pr-2 transition-all hover:border-blue-400 hover:bg-blue-50 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
               >
                 {stageData.leads.map((lead) => (
                   <div
