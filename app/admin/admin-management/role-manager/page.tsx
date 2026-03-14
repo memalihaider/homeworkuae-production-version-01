@@ -69,9 +69,15 @@ const ensureAdminQuotationAccess = (portal: 'admin' | 'employee', pages: string[
   if (portal !== 'admin') return ['Employee Chat']
 
   const normalizedPages = Array.from(new Set(pages))
-  if (!normalizedPages.includes('Quotations')) {
-    normalizedPages.push('Quotations')
-  }
+  
+  // Ensure critical pages for all admin users
+  const criticalPages = ['Quotations', 'Dashboard']
+  
+  criticalPages.forEach(page => {
+    if (!normalizedPages.includes(page)) {
+      normalizedPages.push(page)
+    }
+  })
 
   return normalizedPages
 }

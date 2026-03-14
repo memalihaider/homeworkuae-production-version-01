@@ -548,20 +548,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       const allowedPages = session.allowedPages || [];
       const allAllowedPages = [...allowedPages];
 
+      // Ensure all admin users have access to critical features
+      if (session.portal === "admin") {
+        // ✅ Quotations - required for all admin users (includes download functionality)
+        if (!allAllowedPages.includes("Quotations")) {
+          allAllowedPages.push("Quotations");
+        }
+        
+        // Dashboard - critical for navigation
+        if (!allAllowedPages.includes("Dashboard")) {
+          allAllowedPages.push("Dashboard");
+        }
+      }
+
+      // Process Inquiry - available to all portal types
       if (!allAllowedPages.includes("Process Inquiry")) {
         allAllowedPages.push("Process Inquiry");
-      }
-
-      if (session.portal === "admin" && !allAllowedPages.includes("Quotations")) {
-        allAllowedPages.push("Quotations");
-      }
-
-      // ✅ FIXED: Make sure Employee Chat is included in allowed pages
-      if (
-        !allAllowedPages.includes("Employee Chat") &&
-        allAllowedPages.includes("Employee Chat")
-      ) {
-        // This is just a safety check
       }
 
       setUserSession({
