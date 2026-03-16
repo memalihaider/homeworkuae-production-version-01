@@ -445,7 +445,8 @@ import {
   Search, Filter, MoreVertical, Eye, Edit, Trash2, Mail, 
   Download, CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, FileDown
 } from 'lucide-react'
-import { db } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
@@ -513,6 +514,12 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
 
   // Fetch real quotations from Firebase
   const fetchQuotations = async () => {
+    if (!auth.currentUser) {
+      setQuotations([])
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const q = query(collection(db, 'quotations'), orderBy('createdAt', 'desc'))
@@ -531,6 +538,10 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
       
       setQuotations(quotationsData)
     } catch (error) {
+      if ((error as any)?.code === 'permission-denied') {
+        console.warn('Skipping quotation list load due to Firestore permissions for current user.')
+        return
+      }
       console.error('Error fetching quotations:', error)
       alert('Error loading quotations. Please refresh the page.')
     } finally {
@@ -539,7 +550,12 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
   }
 
   useEffect(() => {
-    fetchQuotations()
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) return
+      fetchQuotations()
+    })
+
+    return () => unsubscribe()
   }, [])
 
   // Refresh when trigger changes
@@ -551,6 +567,11 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
 
   // Delete quotation from Firebase
   const handleDelete = async (id: string) => {
+    if (!auth.currentUser) {
+      alert('Please login again to continue.')
+      return
+    }
+
     if (!confirm('Are you sure you want to delete this quotation?')) {
       return
     }

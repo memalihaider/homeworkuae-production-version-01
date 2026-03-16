@@ -44,6 +44,7 @@ interface QuotationData {
     id: string;
     name: string;
     sku: string;
+    description?: string;
     quantity: number;
     unitPrice: number;
     total: number;
@@ -265,7 +266,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     ...quotation.products.map(product => ({
       type: 'Product',
       name: product.name,
-      description: product.sku ? `SKU: ${product.sku}` : '',
+      description: [product.description, product.sku ? `SKU: ${product.sku}` : ''].filter(Boolean).join('\n'),
       quantity: product.quantity,
       unitPrice: product.unitPrice,
       total: product.total
@@ -278,7 +279,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     body: allItems.map((item, index) => [
       index + 1,
       { 
-        content: item.description ? `${item.name}\n${item.description}` : item.name,
+        content: item.name,
         styles: { valign: 'top' }
       },
       item.quantity,

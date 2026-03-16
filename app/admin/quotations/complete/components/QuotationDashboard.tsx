@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { FileText, CheckCircle, Clock, AlertTriangle, TrendingUp, DollarSign, Users, Building2, Calendar, RefreshCw, TrendingDown, Eye } from 'lucide-react'
-import { db } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
 
 interface FirebaseQuotation {
@@ -54,6 +55,11 @@ export default function QuotationDashboard() {
 
   // Fetch all quotations from Firebase
   const fetchQuotations = async () => {
+    if (!auth.currentUser) {
+      setQuotations([])
+      return
+    }
+
     try {
       const snapshot = await getDocs(collection(db, 'quotations'))
       
@@ -77,6 +83,10 @@ export default function QuotationDashboard() {
       calculateStats(allQuotations)
       
     } catch (error) {
+      if ((error as any)?.code === 'permission-denied') {
+        console.warn('Skipping quotations dashboard load due to Firestore permissions for current user.')
+        return
+      }
       console.error('Error fetching quotations:', error)
     }
   }
@@ -108,7 +118,12 @@ export default function QuotationDashboard() {
   }
 
   useEffect(() => {
-    fetchQuotations()
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) return
+      fetchQuotations()
+    })
+
+    return () => unsubscribe()
   }, [])
 
   // Format currency

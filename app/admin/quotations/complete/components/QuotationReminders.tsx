@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Bell, Mail, File, Send, CheckCircle, AlertCircle, RefreshCw, User, Building2, Phone, Calendar, FileText, Loader2, MessageSquare, Smartphone, Filter, X } from 'lucide-react'
-import { db } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
 import { sendEmailWithAttachment } from '@/lib/gmailService'
@@ -112,6 +113,12 @@ export default function QuotationReminders() {
 
   // Fetch all quotations
   const fetchAllQuotations = async () => {
+    if (!auth.currentUser) {
+      setQuotations([])
+      setFilteredQuotations([])
+      return
+    }
+
     try {
       const snapshot = await getDocs(collection(db, 'quotations'))
       
@@ -159,6 +166,10 @@ export default function QuotationReminders() {
       calculateStats(allQuotations)
       
     } catch (error) {
+      if ((error as any)?.code === 'permission-denied') {
+        console.warn('Skipping quotation reminders load due to Firestore permissions for current user.')
+        return
+      }
       console.error('Error fetching quotations:', error)
     }
   }
@@ -222,7 +233,12 @@ export default function QuotationReminders() {
   }
 
   useEffect(() => {
-    fetchAllQuotations()
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) return
+      fetchAllQuotations()
+    })
+
+    return () => unsubscribe()
   }, [])
 
   // Update stats when quotations change
@@ -311,6 +327,10 @@ export default function QuotationReminders() {
 
   // Update quotation status
   const updateQuotationStatus = async (quotationId: string, status: string) => {
+    if (!auth.currentUser) {
+      return
+    }
+
     try {
       const quotationRef = doc(db, 'quotations', quotationId)
       await updateDoc(quotationRef, {

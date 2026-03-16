@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { FileCheck, AlertCircle, CheckCircle, XCircle, Info, ArrowRight, MessageCircle, Calendar, Phone, Mail, Building2, FileText, DollarSign, Percent, Hash } from 'lucide-react'
-import { db } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 
 interface ServiceItem {
@@ -64,6 +65,11 @@ export default function QuotationApproval() {
 
   // Fetch all quotations and filter for Draft status
   const fetchQuotations = async () => {
+    if (!auth.currentUser) {
+      setQuotations([])
+      return
+    }
+
     try {
       console.log('Fetching quotations ...')
       const snapshot = await getDocs(collection(db, 'quotations'))
@@ -125,17 +131,31 @@ export default function QuotationApproval() {
       
       setQuotations(draftQuotations)
     } catch (error) {
+      if ((error as any)?.code === 'permission-denied') {
+        console.warn('Skipping quotation approval load due to Firestore permissions for current user.')
+        return
+      }
       console.error('Error fetching quotations:', error)
       alert('Error loading quotations  Please check console for details.')
     }
   }
 
   useEffect(() => {
-    fetchQuotations()
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) return
+      fetchQuotations()
+    })
+
+    return () => unsubscribe()
   }, [])
 
   // Approve quotation - Change status to "Approved"
   const handleApprove = async (quotationId: string) => {
+    if (!auth.currentUser) {
+      alert('Please login again to continue.')
+      return
+    }
+
     const quotation = quotations.find(q => q.id === quotationId)
     if (!quotation) return
     
@@ -170,6 +190,11 @@ export default function QuotationApproval() {
 
   // Reject quotation - Change status to "Rejected"
   const handleReject = async (quotationId: string, reason: string) => {
+    if (!auth.currentUser) {
+      alert('Please login again to continue.')
+      return
+    }
+
     const quotation = quotations.find(q => q.id === quotationId)
     if (!quotation) return
     

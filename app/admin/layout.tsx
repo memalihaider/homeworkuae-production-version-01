@@ -53,7 +53,8 @@ import {
   Layout,
 } from "lucide-react";
 import { getSession, logout } from "@/lib/auth";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   onSnapshot,
@@ -446,6 +447,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     console.log("Setting up Firebase real-time listener for bookings...");
 
     let unsubscribe: (() => void) | undefined;
+    let unsubscribeAuth: (() => void) | undefined;
 
     const setupListener = async () => {
       try {
@@ -520,6 +522,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             });
           },
           (error) => {
+            if ((error as any)?.code === "permission-denied") {
+              console.warn(
+                "Skipping bookings listener due to Firestore permissions for current user.",
+              );
+              return;
+            }
             console.error("Firebase listener error:", error);
           },
         );
@@ -531,10 +539,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       }
     };
 
-    setupListener();
+    unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) return;
+      setupListener();
+    });
 
     return () => {
       console.log("Cleaning up Firebase listener");
+      if (unsubscribeAuth) {
+        unsubscribeAuth();
+      }
       if (unsubscribe) {
         unsubscribe();
       }
@@ -611,6 +625,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // MARK AS READ FUNCTION - COMPLETELY REMOVES NOTIFICATION
   const handleMarkAsRead = useCallback(
     async (id: string) => {
+      if (!auth.currentUser) {
+        return;
+      }
+
       try {
         // Add to read notification IDs
         readNotificationIds.current.add(id);
