@@ -82,12 +82,15 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     doc.rect(0, 26, pageWidth, 0.5, 'F');
     
     try {
-      const logoWidth = 48;
-      const logoHeight = 40;
+      const logoSize = 24;
       const logoX = margin;
-      const logoY = -5;
+      const logoY = 1;
       
-      doc.addImage('/logo.jpeg', 'JPEG', logoX, logoY, logoWidth, logoHeight);
+      doc.addImage('/logo.jpeg', 'JPEG', logoX, logoY, logoSize, logoSize);
+
+      doc.setDrawColor(120, 120, 120);
+      doc.setLineWidth(0.5);
+      doc.circle(logoX + (logoSize / 2), logoY + (logoSize / 2), logoSize / 2);
     } catch (error) {
       console.log('Logo not found, using text only');
       doc.setTextColor(255, 255, 255);
