@@ -545,21 +545,23 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       total: 0,
       description: ''
     }
-    setFormData({ ...formData, services: [...formData.services, newService] })
+    setFormData((prev: any) => ({ ...prev, services: [...prev.services, newService] }))
   }
 
   const handleUpdateService = (id: string, field: string, value: any) => {
-    const updated = formData.services.map((s: any) => {
-      if (s.id === id) {
-        const up = { ...s, [field]: value }
-        if (field === 'quantity' || field === 'unitPrice') {
-          up.total = (up.quantity || 0) * (up.unitPrice || 0)
+    setFormData((prev: any) => {
+      const updated = prev.services.map((s: any) => {
+        if (s.id === id) {
+          const up = { ...s, [field]: value }
+          if (field === 'quantity' || field === 'unitPrice') {
+            up.total = (up.quantity || 0) * (up.unitPrice || 0)
+          }
+          return up
         }
-        return up
-      }
-      return s
+        return s
+      })
+      return { ...prev, services: updated }
     })
-    setFormData({ ...formData, services: updated })
   }
 
   const handleRemoveService = (id: string) => {
@@ -576,21 +578,23 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       sku: '',
       description: ''
     }
-    setFormData({ ...formData, products: [...formData.products, newProduct] })
+    setFormData((prev: any) => ({ ...prev, products: [...prev.products, newProduct] }))
   }
 
   const handleUpdateProduct = (id: string, field: string, value: any) => {
-    const updated = formData.products.map((p: any) => {
-      if (p.id === id) {
-        const up = { ...p, [field]: value }
-        if (field === 'quantity' || field === 'unitPrice') {
-          up.total = (up.quantity || 0) * (up.unitPrice || 0)
+    setFormData((prev: any) => {
+      const updated = prev.products.map((p: any) => {
+        if (p.id === id) {
+          const up = { ...p, [field]: value }
+          if (field === 'quantity' || field === 'unitPrice') {
+            up.total = (up.quantity || 0) * (up.unitPrice || 0)
+          }
+          return up
         }
-        return up
-      }
-      return p
+        return p
+      })
+      return { ...prev, products: updated }
     })
-    setFormData({ ...formData, products: updated })
   }
 
   const handleRemoveProduct = (id: string) => {
@@ -1021,14 +1025,27 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                    <select 
                     onChange={(e) => {
                       const selectedService = services.find(s => s.id === e.target.value)
-                      if (selectedService) {
-                        handleUpdateService(service.id, 'name', selectedService.name)
-                        handleUpdateService(service.id, 'unitPrice', selectedService.price)
-                        handleUpdateService(service.id, 'description', selectedService.description || '')
-                      } else {
-                        handleUpdateService(service.id, 'name', '')
-                        handleUpdateService(service.id, 'description', '')
-                      }
+                      setFormData((prev: any) => {
+                        const updatedServices = prev.services.map((row: any) => {
+                          if (row.id !== service.id) return row
+
+                          if (!selectedService) {
+                            return { ...row, name: '', description: '' }
+                          }
+
+                          const nextUnitPrice = Number(selectedService.price) || 0
+                          const nextQuantity = Number(row.quantity) || 0
+                          return {
+                            ...row,
+                            name: selectedService.name,
+                            unitPrice: nextUnitPrice,
+                            description: selectedService.description || '',
+                            total: nextQuantity * nextUnitPrice
+                          }
+                        })
+
+                        return { ...prev, services: updatedServices }
+                      })
                     }}
                     className="w-full text-xs font-bold border-none p-1 focus:ring-0 bg-gray-50 rounded"
                     value={services.find((svc) => svc.name === service.name)?.id || ''}

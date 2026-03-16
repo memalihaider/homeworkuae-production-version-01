@@ -279,7 +279,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     body: allItems.map((item, index) => [
       index + 1,
       { 
-        content: item.name,
+        content: item.description ? `${item.name}\n${item.description}` : item.name,
         styles: { valign: 'top' }
       },
       item.quantity,
@@ -320,49 +320,8 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
-      // Style description column: bold name on first line, italic gray for description
       if (data.section === 'body' && data.column.index === 1) {
-        const rowIndex = data.row.index;
-        const item = allItems[rowIndex];
-        if (item && item.description) {
-          // Name line: bold
-          if (data.cell.raw && typeof data.cell.raw === 'object' && (data.cell.raw as any).content) {
-            data.cell.styles.fontStyle = 'bold';
-          }
-        } else {
-          data.cell.styles.fontStyle = 'bold';
-        }
-      }
-    },
-    didDrawCell: (data) => {
-      // Draw description text separately in a lighter style
-      if (data.section === 'body' && data.column.index === 1) {
-        const rowIndex = data.row.index;
-        const item = allItems[rowIndex];
-        if (item && item.description) {
-          const lines = item.description.split('\n');
-          const cellX = data.cell.x + 2.5;
-          const nameLineHeight = 4;
-          // Name is drawn by autoTable in bold; draw description below it
-          const descY = data.cell.y + nameLineHeight + 2;
-          doc.setFont('helvetica', 'italic');
-          doc.setFontSize(5.8);
-          doc.setTextColor(110, 110, 110);
-          const maxWidth = data.cell.width - 5;
-          let lineY = descY;
-          lines.forEach(line => {
-            const wrapped = doc.splitTextToSize(line, maxWidth);
-            wrapped.forEach((wl: string) => {
-              if (lineY < data.cell.y + data.cell.height - 1) {
-                doc.text(wl, cellX, lineY);
-                lineY += 3.2;
-              }
-            });
-          });
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.5);
-          doc.setTextColor(40, 40, 40);
-        }
+        data.cell.styles.fontStyle = 'bold'
       }
     },
     didDrawPage: (data) => {
