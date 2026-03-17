@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 import { createUserWithRole, updateUserRole, deleteUserRole, UserRole } from '@/lib/auth'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore'
 
 // Available pages for selection - ONLY FOR ADMIN
 const ALL_PAGES = [
@@ -65,14 +65,40 @@ const ALL_PAGES = [
   'Employee Chat'
 ]
 
-const ensureAdminQuotationAccess = (portal: 'admin' | 'employee', pages: string[]) => {
-  if (portal !== 'admin') return ['Employee Chat']
+const PAGE_ALIASES: Record<string, string> = {
+  report: 'Report',
+  'process inquiry': 'Process Inquiry',
+  communications: 'Communications',
+  crm: 'CRM',
+  quotations: 'Quotations',
+  'inventory & services': 'Inventory & Services',
+}
 
-  const normalizedPages = Array.from(new Set(pages))
-  
-  // Ensure critical pages for all admin users
-  const criticalPages = ['Quotations', 'Dashboard']
-  
+const normalizePageKey = (page: string) => {
+  const trimmed = page?.trim()
+  if (!trimmed) return ''
+
+  const alias = PAGE_ALIASES[trimmed] || PAGE_ALIASES[trimmed.toLowerCase()]
+  return alias || trimmed
+}
+
+const normalizePortalPages = (portal: 'admin' | 'employee', pages: string[]) => {
+  const normalizedPages = Array.from(
+    new Set(
+      pages
+        .map(normalizePageKey)
+        .filter(Boolean)
+        .filter(page => ALL_PAGES.includes(page))
+    )
+  )
+
+  if (portal !== 'admin') {
+    return ['Employee Chat']
+  }
+
+  // Keep permissions page-based while ensuring critical admin navigation pages exist.
+  const criticalPages = ['Dashboard', 'Quotations', 'Process Inquiry']
+
   criticalPages.forEach(page => {
     if (!normalizedPages.includes(page)) {
       normalizedPages.push(page)
@@ -143,22 +169,50 @@ export default function RoleManager() {
       const usersRoleRef = collection(db, 'users-role')
       const snapshot = await getDocs(usersRoleRef)
       const roles: LocalUserRole[] = []
+      const healPromises: Promise<void>[] = []
       
       snapshot.forEach(doc => {
         const data = doc.data()
+        const portal = data.portal || 'admin'
+        const allowedPages = normalizePortalPages(portal, data.allowedPages || [])
+
+        const needsPortalFix = !data.portal
+        const currentAllowedPages = Array.isArray(data.allowedPages) ? data.allowedPages : []
+        const hasPagesChanged =
+          allowedPages.length !== currentAllowedPages.length ||
+          allowedPages.some((page, index) => page !== currentAllowedPages[index])
+
+        if (needsPortalFix || hasPagesChanged) {
+          healPromises.push(
+            updateDoc(doc.ref, {
+              portal,
+              allowedPages,
+              updatedAt: new Date().toISOString(),
+            })
+              .then(() => undefined)
+              .catch((error) => {
+                console.warn('Could not normalize legacy role doc:', doc.id, error)
+              }),
+          )
+        }
+
         roles.push({
           id: doc.id,
           email: data.email || '',
           name: data.name || '',
-          allowedPages: data.allowedPages || [],
+          allowedPages,
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || '',
-          portal: data.portal || 'admin',
+          portal,
           employeeId: data.employeeId || '',
           employeeName: data.employeeName || '',
           roleName: ''
         })
       })
+
+      if (healPromises.length > 0) {
+        await Promise.all(healPromises)
+      }
       
       console.log(`✅ Found ${roles.length} users`)
       setUserRoles(roles)
@@ -224,7 +278,7 @@ export default function RoleManager() {
     try {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
-      const allowedPages = ensureAdminQuotationAccess(newUser.portal, newUser.allowedPages)
+      const allowedPages = normalizePortalPages(newUser.portal, newUser.allowedPages)
       
       console.log('📝 Creating user with data:', {
         email: newUser.email,
@@ -310,7 +364,7 @@ export default function RoleManager() {
     try {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
-      const allowedPages = ensureAdminQuotationAccess(newUser.portal, newUser.allowedPages)
+      const allowedPages = normalizePortalPages(newUser.portal, newUser.allowedPages)
       
       console.log('📝 Updating user:', { 
         id: editingUserId, 

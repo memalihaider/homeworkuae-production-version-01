@@ -549,3 +549,5 @@ Generated sources: README.md [40931B] react/package.json [460B] react/README.md 
 [debug] [2026-03-16T07:53:02.057Z] Failed to make request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000
 [debug] [2026-03-16T07:53:02.064Z] *** [apiv2] error from fetch(https://firebase.googleapis.com/v1beta1/projects?pageSize=1000, {"headers":{},"method":"GET","signal":{"reason":""}}): FetchError: request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 failed, reason: Client network socket disconnected before secure TLS connection was established
 [debug] [2026-03-16T07:53:02.064Z] Failed to make request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000
+[info] [Firebase Plugin] Stopping Data Connect toolkit
+[warn] ⚠  Data Connect Emulator has exited upon receiving signal: SIGINT 

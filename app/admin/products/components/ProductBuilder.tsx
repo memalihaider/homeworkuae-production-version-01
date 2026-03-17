@@ -264,14 +264,18 @@ export default function ProductBuilder({ product, onSave, onCancel }: ProductBui
   }
 
   // Generate SKU if not provided
-  const generateSKU = () => {
-    if (!formData.name) return
+  const buildSKU = () => {
+    if (!formData.name) return ''
     
     const prefix = formData.type === 'PRODUCT' ? 'PROD' : 'SERV'
     const namePart = formData.name.substring(0, 3).toUpperCase()
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
-    const sku = `${prefix}-${namePart}-${random}`
-    
+    return `${prefix}-${namePart}-${random}`
+  }
+
+  const generateSKU = () => {
+    const sku = buildSKU()
+    if (!sku) return
     setFormData((prev) => ({ ...prev, sku }))
   }
 
@@ -310,7 +314,7 @@ export default function ProductBuilder({ product, onSave, onCancel }: ProductBui
       // Prepare item data
       const itemData = {
         name: formData.name?.trim() || '',
-        sku: formData.sku?.trim() || generateSKU() || `${formData.type}_${Date.now()}`,
+        sku: formData.sku?.trim() || buildSKU() || `${formData.type}_${Date.now()}`,
         description: formData.description?.trim() || '',
         type: formData.type || 'PRODUCT',
         price: Number(formData.price) || 0,

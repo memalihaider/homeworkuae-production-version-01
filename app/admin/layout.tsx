@@ -350,6 +350,62 @@ const MENU_STRUCTURE = [
   },
 ];
 
+const ADMIN_PAGE_ALIASES: Record<string, string> = {
+  report: "Report",
+  Report: "Report",
+  "process inquiry": "Process Inquiry",
+  "Process inquiry": "Process Inquiry",
+  communications: "Communications",
+  crm: "CRM",
+  quotations: "Quotations",
+  "inventory & services": "Inventory & Services",
+};
+
+const normalizePageKey = (page: string): string => {
+  const trimmed = page?.trim();
+  if (!trimmed) return "";
+
+  const alias = ADMIN_PAGE_ALIASES[trimmed] || ADMIN_PAGE_ALIASES[trimmed.toLowerCase()];
+  return alias || trimmed;
+};
+
+const getNormalizedAllowedPages = (
+  pages: string[] = [],
+  portal: string,
+): string[] => {
+  const normalized = Array.from(
+    new Set(
+      pages
+        .map((page) => normalizePageKey(page))
+        .filter((page) => Boolean(ALL_PAGES_CONFIG[page as keyof typeof ALL_PAGES_CONFIG])),
+    ),
+  );
+
+  if (portal === "admin") {
+    ["Dashboard", "Quotations", "Process Inquiry"].forEach((page) => {
+      if (!normalized.includes(page)) {
+        normalized.push(page);
+      }
+    });
+    return normalized;
+  }
+
+  if (!normalized.includes("Employee Chat")) {
+    normalized.push("Employee Chat");
+  }
+
+  return normalized;
+};
+
+const PAGE_MODULE_ACCESS: Partial<Record<keyof typeof ALL_PAGES_CONFIG, string>> = {
+  Quotations: "/admin/quotations",
+  "AI Command Center": "/admin/ai-command-center",
+  "Inventory & Services": "/admin/products",
+  CRM: "/admin/crm",
+  "Lead Dashboard": "/admin/crm",
+  "Process Inquiry": "/admin/process-inquiry",
+};
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -559,26 +615,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const session = getSession();
     if (session) {
-      const allowedPages = session.allowedPages || [];
-      const allAllowedPages = [...allowedPages];
-
-      // Ensure all admin users have access to critical features
-      if (session.portal === "admin") {
-        // ✅ Quotations - required for all admin users (includes download functionality)
-        if (!allAllowedPages.includes("Quotations")) {
-          allAllowedPages.push("Quotations");
-        }
-        
-        // Dashboard - critical for navigation
-        if (!allAllowedPages.includes("Dashboard")) {
-          allAllowedPages.push("Dashboard");
-        }
-      }
-
-      // Process Inquiry - available to all portal types
-      if (!allAllowedPages.includes("Process Inquiry")) {
-        allAllowedPages.push("Process Inquiry");
-      }
+      const allAllowedPages = getNormalizedAllowedPages(
+        session.allowedPages || [],
+        session.portal || "admin",
+      );
 
       setUserSession({
         name: session.user.name || "User",
@@ -609,6 +649,43 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       router.push("/login");
     }
   }, [router, pathname]);
+
+  useEffect(() => {
+    if (!userSession) {
+      return;
+    }
+
+    if (!pathname.startsWith("/admin")) {
+      return;
+    }
+
+    const allowedConfigs = userSession.allowedPages
+      .map((page) => ALL_PAGES_CONFIG[page as keyof typeof ALL_PAGES_CONFIG])
+      .filter(Boolean);
+
+    const allowedModuleRoots = new Set(
+      userSession.allowedPages
+        .map(
+          (page) => PAGE_MODULE_ACCESS[page as keyof typeof ALL_PAGES_CONFIG],
+        )
+        .filter(Boolean),
+    );
+
+    const isAllowedRoute =
+      pathname === "/admin" ||
+      allowedConfigs.some((config) => {
+        if (!config?.href) return false;
+        return pathname === config.href || pathname.startsWith(`${config.href}/`);
+      }) ||
+      Array.from(allowedModuleRoots).some((root) =>
+        pathname === root || pathname.startsWith(`${root}/`),
+      );
+
+    if (!isAllowedRoute) {
+      const dashboardHref = ALL_PAGES_CONFIG.Dashboard.href;
+      router.replace(dashboardHref);
+    }
+  }, [pathname, router, userSession]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
