@@ -11,6 +11,8 @@ import { useRef, useEffect, useState } from 'react'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
 import { getHomePage, defaultHomePage, type CMSHomePage } from '@/lib/cms-data'
+import { db } from '@/lib/firebase'
+import { collection, getDocs } from 'firebase/firestore'
 
 // Reusable CTA Button Component
 interface CTAButtonProps {
@@ -44,6 +46,15 @@ export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLDivElement>(null)
 
+  const fallbackHeroImages = [
+    'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1528740561666-dc2479dc08ab?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1603712725038-e9334ae8f39f?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=1800&q=80',
+  ]
+
   // Light scroll-reveal animation variants
   const fadeUp = {
     hidden: { opacity: 0, y: 18 },
@@ -61,6 +72,8 @@ export default function HomePage() {
   const [airQualityColor, setAirQualityColor] = useState("text-amber-500")
   const [loading, setLoading] = useState(true)
   const [textIndex, setTextIndex] = useState(0)
+  const [heroImageIndex, setHeroImageIndex] = useState(0)
+  const [heroImages, setHeroImages] = useState<string[]>(fallbackHeroImages)
   const [cmsData, setCmsData] = useState<CMSHomePage>(defaultHomePage)
 
   const heroTexts = cmsData.hero.headings
@@ -123,6 +136,33 @@ export default function HomePage() {
     // Fetch CMS data
     getHomePage().then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
 
+    // Fetch service page images managed from admin portal
+    const fetchServiceHeroImages = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'service-pages'))
+        if (!isMounted) return
+
+        const dbImages = Array.from(
+          new Set(
+            snapshot.docs.flatMap((serviceDoc) => {
+              const data = serviceDoc.data() as Record<string, unknown>
+              const candidates = [data.heroImage, data.sectionImage]
+              return candidates.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            })
+          )
+        )
+
+        if (dbImages.length > 0) {
+          const mergedImages = [...dbImages, ...fallbackHeroImages].slice(0, 6)
+          setHeroImages(mergedImages)
+        }
+      } catch {
+        // Keep fallback images if database fetch fails
+      }
+    }
+
+    fetchServiceHeroImages()
+
     const fetchAirQualityData = async () => {
       if (!isMounted) return
       try {
@@ -171,6 +211,24 @@ export default function HomePage() {
       clearInterval(textInterval)
     }
   }, [])
+
+  useEffect(() => {
+    if (heroImages.length === 0) return
+
+    const imageInterval = setInterval(() => {
+      setHeroImageIndex((prev) => (prev + 1) % heroImages.length)
+    }, 1000)
+
+    return () => {
+      clearInterval(imageInterval)
+    }
+  }, [heroImages])
+
+  useEffect(() => {
+    if (heroImageIndex >= heroImages.length) {
+      setHeroImageIndex(0)
+    }
+  }, [heroImageIndex, heroImages])
 
   // Only use scroll animations on client side
   const { scrollYProgress } = useScroll({
@@ -380,19 +438,18 @@ export default function HomePage() {
                   className="absolute inset-0 z-20"
                 >
                   <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/30">
-                    {cmsData.hero.videoUrl ? (
-                      <video
-                        key={cmsData.hero.videoUrl}
-                        src={cmsData.hero.videoUrl}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover pointer-events-none"
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.img
+                        key={heroImages[heroImageIndex]}
+                        src={heroImages[heroImageIndex]}
+                        alt="Professional cleaning service"
+                        initial={{ opacity: 0, scale: 1.04 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8, ease: 'easeInOut' }}
+                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                       />
-                    ) : (
-                      <div className="w-full h-full bg-slate-800 animate-pulse" />
-                    )}
+                    </AnimatePresence>
 
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
 

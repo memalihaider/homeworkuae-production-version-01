@@ -17,6 +17,13 @@ export const metadata: Metadata = {
     "residential cleaning Dubai",
     "office cleaning Dubai",
     "deep cleaning company UAE",
+    "maid service Dubai",
+    "post construction cleaning Dubai",
+    "kitchen deep cleaning Dubai",
+    "sofa cleaning Dubai",
+    "carpet cleaning Dubai",
+    "window cleaning Dubai",
+
   ],
   alternates: { canonical: "https://www.homeworkuae.com/services" },
   openGraph: {

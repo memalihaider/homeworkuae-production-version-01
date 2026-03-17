@@ -8,15 +8,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/admin/",
-          "/api/",
-          "/login/",
           "/employee/",
-          "/manager/",
-          "/client/",
-          "/guest/",
-          "/survey/",
-          "/debug/",
-          "/route/",
         ],
       },
       {
