@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Star, Quote, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { db } from '@/lib/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 
@@ -135,6 +136,22 @@ export default function Testimonials() {
   // Fetch testimonials from Firebase
   useEffect(() => {
     const fetchTestimonials = async () => {
+      const cacheKey = 'public:testimonials:v1'
+      const cacheTtlMs = 10 * 60 * 1000
+
+      try {
+        const cached = window.sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached) as { timestamp: number; testimonials: FirebaseTestimonial[] }
+          if (Date.now() - parsed.timestamp < cacheTtlMs) {
+            setFirebaseTestimonials(parsed.testimonials)
+            return
+          }
+        }
+      } catch {
+        // Continue with live fetch when cache read fails
+      }
+
       try {
         const querySnapshot = await getDocs(collection(db, 'testimonials'))
         const testimonialsData: FirebaseTestimonial[] = []
@@ -159,6 +176,15 @@ export default function Testimonials() {
           if (!a.featured && b.featured) return 1
           return a.name.localeCompare(b.name)
         })
+
+        try {
+          window.sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ timestamp: Date.now(), testimonials: sortedTestimonials })
+          )
+        } catch {
+          // Ignore cache write failures
+        }
         
         setFirebaseTestimonials(sortedTestimonials)
       } catch (error) {
@@ -258,18 +284,7 @@ export default function Testimonials() {
                 <div className="flex items-center gap-4">
                   {t.isFirebase && t.imageURL ? (
                     <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-white shadow-md">
-                      <img 
-                        src={t.imageURL} 
-                        alt={t.name}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          // Fallback to User icon if image fails to load
-                          const parent = e.currentTarget.parentElement
-                          if (parent) {
-                            parent.innerHTML = '<div class="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'
-                          }
-                        }}
-                      />
+                      <Image src={t.imageURL} alt={t.name} width={48} height={48} className="h-full w-full object-cover" />
                     </div>
                   ) : (
                     <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">

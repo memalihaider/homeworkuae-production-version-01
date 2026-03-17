@@ -3,6 +3,7 @@
 import { CheckCircle2, Users, Award, Leaf, Target, Eye, Heart, Sparkles, ShieldCheck, Zap, ArrowRight, History, Building2 } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef, useState, useEffect } from 'react'
+import Image from 'next/image'
 import { getAboutPage, defaultAboutPage, type CMSAboutPage } from '@/lib/cms-data'
 
 export default function About() {
@@ -28,9 +29,12 @@ export default function About() {
           className="absolute inset-0 z-0 opacity-40 shrink-0"
           style={{ y: heroY }}
         >
-          <img 
-            src={cms.heroImage} 
-            alt="About Us Background" 
+          <Image
+            src={cms.heroImage}
+            alt="About Us Background"
+            fill
+            priority
+            sizes="100vw"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950/80 via-transparent to-slate-950" />
@@ -85,7 +89,7 @@ export default function About() {
               <div className="flex items-center gap-6 pt-4">
                 <div className="flex -space-x-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <img key={i} src={`https://randomuser.me/api/portraits/thumb/men/${i+10}.jpg`} className="h-12 w-12 rounded-full border-4 border-white shadow-lg" alt="Team" />
+                    <Image key={i} src={`https://randomuser.me/api/portraits/thumb/men/${i+10}.jpg`} width={48} height={48} className="h-12 w-12 rounded-full border-4 border-white shadow-lg" alt="Team" />
                   ))}
                 </div>
                 <div className="text-sm font-black text-slate-400">
@@ -100,9 +104,12 @@ export default function About() {
               viewport={{ once: true }}
               className="relative rounded-[3rem] overflow-hidden shadow-3xl group"
             >
-              <img 
-                src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1000" 
-                alt="Professional Cleaning Team" 
+              <Image
+                src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1000"
+                alt="Professional Cleaning Team"
+                width={1000}
+                height={700}
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-x-10 bottom-10 bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-2xl border border-white/20">

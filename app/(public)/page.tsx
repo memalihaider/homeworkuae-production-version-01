@@ -133,11 +133,27 @@ export default function HomePage() {
     setIsClient(true)
     let isMounted = true
 
+    const HERO_CACHE_KEY = 'home:hero-service-images'
+    const HERO_CACHE_TTL_MS = 10 * 60 * 1000
+
     // Fetch CMS data
     getHomePage().then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
 
     // Fetch service page images managed from admin portal
     const fetchServiceHeroImages = async () => {
+      try {
+        const cached = window.sessionStorage.getItem(HERO_CACHE_KEY)
+        if (cached) {
+          const parsed = JSON.parse(cached) as { timestamp: number; images: string[] }
+          if (Date.now() - parsed.timestamp < HERO_CACHE_TTL_MS && parsed.images.length > 0) {
+            setHeroImages(parsed.images)
+            return
+          }
+        }
+      } catch {
+        // Continue with live fetch if cache read fails
+      }
+
       try {
         const snapshot = await getDocs(collection(db, 'service-pages'))
         if (!isMounted) return
@@ -155,6 +171,15 @@ export default function HomePage() {
         if (dbImages.length > 0) {
           const mergedImages = [...dbImages, ...fallbackHeroImages].slice(0, 6)
           setHeroImages(mergedImages)
+
+          try {
+            window.sessionStorage.setItem(
+              HERO_CACHE_KEY,
+              JSON.stringify({ timestamp: Date.now(), images: mergedImages })
+            )
+          } catch {
+            // Ignore cache write failures
+          }
         }
       } catch {
         // Keep fallback images if database fetch fails
@@ -211,6 +236,14 @@ export default function HomePage() {
       clearInterval(textInterval)
     }
   }, [])
+
+  useEffect(() => {
+    // Preload first few hero images to improve first transition smoothness
+    heroImages.slice(0, 3).forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+  }, [heroImages])
 
   useEffect(() => {
     if (heroImages.length === 0) return

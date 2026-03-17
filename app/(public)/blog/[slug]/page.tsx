@@ -3,11 +3,12 @@
 import { motion } from 'framer-motion'
 import { ArrowLeft, Clock, User, Share2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { notFound } from 'next/navigation'
 import { use, useEffect, useState } from 'react'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 
 // Firebase blog post type
 type FirebaseBlogPost = {
@@ -55,6 +56,56 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
   // Fetch all Firebase posts
   useEffect(() => {
     const fetchAllPosts = async () => {
+      const cacheKey = 'public:blog-detail:all-posts:v1'
+      const cacheTtlMs = 5 * 60 * 1000
+
+      const processPosts = (firebasePosts: FirebaseBlogPost[]) => {
+        const convertedFirebasePosts: BlogPost[] = firebasePosts.map(post => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug || `post-${post.id}`,
+          excerpt: post.excerpt || post.description?.substring(0, 100) + '...' || 'No description available',
+          content: post.content,
+          image: post.image || '/api/placeholder/600/400',
+          category: post.category || 'how-to',
+          readTime: post.readTime || 5,
+          author: post.author || 'Admin',
+          publishedAt: post.publishedAt || new Date().toISOString(),
+          featured: post.featured || false,
+          authorImage: undefined,
+        }))
+
+        const allPosts: BlogPost[] = [...convertedFirebasePosts, ...INITIAL_BLOG_POSTS]
+        const currentPost = allPosts.find(p => p.slug === slug)
+
+        if (!currentPost) {
+          notFound()
+          return
+        }
+
+        setPost(currentPost)
+        setRelatedPosts(
+          allPosts
+            .filter(p => p.category === currentPost.category && p.id !== currentPost.id)
+            .slice(0, 3)
+        )
+      }
+
+      try {
+        const cached = window.sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached) as { timestamp: number; posts: FirebaseBlogPost[] }
+          if (Date.now() - parsed.timestamp < cacheTtlMs) {
+            setAllFirebasePosts(parsed.posts)
+            processPosts(parsed.posts)
+            setLoading(false)
+            return
+          }
+        }
+      } catch {
+        // Continue with live fetch when cache read fails
+      }
+
       try {
         // Fetch all Firebase posts
         const querySnapshot = await getDocs(collection(db, 'blog-post'))
@@ -85,41 +136,16 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
         
         setAllFirebasePosts(firebasePosts)
 
-        // Convert Firebase posts to match the format of INITIAL_BLOG_POSTS
-        const convertedFirebasePosts: BlogPost[] = firebasePosts.map(post => ({
-          id: post.id,
-          title: post.title,
-          slug: post.slug || `post-${post.id}`,
-          excerpt: post.excerpt || post.description?.substring(0, 100) + '...' || 'No description available',
-          content: post.content,
-          image: post.image || '/api/placeholder/600/400',
-          category: post.category || 'how-to',
-          readTime: post.readTime || 5,
-          author: post.author || 'Admin',
-          publishedAt: post.publishedAt || new Date().toISOString(),
-          featured: post.featured || false,
-          authorImage: undefined // Firebase posts don't have author image yet
-        }))
-
-        // Combine Firebase posts with dummy posts
-        const allPosts: BlogPost[] = [...convertedFirebasePosts, ...INITIAL_BLOG_POSTS]
-
-        // Find the current post by slug
-        const currentPost = allPosts.find(p => p.slug === slug)
-        
-        if (!currentPost) {
-          notFound()
-          return
+        try {
+          window.sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ timestamp: Date.now(), posts: firebasePosts })
+          )
+        } catch {
+          // Ignore cache write failures
         }
 
-        setPost(currentPost)
-
-        // Find related posts (same category, excluding current post)
-        const related = allPosts
-          .filter(p => p.category === currentPost.category && p.id !== currentPost.id)
-          .slice(0, 3)
-        
-        setRelatedPosts(related)
+        processPosts(firebasePosts)
 
       } catch (error) {
         console.error('Error fetching blog post:', error)
@@ -181,9 +207,12 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
         animate={{ opacity: 1 }}
         className="relative h-96 md:h-125 bg-slate-900 overflow-hidden group"
       >
-        <img 
-          src={post.image} 
+        <Image
+          src={post.image}
           alt={post.title}
+          fill
+          priority
+          sizes="100vw"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-linear-to-t from-slate-900 via-slate-900/50 to-transparent" />
@@ -232,7 +261,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
               <div className="flex items-center gap-4 pb-8 border-b-2 border-slate-200 mb-8">
                 <div className="h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
                   {post.authorImage ? (
-                    <img src={post.authorImage} alt={post.author} className="h-full w-full rounded-full object-cover" />
+                    <Image src={post.authorImage} alt={post.author} width={64} height={64} className="h-full w-full rounded-full object-cover" />
                   ) : (
                     <div className="h-full w-full rounded-full bg-primary/10 flex items-center justify-center">
                       <User className="h-8 w-8 text-primary" />
@@ -337,9 +366,11 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
                         href={`/blog/${relatedPost.slug}`}
                         className="group flex items-start gap-3 p-4 rounded-lg hover:bg-white transition-colors"
                       >
-                        <img 
+                        <Image
                           src={relatedPost.image}
                           alt={relatedPost.title}
+                          width={64}
+                          height={64}
                           className="h-16 w-16 rounded-lg object-cover shrink-0 group-hover:scale-105 transition-transform"
                         />
                         <div className="flex-1">

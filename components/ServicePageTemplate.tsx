@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowRight } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
+import Image from 'next/image'
 
 export type ServicePageContent = {
   name: string
@@ -461,9 +462,12 @@ function SkeletonImg({
         <div className={`absolute inset-0 animate-pulse ${skeletonClassName ?? 'bg-slate-200'}`} />
       )}
       {src && (
-        <img
+        <Image
           src={src}
           alt={alt}
+          fill
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          loading="lazy"
           className={`${imgClassName ?? ''} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setLoaded(true)}
         />
@@ -479,19 +483,48 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
 
   useEffect(() => {
     const fetchOverrides = async () => {
+      const cacheKey = `service-page:${slug}`
+      const cacheTtlMs = 10 * 60 * 1000
+
+      try {
+        const cachedRaw = window.sessionStorage.getItem(cacheKey)
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw) as { timestamp: number; data: Partial<ServicePageContent> }
+          if (Date.now() - cached.timestamp < cacheTtlMs) {
+            setContent(prev => ({ ...prev, ...cached.data }))
+            return
+          }
+        }
+      } catch {
+        // Ignore cache read failures
+      }
+
       try {
         const docRef = doc(db, 'service-pages', slug)
         const docSnap = await getDoc(docRef)
         if (docSnap.exists()) {
           const data = docSnap.data()
-          setContent(prev => ({
-            ...prev,
-            ...Object.fromEntries(
-              Object.entries(data).filter(([, v]) => v !== undefined && v !== null && v !== '')
-            ),
-            // merge features array if present and non-empty
-            ...(Array.isArray(data.features) && data.features.length > 0 ? { features: data.features } : {}),
-          }))
+          setContent((prev) => {
+            const mergedData = {
+              ...prev,
+              ...Object.fromEntries(
+                Object.entries(data).filter(([, v]) => v !== undefined && v !== null && v !== '')
+              ),
+              // merge features array if present and non-empty
+              ...(Array.isArray(data.features) && data.features.length > 0 ? { features: data.features } : {}),
+            }
+
+            try {
+              window.sessionStorage.setItem(
+                cacheKey,
+                JSON.stringify({ timestamp: Date.now(), data: mergedData })
+              )
+            } catch {
+              // Ignore cache write failures
+            }
+
+            return mergedData
+          })
         }
       } catch {
         // use built-in defaults on error

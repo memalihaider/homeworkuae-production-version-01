@@ -33,6 +33,7 @@ import {
 import { db } from '@/lib/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getServicesPage, defaultServicesPage, type CMSServicesPage } from '@/lib/cms-data'
 
 // Firebase service type
@@ -167,6 +168,71 @@ export default function ServicesPage() {
   // Fetch services from Firebase
   useEffect(() => {
     const fetchFirebaseServices = async () => {
+      const cacheKey = 'public:services:list:v1'
+      const cacheTtlMs = 10 * 60 * 1000
+
+      try {
+        const cached = window.sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached) as { timestamp: number; services: FirebaseService[] }
+          if (Date.now() - parsed.timestamp < cacheTtlMs && parsed.services.length > 0) {
+            setFirebaseServices(parsed.services)
+
+            const cachedFormattedServices = parsed.services.map(service => {
+              let categoryId = 'normal'
+              if (service.categoryName?.toLowerCase().includes('deep') || service.name?.toLowerCase().includes('deep')) {
+                categoryId = 'deep'
+              } else if (
+                service.categoryName?.toLowerCase().includes('technical') ||
+                service.name?.toLowerCase().includes('ac') ||
+                service.name?.toLowerCase().includes('duct') ||
+                service.name?.toLowerCase().includes('coil') ||
+                service.name?.toLowerCase().includes('hood') ||
+                service.name?.toLowerCase().includes('grease') ||
+                service.name?.toLowerCase().includes('restaurant') ||
+                service.name?.toLowerCase().includes('water') ||
+                service.name?.toLowerCase().includes('pool') ||
+                service.name?.toLowerCase().includes('gym') ||
+                service.name?.toLowerCase().includes('facade')
+              ) {
+                categoryId = 'technical'
+              }
+
+              return {
+                id: service.id,
+                name: service.name,
+                slug: service.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                icon: getIconForService(service.name),
+                desc: service.description,
+                price: `AED ${service.price}`,
+                image: service.imageUrl,
+                categoryId,
+                isFirebaseService: true,
+              }
+            })
+
+            const updatedCategories = DUMMY_SERVICE_CATEGORIES.map(category => ({
+              ...category,
+              services: [...category.services.map(service => ({ ...service, slug: service.slug }))],
+            }))
+
+            cachedFormattedServices.forEach(firebaseService => {
+              const categoryIndex = updatedCategories.findIndex(cat => cat.id === firebaseService.categoryId)
+              if (categoryIndex !== -1) {
+                updatedCategories[categoryIndex].services.unshift(firebaseService)
+              } else {
+                updatedCategories[0].services.unshift(firebaseService)
+              }
+            })
+
+            setServiceCategories(updatedCategories)
+            return
+          }
+        }
+      } catch {
+        // Continue to live fetch when cache is unavailable
+      }
+
       try {
         const querySnapshot = await getDocs(collection(db, 'services'))
         const services: FirebaseService[] = []
@@ -195,6 +261,15 @@ export default function ServicesPage() {
         })
         
         setFirebaseServices(services)
+
+        try {
+          window.sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ timestamp: Date.now(), services })
+          )
+        } catch {
+          // Ignore cache write failures
+        }
 
         // Convert Firebase services to match our format
         const firebaseFormattedServices = services.map(service => {
@@ -296,9 +371,12 @@ export default function ServicesPage() {
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src={cms.heroImage} 
-            alt="Homework UAE Services" 
+          <Image
+            src={cms.heroImage}
+            alt="Homework UAE Services"
+            fill
+            priority
+            sizes="100vw"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
@@ -379,7 +457,7 @@ export default function ServicesPage() {
               {filteredCategories.map((category) => (
                 <div key={category.id} className="space-y-12">
                   <div className="flex items-center gap-6">
-                    <div className="h-16 w-16 rounded-[1.5rem] bg-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/5">
+                    <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/5">
                       <category.icon className="h-8 w-8" />
                     </div>
                     <div>
@@ -454,7 +532,7 @@ export default function ServicesPage() {
                           className="absolute inset-0 z-0"
                           aria-label={`View ${service.name} details`}
                         />
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[40px] rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
                         <ArrowRight className="absolute bottom-8 right-8 h-5 w-5 text-primary opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0" />
                       </motion.div>
                     ))}

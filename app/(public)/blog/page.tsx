@@ -4,8 +4,9 @@ import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Search, ChevronRight, Clock, User, Zap } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, orderBy, query, where, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, orderBy, query } from 'firebase/firestore'
 
 const POSTS_PER_PAGE = 6
 
@@ -59,6 +60,24 @@ export default function BlogPage() {
   useEffect(() => {
     const fetchFirebasePosts = async () => {
       setLoading(true)
+
+      const cacheKey = 'public:blog-posts:v1'
+      const cacheTtlMs = 5 * 60 * 1000
+
+      try {
+        const cached = window.sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached) as { timestamp: number; posts: FirebaseBlogPost[] }
+          if (Date.now() - parsed.timestamp < cacheTtlMs) {
+            setFirebasePosts(parsed.posts)
+            setLoading(false)
+            return
+          }
+        }
+      } catch {
+        // Continue with live fetch when cache read fails
+      }
+
       try {
         const q = query(collection(db, 'blog-post'), orderBy('createdAt', 'desc'))
         const querySnapshot = await getDocs(q)
@@ -111,6 +130,15 @@ export default function BlogPage() {
         })
         
         setFirebasePosts(posts)
+
+        try {
+          window.sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ timestamp: Date.now(), posts })
+          )
+        } catch {
+          // Ignore cache write failures
+        }
       } catch (error) {
         console.error('Error fetching blog posts:', error)
       } finally {
@@ -216,14 +244,15 @@ export default function BlogPage() {
                   className="group rounded-[2.5rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all border-2 border-slate-200"
                 >
                   <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
-                    <img 
-                      src={post.image} 
-                      alt={post.title}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/api/placeholder/600/400'
-                      }}
-                    />
+                    <div className="relative w-full h-64 overflow-hidden">
+                      <Image
+                        src={post.image}
+                        alt={post.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
                     <div className="p-8 flex-1 flex flex-col justify-between bg-white">
                       <div>
                         <div className="flex items-center gap-3 mb-4">
@@ -349,14 +378,15 @@ export default function BlogPage() {
                   >
                     <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
                       <div className="relative overflow-hidden">
-                        <img 
-                          src={post.image} 
-                          alt={post.title}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/api/placeholder/600/400'
-                          }}
-                        />
+                        <div className="relative w-full h-48">
+                          <Image
+                            src={post.image}
+                            alt={post.title}
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
                         {post.featured && (
                           <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-lg">
                             Featured

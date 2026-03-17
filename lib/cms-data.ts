@@ -313,14 +313,72 @@ export const defaultLayoutSettings: CMSLayoutSettings = {
 // ─── Firebase CRUD Operations ─────────────────────────────────────
 
 const CMS_COLLECTION = 'cms-pages'
+const CMS_CACHE_TTL_MS = 5 * 60 * 1000
+const cmsMemoryCache = new Map<string, { timestamp: number; data: unknown }>()
+
+function getCachedCMSData<T>(pageId: string): T | null {
+  const memoryEntry = cmsMemoryCache.get(pageId)
+  if (memoryEntry && Date.now() - memoryEntry.timestamp < CMS_CACHE_TTL_MS) {
+    return memoryEntry.data as T
+  }
+
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.sessionStorage.getItem(`cms:${pageId}`)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as { timestamp: number; data: T }
+    if (Date.now() - parsed.timestamp >= CMS_CACHE_TTL_MS) {
+      window.sessionStorage.removeItem(`cms:${pageId}`)
+      return null
+    }
+
+    cmsMemoryCache.set(pageId, { timestamp: parsed.timestamp, data: parsed.data })
+    return parsed.data
+  } catch {
+    return null
+  }
+}
+
+function setCachedCMSData<T>(pageId: string, data: T) {
+  const entry = { timestamp: Date.now(), data }
+  cmsMemoryCache.set(pageId, entry)
+
+  if (typeof window === 'undefined') return
+
+  try {
+    window.sessionStorage.setItem(`cms:${pageId}`, JSON.stringify(entry))
+  } catch {
+    // Ignore cache write failures
+  }
+}
+
+function clearCachedCMSData(pageId: string) {
+  cmsMemoryCache.delete(pageId)
+
+  if (typeof window === 'undefined') return
+
+  try {
+    window.sessionStorage.removeItem(`cms:${pageId}`)
+  } catch {
+    // Ignore cache cleanup failures
+  }
+}
 
 export async function getCMSData<T>(pageId: string, defaultData: T): Promise<T> {
+  const cached = getCachedCMSData<T>(pageId)
+  if (cached) return cached
+
   try {
     const docRef = doc(db, CMS_COLLECTION, pageId)
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
-      return docSnap.data() as T
+      const data = docSnap.data() as T
+      setCachedCMSData(pageId, data)
+      return data
     }
+    setCachedCMSData(pageId, defaultData)
     return defaultData
   } catch (error) {
     console.error(`Error fetching CMS data for ${pageId}:`, error)
@@ -332,6 +390,7 @@ export async function saveCMSData<T extends Record<string, unknown>>(pageId: str
   try {
     const docRef = doc(db, CMS_COLLECTION, pageId)
     await setDoc(docRef, { ...data, updatedAt: serverTimestamp() }, { merge: true })
+    clearCachedCMSData(pageId)
     return true
   } catch (error) {
     console.error(`Error saving CMS data for ${pageId}:`, error)

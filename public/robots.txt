@@ -1,11 +1,9 @@
 # *
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /employee/
 
 # Host
-Host: https://www.homeworkuae.com
+Host: https://homeworkuae.com
 
 # Sitemaps
-Sitemap: https://www.homeworkuae.com/sitemap.xml
+Sitemap: https://homeworkuae.com/sitemap.xml
