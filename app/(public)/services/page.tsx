@@ -32,7 +32,6 @@ import {
 import { db } from '@/lib/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getServicesPage, defaultServicesPage, type CMSServicesPage } from '@/lib/cms-data'
 
 // Firebase service type
@@ -369,17 +368,7 @@ export default function ServicesPage() {
     <div className="flex flex-col overflow-hidden bg-slate-50 min-h-screen">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-40">
-          <Image
-            src={cms.heroImage}
-            alt="Homework UAE Services"
-            fill
-            priority
-            sizes="100vw"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
-        </div>
+        <div className="absolute inset-0 z-0 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950" />
         
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div>

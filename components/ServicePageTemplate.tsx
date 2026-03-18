@@ -537,15 +537,7 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
     <div className="flex flex-col overflow-hidden">
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <SkeletonImg
-            src={content.heroImage}
-            alt={content.name}
-            imgClassName="w-full h-full object-cover opacity-40"
-            skeletonClassName="bg-slate-800"
-          />
-          <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
-        </div>
+        <div className="absolute inset-0 z-0 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950" />
 
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
