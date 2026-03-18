@@ -37,6 +37,7 @@ const ALL_PAGES = [
   'Report',           // ✅ Changed from 'report' to 'Report' with proper capitalization
   'Process Inquiry',   // ✅ Fixed capitalization
   'Quotations',
+  'Quotation List',
   'Inventory & Services',
   'Jobs',
   'Equipment & Permits',
@@ -64,6 +65,8 @@ const ALL_PAGES = [
   'Settings',
   'Employee Chat'
 ]
+
+const ALL_ACTIONS = ['view', 'add', 'edit', 'remove'] as const
 
 const PAGE_ALIASES: Record<string, string> = {
   report: 'Report',
@@ -97,7 +100,7 @@ const normalizePortalPages = (portal: 'admin' | 'employee', pages: string[]) => 
   }
 
   // Keep permissions page-based while ensuring critical admin navigation pages exist.
-  const criticalPages = ['Dashboard', 'Quotations', 'Process Inquiry']
+  const criticalPages = ['Dashboard', 'Quotations', 'Quotation List', 'Process Inquiry']
 
   criticalPages.forEach(page => {
     if (!normalizedPages.includes(page)) {
@@ -126,6 +129,7 @@ interface Employee {
 // Extended UserRole interface for local state
 interface LocalUserRole extends UserRole {
   allowedPages: string[]
+  allowedActions: string[]
   portal: 'admin' | 'employee'
   employeeId?: string
   employeeName?: string
@@ -145,7 +149,8 @@ export default function RoleManager() {
     password: '',
     portal: 'admin' as 'admin' | 'employee',
     employeeId: '',
-    allowedPages: [] as string[]
+    allowedPages: [] as string[],
+    allowedActions: [...ALL_ACTIONS] as string[]
   })
 
   const [showPassword, setShowPassword] = useState(false)
@@ -175,18 +180,30 @@ export default function RoleManager() {
         const data = doc.data()
         const portal = data.portal || 'admin'
         const allowedPages = normalizePortalPages(portal, data.allowedPages || [])
+        const roleName = data.roleName || (portal === 'admin' ? 'admin' : 'employee')
+        const allowedActions = portal === 'admin' ? [...ALL_ACTIONS] : ['view']
 
         const needsPortalFix = !data.portal
         const currentAllowedPages = Array.isArray(data.allowedPages) ? data.allowedPages : []
         const hasPagesChanged =
           allowedPages.length !== currentAllowedPages.length ||
           allowedPages.some((page, index) => page !== currentAllowedPages[index])
+        const currentRoleName = (data.roleName || '').toString().toLowerCase()
+        const hasRoleNameChanged = currentRoleName !== roleName
+        const currentAllowedActions = Array.isArray(data.allowedActions)
+          ? data.allowedActions
+          : []
+        const hasActionsChanged =
+          allowedActions.length !== currentAllowedActions.length ||
+          allowedActions.some((action, index) => action !== currentAllowedActions[index])
 
-        if (needsPortalFix || hasPagesChanged) {
+        if (needsPortalFix || hasPagesChanged || hasRoleNameChanged || hasActionsChanged) {
           healPromises.push(
             updateDoc(doc.ref, {
               portal,
+              roleName,
               allowedPages,
+              allowedActions,
               updatedAt: new Date().toISOString(),
             })
               .then(() => undefined)
@@ -201,12 +218,15 @@ export default function RoleManager() {
           email: data.email || '',
           name: data.name || '',
           allowedPages,
+          allowedActions: Array.isArray(data.allowedActions)
+            ? data.allowedActions
+            : allowedActions,
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || '',
           portal,
           employeeId: data.employeeId || '',
           employeeName: data.employeeName || '',
-          roleName: ''
+          roleName
         })
       })
 
@@ -279,13 +299,17 @@ export default function RoleManager() {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
       const allowedPages = normalizePortalPages(newUser.portal, newUser.allowedPages)
+      const allowedActions = newUser.portal === 'admin' ? [...ALL_ACTIONS] : ['view']
+      const roleName = newUser.portal === 'admin' ? 'admin' : 'employee'
       
       console.log('📝 Creating user with data:', {
         email: newUser.email,
         name: newUser.name,
         portal: newUser.portal,
         employeeId: newUser.employeeId,
-        allowedPages
+        allowedPages,
+        allowedActions,
+        roleName
       })
       
       const result = await createUserWithRole(
@@ -295,7 +319,9 @@ export default function RoleManager() {
         allowedPages,
         newUser.portal,
         newUser.portal === 'employee' ? newUser.employeeId : '',
-        newUser.portal === 'employee' ? selectedEmployee?.name : ''
+        newUser.portal === 'employee' ? selectedEmployee?.name : '',
+        roleName,
+        allowedActions
       )
 
       if (result.success) {
@@ -306,7 +332,8 @@ export default function RoleManager() {
           password: '',
           portal: 'admin',
           employeeId: '',
-          allowedPages: []
+          allowedPages: [],
+          allowedActions: [...ALL_ACTIONS]
         })
         setShowForm(false)
         fetchUserRoles()
@@ -330,7 +357,8 @@ export default function RoleManager() {
         password: '',
         portal: user.portal,
         employeeId: user.employeeId || '',
-        allowedPages: user.allowedPages
+        allowedPages: user.allowedPages,
+        allowedActions: user.allowedActions
       })
       setEditingUserId(userId)
       setShowForm(true)
@@ -365,6 +393,8 @@ export default function RoleManager() {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
       const allowedPages = normalizePortalPages(newUser.portal, newUser.allowedPages)
+      const allowedActions = newUser.portal === 'admin' ? [...ALL_ACTIONS] : ['view']
+      const roleName = newUser.portal === 'admin' ? 'admin' : 'employee'
       
       console.log('📝 Updating user:', { 
         id: editingUserId, 
@@ -376,7 +406,9 @@ export default function RoleManager() {
       const updateData: any = {
         name: newUser.name,
         portal: newUser.portal,
-        allowedPages: allowedPages
+        roleName,
+        allowedPages: allowedPages,
+        allowedActions
       }
       
       if (newUser.portal === 'employee') {
@@ -398,7 +430,8 @@ export default function RoleManager() {
           password: '',
           portal: 'admin',
           employeeId: '',
-          allowedPages: []
+          allowedPages: [],
+          allowedActions: [...ALL_ACTIONS]
         })
         setEditingUserId(null)
         setShowForm(false)
@@ -483,7 +516,8 @@ export default function RoleManager() {
                 password: '', 
                 portal: 'admin',
                 employeeId: '',
-                allowedPages: [] 
+                allowedPages: [],
+                allowedActions: [...ALL_ACTIONS]
               }) 
             }}
             className="group relative flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl hover:scale-[1.02] active:scale-[0.98]">
@@ -682,7 +716,15 @@ export default function RoleManager() {
               <button onClick={() => {
                 setShowForm(false)
                 setEditingUserId(null)
-                setNewUser({ name: '', email: '', password: '', portal: 'admin', employeeId: '', allowedPages: [] })
+                setNewUser({
+                  name: '',
+                  email: '',
+                  password: '',
+                  portal: 'admin',
+                  employeeId: '',
+                  allowedPages: [],
+                  allowedActions: [...ALL_ACTIONS]
+                })
               }} className="p-2 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors text-gray-500">
                 <X className="h-6 w-6" />
               </button>
@@ -703,7 +745,12 @@ export default function RoleManager() {
                         <button
                           key={portal.id}
                           type="button"
-                          onClick={() => setNewUser({...newUser, portal: portal.id as 'admin' | 'employee', employeeId: ''})}
+                          onClick={() => setNewUser({
+                            ...newUser,
+                            portal: portal.id as 'admin' | 'employee',
+                            employeeId: '',
+                            allowedActions: portal.id === 'admin' ? [...ALL_ACTIONS] : ['view']
+                          })}
                           className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                             isSelected
                               ? portal.id === 'admin'
@@ -877,7 +924,15 @@ export default function RoleManager() {
                 onClick={() => {
                   setShowForm(false)
                   setEditingUserId(null)
-                  setNewUser({ name: '', email: '', password: '', portal: 'admin', employeeId: '', allowedPages: [] })
+                  setNewUser({
+                    name: '',
+                    email: '',
+                    password: '',
+                    portal: 'admin',
+                    employeeId: '',
+                    allowedPages: [],
+                    allowedActions: [...ALL_ACTIONS]
+                  })
                 }}
                 className="flex-1 px-6 py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-2xl font-black uppercase tracking-widest transition-all"
               >

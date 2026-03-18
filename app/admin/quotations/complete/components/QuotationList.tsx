@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
-  Search, Filter, MoreVertical, Eye, Edit, Trash2, Mail, 
-  Download, CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, FileDown
+  Search, Eye, Edit, Trash2,
+  CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, FileDown, Wifi
 } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore'
+import { collection, getDocs, deleteDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
 interface FirebaseQuotation {
@@ -58,7 +58,7 @@ interface FirebaseQuotation {
 }
 
 interface Props {
-  onEdit: (quotation: FirebaseQuotation) => void
+  onEdit?: (quotation: FirebaseQuotation) => void
   onView?: (quotation: FirebaseQuotation) => void
   onSend?: (quotation: FirebaseQuotation) => void
   refreshTrigger?: boolean
@@ -69,61 +69,126 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
   const [statusFilter, setStatusFilter] = useState('All')
   const [quotations, setQuotations] = useState<FirebaseQuotation[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
+  const normalizeQuotations = (snapshot: { docs: Array<{ id: string; data: () => Record<string, any> }> }) => {
+    return snapshot.docs.map((docSnapshot) => {
+      const data = docSnapshot.data()
+
+      return {
+        id: docSnapshot.id,
+        ...data,
+        createdBy: data.createdBy || '',
+        createdById: data.createdById || '',
+      }
+    }) as FirebaseQuotation[]
+  }
+
   // Fetch real quotations from Firebase
-  const fetchQuotations = async () => {
+  const fetchQuotations = useCallback(async (isManual = false) => {
     if (!auth.currentUser) {
       setQuotations([])
       setLoading(false)
+      setRefreshing(false)
+      setFetchError('Please sign in to view quotations.')
       return
     }
 
     try {
-      setLoading(true)
+      if (isManual) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
+      }
+      setFetchError(null)
+
       const q = query(collection(db, 'quotations'), orderBy('createdAt', 'desc'))
       const snapshot = await getDocs(q)
-      
-      const quotationsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Ensure createdBy is properly mapped
-          createdBy: data.createdBy || '',
-          createdById: data.createdById || '',
-        }
-      }) as FirebaseQuotation[]
-      
+
+      const quotationsData = normalizeQuotations(snapshot)
       setQuotations(quotationsData)
+      setLastUpdated(new Date().toISOString())
     } catch (error) {
       if ((error as any)?.code === 'permission-denied') {
+        setFetchError('You do not have permission to view quotations.')
         console.warn('Skipping quotation list load due to Firestore permissions for current user.')
         return
       }
       console.error('Error fetching quotations:', error)
-      alert('Error loading quotations. Please refresh the page.')
+      setFetchError('Unable to load quotations right now. Please try again.')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
+    let unsubscribeQuotes: (() => void) | null = null
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) return
-      fetchQuotations()
+      if (unsubscribeQuotes) {
+        unsubscribeQuotes()
+        unsubscribeQuotes = null
+      }
+
+      if (!firebaseUser) {
+        setQuotations([])
+        setLoading(false)
+        setIsRealtimeConnected(false)
+        setFetchError('Please sign in to view quotations.')
+        return
+      }
+
+      setLoading(true)
+      setFetchError(null)
+
+      const quotationsQuery = query(collection(db, 'quotations'), orderBy('createdAt', 'desc'))
+
+      unsubscribeQuotes = onSnapshot(
+        quotationsQuery,
+        (snapshot) => {
+          const quotationsData = normalizeQuotations(snapshot)
+          setQuotations(quotationsData)
+          setLoading(false)
+          setRefreshing(false)
+          setFetchError(null)
+          setIsRealtimeConnected(true)
+          setLastUpdated(new Date().toISOString())
+        },
+        (error) => {
+          console.error('Realtime quotation listener error:', error)
+          setIsRealtimeConnected(false)
+          setLoading(false)
+
+          if ((error as any)?.code === 'permission-denied') {
+            setFetchError('You do not have permission to view quotations.')
+            return
+          }
+
+          setFetchError('Live sync disconnected. Use Refresh to retry.')
+        },
+      )
     })
 
-    return () => unsubscribe()
+    return () => {
+      unsubscribe()
+      if (unsubscribeQuotes) {
+        unsubscribeQuotes()
+      }
+    }
   }, [])
 
   // Refresh when trigger changes
   useEffect(() => {
     if (refreshTrigger) {
-      fetchQuotations()
+      fetchQuotations(true)
     }
-  }, [refreshTrigger])
+  }, [refreshTrigger, fetchQuotations])
 
   // Delete quotation from Firebase
   const handleDelete = async (id: string) => {
@@ -195,6 +260,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
 
   // Handle edit button click
   const handleEditClick = (quotation: FirebaseQuotation) => {
+    if (!onEdit) return
     console.log('Editing quotation:', quotation.id, quotation);
     onEdit(quotation);
   }
@@ -281,19 +347,53 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64 rounded-3xl border border-gray-200 bg-linear-to-br from-white to-slate-50">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-4" />
-          <p className="text-sm text-gray-500">Loading quotations...</p>
+          <RefreshCw className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-sm font-bold text-gray-700">Loading quotations...</p>
+          <p className="text-xs text-gray-500 mt-1">Preparing your latest quote data</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Search & Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 border border-gray-300 rounded shadow-none">
+      <div className="bg-white rounded-3xl border border-gray-200 p-4 md:p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <h3 className="text-lg font-black text-black">Quotation List</h3>
+            <p className="text-sm text-gray-500 font-medium">Track and manage all client quotations in real-time</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
+              isRealtimeConnected
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-amber-50 text-amber-700 border-amber-200'
+            }`}>
+              <Wifi className="w-3.5 h-3.5" />
+              {isRealtimeConnected ? 'Live Sync' : 'Sync Paused'}
+            </span>
+            <button
+              onClick={() => fetchQuotations(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-gray-50 transition-colors"
+              disabled={refreshing}
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing' : 'Refresh'}
+            </button>
+          </div>
+        </div>
+
+        {fetchError && (
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3">
+            <p className="text-xs font-bold text-red-700 uppercase tracking-widest mb-1">Data Fetch Notice</p>
+            <p className="text-sm text-red-700">{fetchError}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="md:col-span-2 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -301,14 +401,14 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
             placeholder="Search quotes, clients, companies..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
         <div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black appearance-none bg-white font-medium"
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 appearance-none bg-white font-medium"
           >
             <option value="All">All Statuses</option>
             <option value="Draft">Draft</option>
@@ -318,45 +418,39 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
             <option value="Expired">Expired</option>
           </select>
         </div>
-        <button 
-          onClick={fetchQuotations}
-          className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm font-bold uppercase tracking-tight hover:bg-gray-50 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        </div>
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-5 gap-3">
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Total Quotes</p>
           <p className="text-2xl font-black text-black">{stats.total}</p>
         </div>
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
+        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Drafts</p>
           <p className="text-2xl font-black text-gray-700">{stats.draft}</p>
         </div>
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
+        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Sent</p>
           <p className="text-2xl font-black text-blue-700">{stats.sent}</p>
         </div>
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
+        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Approved</p>
           <p className="text-2xl font-black text-green-700">{stats.approved}</p>
         </div>
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
+        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Rejected</p>
           <p className="text-2xl font-black text-red-700">{stats.rejected}</p>
         </div>
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block bg-white border border-gray-300 rounded overflow-hidden shadow-none">
+      <div className="hidden md:block bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-gray-300 bg-gray-50">
+              <tr className="border-b border-gray-200 bg-gray-50/80">
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500">Quote Info</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500">Client / Company</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500">Amount</th>
@@ -381,7 +475,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                 </tr>
               ) : (
                 filtered.map((q) => (
-                  <tr key={q.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={q.id} className="hover:bg-blue-50/40 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <p className="font-bold text-[13px] text-black mb-0.5">{q.quoteNumber}</p>
                       <div className="flex items-center gap-2">
@@ -431,17 +525,18 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                           onClick={() => handleDownloadPDF(q)}
                           disabled={downloadingId === q.id}
                           title="Download PDF" 
-                          className={`p-1.5 rounded transition-colors ${
+                          className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-colors ${
                             downloadingId === q.id 
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'hover:bg-gray-100 text-green-600'
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
                           }`}
                         >
                           {downloadingId === q.id ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <RefreshCw className="w-5 h-5 animate-spin" />
                           ) : (
-                            <FileDown className="w-4 h-4" />
+                            <FileDown className="w-5 h-5" />
                           )}
+                          <span>Download</span>
                         </button>
 
                         {/* View Button */}
@@ -456,13 +551,15 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                         )}
 
                         {/* Edit Button */}
-                        <button 
-                          onClick={() => handleEditClick(q)}
-                          title="Edit" 
-                          className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
+                        {onEdit && (
+                          <button 
+                            onClick={() => handleEditClick(q)}
+                            title="Edit" 
+                            className="p-1.5 hover:bg-gray-100 rounded text-blue-600 transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
                         
                         {/* Delete Button */}
                         <button 
@@ -494,7 +591,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
         {filtered.length === 0 ? (
-          <div className="bg-white border border-gray-300 rounded p-6 text-center">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center shadow-sm">
             <div className="flex flex-col items-center justify-center gap-2">
               <FileText className="w-8 h-8 text-gray-300" />
               <p className="text-sm text-gray-500">No quotations found</p>
@@ -505,7 +602,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
           </div>
         ) : (
           filtered.map((q) => (
-            <div key={q.id} className="bg-white border border-gray-300 rounded p-4 shadow-none space-y-3">
+            <div key={q.id} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-bold text-[13px] text-black">{q.quoteNumber}</p>
@@ -531,28 +628,30 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
                 <button
                   onClick={() => handleDownloadPDF(q)}
                   disabled={downloadingId === q.id}
-                  className={`col-span-3 flex items-center justify-center gap-2 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight transition-colors ${
+                  className={`col-span-3 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors ${
                     downloadingId === q.id
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                   }`}
                 >
-                  {downloadingId === q.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                  {downloadingId === q.id ? <RefreshCw className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
                   Download PDF
                 </button>
 
-                <button
-                  onClick={() => handleEditClick(q)}
-                  className="flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit
-                </button>
+                {onEdit && (
+                  <button
+                    onClick={() => handleEditClick(q)}
+                    className="flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                )}
 
                 <button
                   onClick={() => handleDelete(q.id)}
                   disabled={deletingId === q.id}
-                  className={`col-span-2 flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight transition-colors ${
+                  className={`${onEdit ? 'col-span-2' : 'col-span-3'} flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-bold uppercase tracking-tight transition-colors ${
                     deletingId === q.id
                       ? 'bg-red-100 text-red-400 cursor-not-allowed'
                       : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
@@ -574,7 +673,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
         </p>
         {filtered.length > 0 && (
           <p className="text-xs text-gray-400">
-            Last updated: {new Date().toLocaleTimeString()}
+            Last updated: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'N/A'}
           </p>
         )}
       </div>

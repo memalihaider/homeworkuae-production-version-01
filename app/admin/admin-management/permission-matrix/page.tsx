@@ -27,9 +27,75 @@ interface UserRole {
   email: string
   name: string
   allowedPages: string[]
+  allowedActions: string[]
   roleName: string
+  portal: 'admin' | 'employee'
   createdAt: string
   updatedAt: string
+}
+
+const ALL_SYSTEM_PAGES = [
+  'Dashboard',
+  'Lead Dashboard',
+  'Communications',
+  'Clients',
+  'Surveys',
+  'Report',
+  'Process Inquiry',
+  'Quotations',
+  'Quotation List',
+  'Inventory & Services',
+  'Jobs',
+  'Equipment & Permits',
+  'Job Profitability',
+  'Bookings',
+  'Employee Directory',
+  'Attendance',
+  'Leave Management',
+  'Payroll',
+  'Performance Dashboard',
+  'Feedback & Complaints',
+  'Meeting Calendar',
+  'Meeting Detail',
+  'Notes & Decisions',
+  'Follow-Up Tracker',
+  'Finance',
+  'Marketing',
+  'Role Manager',
+  'Permission Matrix',
+  'User Accounts',
+  'Audit Logs',
+  'AI Command Center',
+  'AI Recommendations',
+  'CMS',
+  'Settings',
+  'Employee Chat'
+]
+
+const ALL_ACTIONS = ['view', 'add', 'edit', 'remove'] as const
+
+const getNormalizedActions = (
+  portal: 'admin' | 'employee',
+  roleName: string,
+  actions: unknown,
+) => {
+  if (portal === 'admin' || roleName.toLowerCase() === 'admin') {
+    return [...ALL_ACTIONS]
+  }
+
+  const normalized = Array.from(
+    new Set(
+      (Array.isArray(actions) ? actions : [])
+        .map((action) => action?.toString().toLowerCase().trim())
+        .filter(Boolean)
+    )
+  )
+
+  if (!normalized.includes('view')) {
+    normalized.unshift('view')
+  }
+
+  return normalized
 }
 
 export default function PermissionMatrix() {
@@ -50,12 +116,21 @@ export default function PermissionMatrix() {
       
       snapshot.forEach(doc => {
         const data = doc.data()
+        const portal: 'admin' | 'employee' = data.portal === 'employee' ? 'employee' : 'admin'
+        const roleName = data.roleName || (portal === 'admin' ? 'admin' : 'employee')
+        const allowedPages = Array.from(
+          new Set((Array.isArray(data.allowedPages) ? data.allowedPages : []).filter(Boolean))
+        )
+        const allowedActions = getNormalizedActions(portal, roleName, data.allowedActions)
+
         roles.push({
           id: doc.id,
           email: data.email || '',
           name: data.name || '',
-          allowedPages: data.allowedPages || [],
-          roleName: data.roleName || '',
+          allowedPages,
+          allowedActions,
+          roleName,
+          portal,
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || ''
         })
@@ -79,7 +154,8 @@ export default function PermissionMatrix() {
     return userRoles.filter(user => 
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.roleName.toLowerCase().includes(searchTerm.toLowerCase())
+      user.roleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.portal.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [searchTerm, userRoles])
 
@@ -89,7 +165,7 @@ export default function PermissionMatrix() {
   }, [selectedUser, userRoles])
 
   // Get total pages count
-  const TOTAL_PAGES = 35 // Total number of pages in your system
+  const TOTAL_PAGES = ALL_SYSTEM_PAGES.length
 
   // Format date function
   const formatDate = (dateString: string) => {
@@ -152,46 +228,6 @@ export default function PermissionMatrix() {
     }
   }
 
-  // Group pages by category for display
-  const groupPagesByCategory = (pages: string[]) => {
-    const categories: Record<string, string[]> = {
-      'Main Pages': [],
-      'CRM': [],
-      'HR Management': [],
-      'Meetings': [],
-      'Admin Management': [],
-      'Other Pages': []
-    }
-
-    pages.forEach(page => {
-      if (['Dashboard', 'Surveys', 'Quotations', 'Inventory & Services', 'Jobs', 
-           'Equipment & Permits', 'Job Profitability', 'Bookings', 'Finance', 
-           'Marketing', 'AI Command Center', 'CMS', 'Settings'].includes(page)) {
-        categories['Main Pages'].push(page)
-      } else if (['Lead Dashboard', 'Communications', 'Clients'].includes(page)) {
-        categories['CRM'].push(page)
-      } else if (['Employee Directory', 'Attendance', 'Leave Management', 
-                  'Payroll', 'Performance Dashboard', 'Feedback & Complaints'].includes(page)) {
-        categories['HR Management'].push(page)
-      } else if (['Meeting Calendar', 'Meeting Detail', 'Notes & Decisions', 'Follow-Up Tracker'].includes(page)) {
-        categories['Meetings'].push(page)
-      } else if (['Role Manager', 'Permission Matrix', 'User Accounts', 'Audit Logs'].includes(page)) {
-        categories['Admin Management'].push(page)
-      } else {
-        categories['Other Pages'].push(page)
-      }
-    })
-
-    // Remove empty categories
-    Object.keys(categories).forEach(category => {
-      if (categories[category].length === 0) {
-        delete categories[category]
-      }
-    })
-
-    return categories
-  }
-
   return (
     <div className="space-y-8 pb-10 bg-white text-black">
       {/* Header */}
@@ -243,7 +279,7 @@ export default function PermissionMatrix() {
             Users ({filteredUsers.length})
           </h3>
           
-          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+          <div className="space-y-2 max-h-125 overflow-y-auto">
             {filteredUsers.map((user) => {
               const isSelected = selectedUser === user.id
               const risk = getRiskLevel(user.allowedPages)
@@ -398,34 +434,68 @@ export default function PermissionMatrix() {
               <div className="bg-white border border-gray-200 rounded-[32px] p-8">
                 <h3 className="text-xl font-black text-black mb-6 flex items-center gap-2">
                   <Lock className="h-5 w-5 text-indigo-600" />
-                  Page Permissions
+                  All Permissions
                 </h3>
 
-                {/* Grouped Pages Display */}
+                {/* Action Permissions */}
+                <div className="mb-8">
+                  <h4 className="text-sm font-bold text-gray-700 mb-3">Action Permissions</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {ALL_ACTIONS.map((action) => {
+                      const hasAction = selectedUserData.allowedActions.includes(action)
+
+                      return (
+                        <div
+                          key={action}
+                          className={`p-3 rounded-xl border ${
+                            hasAction
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                              : 'bg-gray-50 border-gray-200 text-gray-500'
+                          }`}
+                        >
+                          <p className="text-[10px] font-black uppercase tracking-widest">{action}</p>
+                          <p className="text-xs font-bold mt-1">{hasAction ? 'Allowed' : 'Not Allowed'}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* All Pages Display */}
                 <div className="space-y-6">
-                  {Object.entries(groupPagesByCategory(selectedUserData.allowedPages)).map(([category, pages]) => (
-                    <div key={category} className="space-y-3">
-                      <h4 className="text-sm font-bold text-gray-700 border-b pb-2 flex items-center gap-2">
-                        <span className="text-indigo-600">{category}</span>
-                        <span className="text-xs text-gray-500 font-normal">
-                          ({pages.length} {pages.length === 1 ? 'page' : 'pages'})
-                        </span>
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {pages.map((page, index) => (
-                          <div 
-                            key={index} 
-                            className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl"
+                  <h4 className="text-sm font-bold text-gray-700">Page Permissions ({TOTAL_PAGES} total)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {ALL_SYSTEM_PAGES.map((page) => {
+                      const isAllowed = selectedUserData.allowedPages.includes(page)
+
+                      return (
+                        <div
+                          key={page}
+                          className={`flex items-center gap-3 p-3 rounded-xl border ${
+                            isAllowed
+                              ? 'bg-emerald-50 border-emerald-200'
+                              : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div
+                            className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                              isAllowed ? 'bg-emerald-100' : 'bg-gray-200'
+                            }`}
                           >
-                            <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                            </div>
-                            <span className="text-sm font-medium text-emerald-700">{page}</span>
+                            <ShieldCheck className={`h-4 w-4 ${isAllowed ? 'text-emerald-600' : 'text-gray-500'}`} />
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                          <div>
+                            <p className={`text-sm font-medium ${isAllowed ? 'text-emerald-700' : 'text-gray-700'}`}>
+                              {page}
+                            </p>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${isAllowed ? 'text-emerald-600' : 'text-gray-500'}`}>
+                              {isAllowed ? 'Allowed' : 'Not Allowed'}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Access Summary */}
@@ -439,6 +509,9 @@ export default function PermissionMatrix() {
                         </p>
                         <p className="text-xs text-blue-600 mt-1">
                           That's {((selectedUserData.allowedPages.length / TOTAL_PAGES) * 100).toFixed(1)}% of total system pages
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Actions allowed: {selectedUserData.allowedActions.join(', ')}
                         </p>
                       </div>
                       <div className="text-right">

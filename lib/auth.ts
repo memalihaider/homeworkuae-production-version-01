@@ -32,7 +32,7 @@ const normalizePagesForPortal = (portal: 'admin' | 'employee', pages: string[]) 
     return ['Employee Chat']
   }
 
-  const criticalPages = ['Dashboard', 'Quotations', 'Process Inquiry']
+  const criticalPages = ['Dashboard', 'Quotations', 'Quotation List', 'Process Inquiry']
   criticalPages.forEach((page) => {
     if (!normalized.includes(page)) {
       normalized.push(page)
@@ -42,11 +42,30 @@ const normalizePagesForPortal = (portal: 'admin' | 'employee', pages: string[]) 
   return normalized
 }
 
+const ALL_ACTIONS = ['view', 'add', 'edit', 'remove'] as const
+
+const normalizeActionsForPortal = (portal: 'admin' | 'employee', actions?: string[]) => {
+  if (portal === 'admin') {
+    return [...ALL_ACTIONS]
+  }
+
+  const normalized = Array.from(
+    new Set((actions || []).map((action) => action?.toString().toLowerCase().trim()).filter(Boolean)),
+  )
+
+  if (!normalized.includes('view')) {
+    normalized.unshift('view')
+  }
+
+  return normalized
+}
+
 export interface UserRole {
   id: string
   email: string
   name: string
   allowedPages: string[]
+  allowedActions?: string[]
   createdAt: string
   updatedAt: string
   portal: 'admin' | 'employee'  // ✅ Added portal field
@@ -77,7 +96,9 @@ export async function createUserWithRole(
   allowedPages: string[], 
   portal: 'admin' | 'employee',
   employeeId?: string,
-  employeeName?: string
+  employeeName?: string,
+  roleName?: string,
+  allowedActions?: string[]
 ) {
   try {
     console.log('📝 Creating user:', { email, name, portal, employeeId });
@@ -98,6 +119,8 @@ export async function createUserWithRole(
       name,
       allowedPages,
       portal,
+      roleName: roleName || (portal === 'admin' ? 'admin' : 'employee'),
+      allowedActions: normalizeActionsForPortal(portal, allowedActions),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -134,16 +157,28 @@ export async function getUserRole(uid: string): Promise<UserRole | null> {
         inferredPortal,
         (data.allowedPages || []) as string[],
       )
+      const normalizedAllowedActions = normalizeActionsForPortal(
+        inferredPortal,
+        (data.allowedActions || []) as string[],
+      )
+      const roleName = inferredPortal === 'admin' ? 'admin' : 'employee'
 
       const sourceAllowedPages = Array.isArray(data.allowedPages) ? data.allowedPages : []
       const allowedPagesChanged =
         normalizedAllowedPages.length !== sourceAllowedPages.length ||
         normalizedAllowedPages.some((page, index) => page !== sourceAllowedPages[index])
+      const sourceAllowedActions = Array.isArray(data.allowedActions) ? data.allowedActions : []
+      const allowedActionsChanged =
+        normalizedAllowedActions.length !== sourceAllowedActions.length ||
+        normalizedAllowedActions.some((action, index) => action !== sourceAllowedActions[index])
+      const roleNameChanged = (data.roleName || '').toString().toLowerCase() !== roleName
 
-      if (!data.portal || allowedPagesChanged) {
+      if (!data.portal || allowedPagesChanged || allowedActionsChanged || roleNameChanged) {
         await updateDoc(userRoleRef, {
           portal: inferredPortal,
+          roleName,
           allowedPages: normalizedAllowedPages,
+          allowedActions: normalizedAllowedActions,
           updatedAt: new Date().toISOString(),
         })
       }
@@ -153,11 +188,13 @@ export async function getUserRole(uid: string): Promise<UserRole | null> {
         email: data.email || '',
         name: data.name || '',
         allowedPages: normalizedAllowedPages,
+        allowedActions: normalizedAllowedActions,
         createdAt: data.createdAt || '',
         updatedAt: data.updatedAt || '',
         portal: inferredPortal,
         employeeId: data.employeeId || '',
-        employeeName: data.employeeName || ''
+        employeeName: data.employeeName || '',
+        roleName
       } as UserRole
     }
     return null

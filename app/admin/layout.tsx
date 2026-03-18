@@ -155,6 +155,7 @@ const ALL_PAGES_CONFIG = {
   Clients: { icon: UserCheck, href: "/admin/crm/clients" },
   Surveys: { icon: Ruler, href: "/admin/surveys" },
   Quotations: { icon: FileText, href: "/admin/quotations/complete" },
+  "Quotation List": { icon: FileText, href: "/admin/quotations/list" },
   "Inventory & Services": { icon: Wrench, href: "/admin/products" },
   Jobs: { icon: Briefcase, href: "/admin/jobs" },
   "Equipment & Permits": { icon: Wrench, href: "/admin/equipment-permits" },
@@ -247,6 +248,11 @@ const MENU_STRUCTURE = [
     type: "single",
     label: "Quotations",
     key: "Quotations",
+  },
+  {
+    type: "single",
+    label: "Quotation List",
+    key: "Quotation List",
   },
   {
     type: "single",
@@ -358,6 +364,8 @@ const ADMIN_PAGE_ALIASES: Record<string, string> = {
   communications: "Communications",
   crm: "CRM",
   quotations: "Quotations",
+  "quotation list": "Quotation List",
+  quotationlist: "Quotation List",
   "inventory & services": "Inventory & Services",
 };
 
@@ -382,7 +390,7 @@ const getNormalizedAllowedPages = (
   );
 
   if (portal === "admin") {
-    ["Dashboard", "Quotations", "Process Inquiry"].forEach((page) => {
+    ["Dashboard", "Quotations", "Quotation List", "Process Inquiry"].forEach((page) => {
       if (!normalized.includes(page)) {
         normalized.push(page);
       }
@@ -399,6 +407,7 @@ const getNormalizedAllowedPages = (
 
 const PAGE_MODULE_ACCESS: Partial<Record<keyof typeof ALL_PAGES_CONFIG, string>> = {
   Quotations: "/admin/quotations",
+  "Quotation List": "/admin/quotations",
   "AI Command Center": "/admin/ai-command-center",
   "Inventory & Services": "/admin/products",
   CRM: "/admin/crm",
