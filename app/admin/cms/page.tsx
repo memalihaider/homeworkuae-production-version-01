@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { 
   FileText, 
   Layout, 
@@ -25,6 +26,24 @@ import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import WebsiteCMS from './website/page'
 import ServicePagesCMS from './service-pages/page'
+
+const OPTIMIZED_IMAGE_HOSTS = new Set([
+  'images.unsplash.com',
+  'randomuser.me',
+  'firebasestorage.googleapis.com',
+  'homework-a36e3.firebasestorage.app',
+  'i.pinimg.com',
+  's.pinimg.com',
+])
+
+const canUseNextImage = (src: string) => {
+  try {
+    const url = new URL(src)
+    return url.protocol === 'https:' && OPTIMIZED_IMAGE_HOSTS.has(url.hostname)
+  } catch {
+    return false
+  }
+}
 
 // Blog Post Type
 type BlogPost = {
@@ -1003,14 +1022,26 @@ You have the right to request access to the personal data we hold about you, to 
                   {/* User Info */}
                   <div className="flex items-center gap-3 pt-4 border-t">
                     {testimonial.imageURL ? (
-                      <img 
-                        src={testimonial.imageURL} 
-                        alt={testimonial.name}
-                        className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40'
-                        }}
-                      />
+                      canUseNextImage(testimonial.imageURL) ? (
+                        <Image
+                          src={testimonial.imageURL}
+                          alt={testimonial.name}
+                          width={40}
+                          height={40}
+                          loading="lazy"
+                          sizes="40px"
+                          className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                      ) : (
+                        <img 
+                          src={testimonial.imageURL} 
+                          alt={testimonial.name}
+                          className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40'
+                          }}
+                        />
+                      )
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                         <User className="h-5 w-5 text-blue-600" />
@@ -1351,14 +1382,18 @@ You have the right to request access to the personal data we hold about you, to 
                   <div className="mt-3">
                     <p className="text-xs font-medium mb-2">Image Preview:</p>
                     <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                      <img 
-                        src={formData.imageURL} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none'
-                        }}
-                      />
+                      {canUseNextImage(formData.imageURL) ? (
+                        <Image src={formData.imageURL} alt="Preview" fill loading="lazy" sizes="(min-width: 768px) 50vw, 100vw" className="w-full h-full object-cover" />
+                      ) : (
+                        <img 
+                          src={formData.imageURL} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 )}
@@ -1498,14 +1533,18 @@ You have the right to request access to the personal data we hold about you, to 
                     <p className="text-xs font-medium mb-2">Image Preview:</p>
                     <div className="flex items-center gap-4">
                       <div className="relative h-16 w-16 rounded-full overflow-hidden border">
-                        <img 
-                          src={testimonialForm.imageURL} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none'
-                          }}
-                        />
+                        {canUseNextImage(testimonialForm.imageURL) ? (
+                          <Image src={testimonialForm.imageURL} alt="Preview" fill loading="lazy" sizes="64px" className="w-full h-full object-cover" />
+                        ) : (
+                          <img 
+                            src={testimonialForm.imageURL} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         This image will appear next to the testimonial

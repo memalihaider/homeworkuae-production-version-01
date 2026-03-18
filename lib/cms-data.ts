@@ -133,8 +133,8 @@ export const defaultHomePage: CMSHomePage = {
       "Sparkle &\nShine Daily",
       "Trust Our\nExpertise"
     ],
-    subtitle: "Professional cleaning solutions for homes and offices across the UAE. Trusted by 20,000+ clients with eco-friendly products and expert teams.",
-    badgeText: "Professional Cleaning Solutions",
+    subtitle: "Premium cleaning company in Dubai offering maid services and deep cleaning services for homes, villas, and offices. Trusted by 20,000+ clients.",
+    badgeText: "Premium Maid & Deep Cleaning Services in Dubai",
     ctaText: "Get Started",
     ctaLink: "/book-service",
     videoUrl: "",

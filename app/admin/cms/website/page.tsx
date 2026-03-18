@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import {
   Home, Globe, FileText, Phone, DollarSign, HelpCircle, Layers, Settings,
   Save, RotateCcw, Eye, Upload, Plus, Trash2, GripVertical, Check, X,
@@ -19,6 +20,24 @@ import {
   saveFAQPage, saveServicesPage, saveLayoutSettings,
   uploadCMSImage
 } from '@/lib/cms-data'
+
+const OPTIMIZED_IMAGE_HOSTS = new Set([
+  'images.unsplash.com',
+  'randomuser.me',
+  'firebasestorage.googleapis.com',
+  'homework-a36e3.firebasestorage.app',
+  'i.pinimg.com',
+  's.pinimg.com',
+])
+
+const canUseNextImage = (src: string) => {
+  try {
+    const url = new URL(src)
+    return url.protocol === 'https:' && OPTIMIZED_IMAGE_HOSTS.has(url.hostname)
+  } catch {
+    return false
+  }
+}
 
 // ─── Reusable UI Components ──────────────────────────────────────
 
@@ -141,7 +160,11 @@ function ImageField({ label, value, onChange, onUpload }: {
       {value && (
         <div className="mt-2 flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-100">
           <div className="rounded-lg overflow-hidden border border-slate-200 h-20 w-28 shrink-0">
-            <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            {canUseNextImage(value) ? (
+              <Image src={value} alt="Preview" width={112} height={80} loading="lazy" sizes="112px" className="w-full h-full object-cover" />
+            ) : (
+              <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-slate-400 break-all leading-relaxed line-clamp-3">{value}</p>
@@ -687,7 +710,11 @@ function ServiceItemCard({ svc, si, ci, data, onChange, onUpload }: {
           <input ref={imgRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
           {svc.image && (
             <div className="flex items-center gap-2 mt-1.5 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-              <img src={svc.image} alt="preview" className="h-9 w-14 object-cover rounded border border-slate-200 shrink-0" />
+              {canUseNextImage(svc.image) ? (
+                <Image src={svc.image} alt="preview" width={56} height={36} loading="lazy" sizes="56px" className="h-9 w-14 object-cover rounded border border-slate-200 shrink-0" />
+              ) : (
+                <img src={svc.image} alt="preview" className="h-9 w-14 object-cover rounded border border-slate-200 shrink-0" />
+              )}
               <span className="text-[10px] text-slate-400 truncate flex-1 min-w-0">{svc.image}</span>
               <button onClick={() => update({ image: '' })} className="text-slate-400 hover:text-red-500 shrink-0"><X className="h-3 w-3" /></button>
             </div>

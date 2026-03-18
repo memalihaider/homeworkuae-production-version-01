@@ -1,10 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Edit3, Globe, CheckCircle2, X, Save, Loader2 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { SERVICE_DEFAULTS, ServicePageContent } from '@/components/ServicePageTemplate'
+
+const OPTIMIZED_IMAGE_HOSTS = new Set([
+  'images.unsplash.com',
+  'randomuser.me',
+  'firebasestorage.googleapis.com',
+  'homework-a36e3.firebasestorage.app',
+  'i.pinimg.com',
+  's.pinimg.com',
+])
+
+const canUseNextImage = (src: string) => {
+  try {
+    const url = new URL(src)
+    return url.protocol === 'https:' && OPTIMIZED_IMAGE_HOSTS.has(url.hostname)
+  } catch {
+    return false
+  }
+}
 
 const SERVICE_LIST = [
   // Normal Cleaning
@@ -210,7 +229,11 @@ export default function ServicePagesCMS() {
                     <input value={form.heroImage} onChange={e => setForm(f => ({ ...f, heroImage: e.target.value }))}
                       placeholder="https://..." className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                     {form.heroImage && (
-                      <img src={form.heroImage} alt="" className="mt-2 h-20 w-full object-cover rounded-lg" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      canUseNextImage(form.heroImage) ? (
+                        <Image src={form.heroImage} alt="" width={640} height={80} loading="lazy" sizes="(min-width: 768px) 50vw, 100vw" className="mt-2 h-20 w-full object-cover rounded-lg" />
+                      ) : (
+                        <img src={form.heroImage} alt="" className="mt-2 h-20 w-full object-cover rounded-lg" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      )
                     )}
                   </div>
                   <div>
@@ -218,7 +241,11 @@ export default function ServicePagesCMS() {
                     <input value={form.sectionImage} onChange={e => setForm(f => ({ ...f, sectionImage: e.target.value }))}
                       placeholder="https://..." className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                     {form.sectionImage && (
-                      <img src={form.sectionImage} alt="" className="mt-2 h-20 w-full object-cover rounded-lg" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      canUseNextImage(form.sectionImage) ? (
+                        <Image src={form.sectionImage} alt="" width={640} height={80} loading="lazy" sizes="(min-width: 768px) 50vw, 100vw" className="mt-2 h-20 w-full object-cover rounded-lg" />
+                      ) : (
+                        <img src={form.sectionImage} alt="" className="mt-2 h-20 w-full object-cover rounded-lg" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      )
                     )}
                   </div>
                 </div>

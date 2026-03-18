@@ -4,9 +4,28 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { BlogPost } from '@/lib/types/blog'
+
+const OPTIMIZED_IMAGE_HOSTS = new Set([
+  'images.unsplash.com',
+  'randomuser.me',
+  'firebasestorage.googleapis.com',
+  'homework-a36e3.firebasestorage.app',
+  'i.pinimg.com',
+  's.pinimg.com',
+])
+
+const canUseNextImage = (src: string) => {
+  try {
+    const url = new URL(src)
+    return url.protocol === 'https:' && OPTIMIZED_IMAGE_HOSTS.has(url.hostname)
+  } catch {
+    return false
+  }
+}
 
 const generateSlug = (title: string) => {
   return title
@@ -238,7 +257,11 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
             {showPreview && (
               <div className="bg-white rounded-2xl border-2 border-slate-200 overflow-hidden sticky top-24">
                 {formData.image && (
-                  <img src={formData.image} alt="Preview" className="w-full h-48 object-cover" />
+                  canUseNextImage(formData.image) ? (
+                    <Image src={formData.image} alt="Preview" width={480} height={192} loading="lazy" sizes="(min-width: 1024px) 33vw, 100vw" className="w-full h-48 object-cover" />
+                  ) : (
+                    <img src={formData.image} alt="Preview" className="w-full h-48 object-cover" />
+                  )
                 )}
                 <div className="p-6">
                   <div className="mb-3">

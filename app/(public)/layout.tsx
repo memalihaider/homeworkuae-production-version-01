@@ -7,14 +7,16 @@ import {
   Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, 
   Wind, Grid3X3, Warehouse, CookingPot, HardHat, Building, Truck, Brush,
   Fan, Pipette, Utensils, Waves, Dumbbell, PanelTop, ThermometerSnowflake,
-  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, User
+  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, User, X
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getLayoutSettings, defaultLayoutSettings, type CMSLayoutSettings } from '@/lib/cms-data'
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const [profileData, setProfileData] = useState({
     phone: '80046639675',
     email: 'services@homeworkuae.com',
@@ -60,6 +62,16 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     fetchProfileData()
   }, [])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcomePopup(true)
+    }, 700)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* Top Bar - Premium */}
@@ -99,9 +111,13 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <div className="container mx-auto flex h-18 items-center justify-between px-6">
           <a href="/" className="flex items-center">
             <div className="h-24 w-24">
-              <img 
-                src="/logo.jpeg" 
-                alt="Logo" 
+              <Image
+                src="/logo.jpeg"
+                alt="Logo"
+                width={96}
+                height={96}
+                priority
+                sizes="96px"
                 className="w-full h-full object-contain rounded-2xl"
               />
             </div>
@@ -353,6 +369,52 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
+
+      {showWelcomePopup && (
+        <div className="fixed inset-0 z-10000 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="relative w-full max-w-xl rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+            <button
+              onClick={() => setShowWelcomePopup(false)}
+              className="absolute top-4 right-4 h-9 w-9 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center justify-center"
+              aria-label="Close popup"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="p-8 md:p-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-widest mb-4">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Premium Service Provider
+              </div>
+
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight mb-3">
+                Welcome to Homework UAE
+              </h2>
+              <p className="text-slate-600 text-base leading-relaxed mb-8">
+                Trusted premium cleaning solutions for homes, villas, and offices across Dubai. Book your service now or chat with our team directly on WhatsApp.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href="https://www.homeworkuae.com/book-service"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-primary text-white font-black uppercase text-xs tracking-widest hover:bg-pink-600 transition-colors"
+                >
+                  Book Service
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://wa.me/971507177059"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#25D366] text-white font-black uppercase text-xs tracking-widest hover:bg-[#1fb65a] transition-colors"
+                >
+                  WhatsApp +971 50 717 7059
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Action Buttons - Clean & Minimal */}
       <div className="fixed bottom-6 right-6 z-9999 flex flex-col gap-3">

@@ -1,5 +1,6 @@
 import { Briefcase, MapPin, Clock, ArrowRight, CheckCircle2, Users, Heart, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Careers() {
   const jobs = [
@@ -31,9 +32,12 @@ export default function Careers() {
       {/* Hero Section */}
       <section className="relative py-24 bg-slate-900 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <img 
-            src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=80&w=1600" 
-            alt="Careers" 
+          <Image
+            src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=80&w=1600"
+            alt="Careers"
+            fill
+            priority
+            sizes="100vw"
             className="w-full h-full object-cover"
           />
         </div>
@@ -72,10 +76,14 @@ export default function Careers() {
               </div>
             </div>
             <div className="relative">
-              <img 
-                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800" 
-                alt="Our Team" 
-                className="rounded-[3rem] shadow-2xl"
+              <Image
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800"
+                alt="Our Team"
+                width={800}
+                height={600}
+                loading="lazy"
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="rounded-[3rem] shadow-2xl w-full h-auto"
               />
               <div className="absolute -bottom-10 -left-10 bg-white p-8 rounded-4xl shadow-2xl border border-slate-100 hidden md:block">
                 <div className="text-4xl font-black text-primary mb-1">50+</div>

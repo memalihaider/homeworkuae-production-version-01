@@ -3,6 +3,7 @@
 import { CheckCircle2, ArrowRight, Zap, ShieldCheck, Star, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { getPricingPage, defaultPricingPage, type CMSPricingPage } from '@/lib/cms-data'
 
 export default function Pricing() {
@@ -25,9 +26,12 @@ export default function Pricing() {
       {/* Hero Section */}
       <section className="relative py-20 bg-slate-900 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <img 
-            src={cms.heroImage} 
-            alt="Pricing" 
+          <Image
+            src={cms.heroImage}
+            alt="Pricing"
+            fill
+            priority
+            sizes="100vw"
             className="w-full h-full object-cover"
           />
         </div>

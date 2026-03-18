@@ -287,14 +287,7 @@ export default function BookService() {
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Hero Header */}
       <section className="relative py-24 bg-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-40">
-          <img
-            src="https://images.unsplash.com/photo-1628177142898-93e36e4e3a40?auto=format&fit=crop&q=80&w=1600"
-            alt="Premium Booking"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
-        </div>
+        <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950" />
 
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.div
@@ -321,12 +314,12 @@ export default function BookService() {
       </section>
 
       {/* Booking Form Section */}
-      <section className="py-24 -mt-20 relative z-20">
+      <section className="py-16 md:py-24 -mt-10 md:-mt-20 relative z-20">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+            <div className="bg-white rounded-3xl md:rounded-[3rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden flex flex-col md:flex-row md:min-h-175">
               {/* Left Side: Progress & Info */}
-              <div className="bg-slate-900 md:w-80 p-12 text-white flex flex-col justify-between border-r border-white/5">
+              <div className="hidden md:flex bg-slate-900 md:w-80 p-12 text-white flex-col justify-between border-r border-white/5">
                 <div className="space-y-12">
                   <div className="space-y-6">
                     <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">
@@ -400,7 +393,7 @@ export default function BookService() {
               </div>
 
               {/* Right Side: Form Content */}
-              <div className="flex-1 p-12 md:p-20 flex flex-col">
+              <div className="flex-1 p-6 md:p-20 flex flex-col">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
                   <AnimatePresence mode="wait">
                     {step === 1 && (
@@ -412,7 +405,7 @@ export default function BookService() {
                         className="space-y-8 flex-1"
                       >
                         <div className="space-y-2">
-                          <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">
+                          <h2 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter">
                             Your Details
                           </h2>
                           <p className="text-slate-400 font-bold italic">
@@ -487,7 +480,7 @@ export default function BookService() {
                         className="space-y-8 flex-1"
                       >
                         <div className="space-y-2">
-                          <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">
+                          <h2 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter">
                             Services
                           </h2>
                           <p className="text-slate-400 font-bold italic">
@@ -530,7 +523,7 @@ export default function BookService() {
                                   <optgroup key={`firebase-${category}`} label={category}>
                                     {services.map((service) => (
                                       <option key={`firebase-${service.id}`} value={service.id}>
-                                        {service.name} - AED {service.price}
+                                        {service.name}
                                       </option>
                                     ))}
                                   </optgroup>
@@ -544,7 +537,7 @@ export default function BookService() {
                             )}
                           </div>
 
-                          <div className="grid grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest pl-1">
                                 Property
@@ -606,7 +599,7 @@ export default function BookService() {
                         className="space-y-8 flex-1"
                       >
                         <div className="space-y-2">
-                          <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">
+                          <h2 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter">
                             Availability
                           </h2>
                           <p className="text-slate-400 font-bold italic">
@@ -615,7 +608,7 @@ export default function BookService() {
                         </div>
 
                         <div className="grid gap-6">
-                          <div className="grid grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                               <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest pl-1">
                                 Target Date *
@@ -667,7 +660,7 @@ export default function BookService() {
                   </AnimatePresence>
 
                   {/* Footer Navigation */}
-                  <div className="pt-12 flex items-center justify-between gap-6">
+                  <div className="pt-8 md:pt-12 flex items-center justify-between gap-3 md:gap-6">
                     {step > 1 ? (
                       <button
                         type="button"

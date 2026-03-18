@@ -29,6 +29,9 @@ function buildKeywords(serviceName: string): string[] {
 
   return Array.from(
     new Set([
+      'premium cleaning company in Dubai',
+      'maid services Dubai',
+      'deep cleaning services in Dubai',
       `${serviceName} Dubai`,
       `${serviceName} UAE`,
       `${lower} service`,
@@ -54,7 +57,7 @@ export function buildServiceMetadata(slug: string): Metadata {
   const canonicalUrl = `${SITE_URL}${canonicalPath}`
 
   const title = `${serviceName} in Dubai | Homework UAE`
-  const description = `Book professional ${serviceName.toLowerCase()} in Dubai and across the UAE with Homework UAE. Trusted experts, fast booking, and quality results.`
+  const description = `Book premium ${serviceName.toLowerCase()} in Dubai with Homework UAE. Trusted for maid services, deep cleaning services, and high-quality residential and commercial cleaning.`
 
   return {
     title,
@@ -116,7 +119,7 @@ export function buildServiceStructuredData(slug: string) {
         },
         url: canonicalUrl,
         category: 'Cleaning Service',
-        description: `Professional ${serviceName.toLowerCase()} for homes and businesses in Dubai and across the UAE.`,
+        description: `Premium ${serviceName.toLowerCase()} in Dubai for homes and businesses, delivered by a trusted cleaning company known for maid and deep cleaning services.`,
       },
     ],
   }

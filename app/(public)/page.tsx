@@ -6,8 +6,9 @@ import {
   Home, Building2, Wind, ShieldAlert, Utensils, Construction,
   Sofa, Layout, Waves, Dumbbell, Calendar, BookOpen, ArrowUpRight
 } from 'lucide-react'
-import { motion, useScroll, useInView, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import NextImage from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
 import { getHomePage, defaultHomePage, type CMSHomePage } from '@/lib/cms-data'
@@ -43,9 +44,6 @@ const CTAButton = ({ text, href, variant = "primary", icon: Icon = null, classNa
 }
 
 export default function HomePage() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const heroRef = useRef<HTMLDivElement>(null)
-
   const fallbackHeroImages = [
     'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1800&q=80',
     'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
@@ -71,12 +69,12 @@ export default function HomePage() {
   const [airQualityStatus, setAirQualityStatus] = useState("Moderate")
   const [airQualityColor, setAirQualityColor] = useState("text-amber-500")
   const [loading, setLoading] = useState(true)
-  const [textIndex, setTextIndex] = useState(0)
-  const [heroImageIndex, setHeroImageIndex] = useState(0)
   const [heroImages, setHeroImages] = useState<string[]>(fallbackHeroImages)
   const [cmsData, setCmsData] = useState<CMSHomePage>(defaultHomePage)
 
   const heroTexts = cmsData.hero.headings
+  const activeHeroText = heroTexts[0] ?? 'PREMIUM\nCLEANING'
+  const activeHeroImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80'
 
   // Services data with Icons
   // Services data with Icons - merge CMS data with local icon mapping
@@ -223,97 +221,33 @@ export default function HomePage() {
       if (isMounted) fetchAirQualityData()
     }, 10 * 60 * 1000)
 
-    // Hero text rotation
-    const textInterval = setInterval(() => {
-      if (isMounted) {
-        setTextIndex((prev) => (prev + 1) % heroTexts.length)
-      }
-    }, 4000)
-
     return () => {
       isMounted = false
       clearInterval(airQualityInterval)
-      clearInterval(textInterval)
     }
   }, [])
 
   useEffect(() => {
     // Preload first few hero images to improve first transition smoothness
     heroImages.slice(0, 3).forEach((src) => {
-      const img = new Image()
+      const img = new window.Image()
       img.src = src
     })
   }, [heroImages])
 
-  useEffect(() => {
-    if (heroImages.length === 0) return
-
-    const imageInterval = setInterval(() => {
-      setHeroImageIndex((prev) => (prev + 1) % heroImages.length)
-    }, 1000)
-
-    return () => {
-      clearInterval(imageInterval)
-    }
-  }, [heroImages])
-
-  useEffect(() => {
-    if (heroImageIndex >= heroImages.length) {
-      setHeroImageIndex(0)
-    }
-  }, [heroImageIndex, heroImages])
-
-  // Only use scroll animations on client side
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"]
-  })
-
   return (
-    <div ref={containerRef} className="flex flex-col overflow-hidden selection:bg-primary selection:text-white">
+    <div className="flex flex-col overflow-hidden selection:bg-primary selection:text-white">
 
       {/* Hero Section - Enhanced Premium */}
       <section
         className="relative pt-16 pb-24 px-4 md:px-8 min-h-[92vh] flex items-center overflow-hidden"
       >
-        {/* Layered animated background */}
+        {/* Simplified static background for faster paint */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-linear-to-br from-white via-slate-50/90 to-pink-50/40" />
-
-          {/* Large ambient orbs */}
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], opacity: [0.07, 0.12, 0.07] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-20 -right-20 w-175 h-175 bg-primary rounded-full blur-[140px]"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.06, 0.1, 0.06] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute -bottom-25 -left-25 w-125 h-125 bg-[#039ED9] rounded-full blur-[120px]"
-          />
-          <motion.div
-            animate={{ x: [0, 30, 0], y: [0, -20, 0], opacity: [0.04, 0.08, 0.04] }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute top-1/2 left-1/3 w-75 h-75 bg-rose-400 rounded-full blur-[100px]"
-          />
-
-          {/* Floating particles */}
-          {[
-            { top: "15%", left: "8%", size: 6, delay: 0, duration: 4 },
-            { top: "70%", left: "5%", size: 4, delay: 1, duration: 5 },
-            { top: "25%", left: "88%", size: 5, delay: 0.5, duration: 6 },
-            { top: "80%", left: "85%", size: 3, delay: 2, duration: 4.5 },
-            { top: "50%", left: "15%", size: 4, delay: 1.5, duration: 5.5 },
-            { top: "10%", left: "55%", size: 3, delay: 0.8, duration: 7 },
-          ].map((p, i) => (
-            <motion.div
-              key={i}
-              animate={{ y: [0, -18, 0], opacity: [0.3, 0.7, 0.3] }}
-              transition={{ duration: p.duration, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
-              className="absolute rounded-full bg-primary/40"
-              style={{ top: p.top, left: p.left, width: p.size, height: p.size }}
-            />
-          ))}
+          <div className="absolute -top-20 -right-20 w-175 h-175 bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute -bottom-25 -left-25 w-125 h-125 bg-[#039ED9]/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/2 left-1/3 w-75 h-75 bg-rose-400/10 rounded-full blur-[90px]" />
 
           {/* Grid overlay */}
           <div
@@ -351,28 +285,14 @@ export default function HomePage() {
                   <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.12em] relative z-10">{cmsData.hero.badgeText}</span>
                 </motion.div>
 
-                {/* Hero heading with AnimatePresence for smooth text swap */}
+                {/* Hero heading */}
                 <div className="relative min-h-42 md:min-h-52">
-                  <AnimatePresence mode="wait">
-                    <motion.h1
-                      key={textIndex}
-                      initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
-                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                      exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
-                      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      className="absolute top-0 left-0 text-5xl md:text-7xl font-black text-[#039ED9] leading-[0.95] tracking-tight"
-                    >
-                      {heroTexts[textIndex].split('\n')[0]} <br />
-                      <motion.span
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-transparent bg-clip-text bg-linear-to-r from-pink-500 via-rose-500 to-pink-600"
-                      >
-                        {heroTexts[textIndex].split('\n')[1]}
-                      </motion.span>
-                    </motion.h1>
-                  </AnimatePresence>
+                  <h1 className="absolute top-0 left-0 text-5xl md:text-7xl font-black text-[#039ED9] leading-[0.95] tracking-tight">
+                    {activeHeroText.split('\n')[0]} <br />
+                    <span className="text-primary">
+                      {activeHeroText.split('\n')[1]}
+                    </span>
+                  </h1>
                 </div>
 
                 <motion.p
@@ -425,7 +345,15 @@ export default function HomePage() {
                           transition={{ delay: 0.8 + i * 0.08, duration: 0.3 }}
                           className="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-sm"
                         >
-                          <img src={src} alt="Happy client" className="w-full h-full object-cover" />
+                          <NextImage
+                            src={src}
+                            alt="Happy client"
+                            width={40}
+                            height={40}
+                            loading="lazy"
+                            sizes="40px"
+                            className="w-full h-full object-cover"
+                          />
                         </motion.div>
                       ))}
                       <motion.div
@@ -471,18 +399,11 @@ export default function HomePage() {
                   className="absolute inset-0 z-20"
                 >
                   <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/30">
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.img
-                        key={heroImages[heroImageIndex]}
-                        src={heroImages[heroImageIndex]}
-                        alt="Professional cleaning service"
-                        initial={{ opacity: 0, scale: 1.04 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8, ease: 'easeInOut' }}
-                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      />
-                    </AnimatePresence>
+                    <img
+                      src={activeHeroImage}
+                      alt="Professional cleaning service"
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    />
 
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
 

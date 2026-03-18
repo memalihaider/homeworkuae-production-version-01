@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import MotionProvider from "@/components/MotionProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,12 +24,17 @@ const SITE_URL = "https://www.homeworkuae.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Homework UAE | #1 Cleaning Company in Dubai | Since 2004",
+    default: "Homework UAE | Premium Cleaning Company in Dubai | Maid & Deep Cleaning Services",
     template: "%s | Homework UAE",
   },
   description:
-    "Dubai's #1 cleaning company since 2004. Villa deep cleaning, AC duct cleaning, residential & home cleaning, office & post-construction. Dubai Municipality approved. 20,000+ happy clients.",
+    "Premium cleaning company in Dubai for maid services, deep cleaning services, villa cleaning, office cleaning, and AC duct cleaning. Dubai Municipality approved. Trusted by 20,000+ clients since 2004.",
   keywords: [
+    "premium cleaning company in Dubai",
+    "maid services Dubai",
+    "maid service Dubai",
+    "deep cleaning services in Dubai",
+    "best cleaning company in Dubai",
     "cleaning companies in Dubai",
     "cleaning companies Dubai",
     "home cleaning Dubai",
@@ -58,9 +64,9 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
   openGraph: {
-    title: "Homework UAE | #1 Cleaning Company in Dubai",
+    title: "Homework UAE | Premium Cleaning Company in Dubai",
     description:
-      "Professional villa deep cleaning, AC duct cleaning, residential & home cleaning across Dubai & UAE. Municipality approved. 20,000+ happy clients.",
+      "Premium maid services and deep cleaning services in Dubai. Professional villa, office, AC duct, and residential cleaning with trusted quality.",
     type: "website",
     locale: "en_AE",
     siteName: "Homework UAE",
@@ -76,9 +82,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Homework UAE | #1 Cleaning Company in Dubai",
+    title: "Homework UAE | Premium Cleaning Company in Dubai",
     description:
-      "Professional villa deep cleaning, AC duct cleaning, residential & home cleaning across Dubai & UAE.",
+      "Premium maid services and deep cleaning services in Dubai for homes, villas, and offices.",
     images: ["/logo.jpeg"],
   },
   verification: {
@@ -97,7 +103,7 @@ export default function RootLayout({
         {/* Google Tag Manager */}
         <Script
           id="gtm-script"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -121,7 +127,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   name: "Homework UAE",
                   alternateName: "Homework Cleaning UAE",
                   description:
-                    "Professional cleaning company in Dubai & UAE offering villa deep cleaning, AC duct cleaning, residential home cleaning, office, kitchen & post-construction cleaning since 2004.",
+                    "Premium cleaning company in Dubai offering maid services, deep cleaning services, villa cleaning, office cleaning, kitchen cleaning, AC duct cleaning, and post-construction cleaning since 2004.",
                   url: "https://www.homeworkuae.com",
                   telephone: "+97180046639675",
                   email: "services@homeworkuae.com",
@@ -167,6 +173,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     "@type": "OfferCatalog",
                     name: "Cleaning Services",
                     itemListElement: [
+                      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Maid Services Dubai" } },
+                      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Deep Cleaning Services in Dubai" } },
                       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Villa Deep Cleaning Dubai" } },
                       { "@type": "Offer", itemOffered: { "@type": "Service", name: "AC Duct Cleaning Dubai" } },
                       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Residential Cleaning Dubai" } },
@@ -213,7 +221,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <link rel="prefetch" href="/about" />
       </head>
       <body
-        className={`${inter.variable} ${playfair.variable} antialiased`}
+        className={`${inter.variable} ${playfair.variable} antialiased reduce-motion`}
         suppressHydrationWarning
       >
         {/* Google Tag Manager (noscript) */}
@@ -227,13 +235,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
         {/* End Google Tag Manager (noscript) */}
 
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <MotionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </MotionProvider>
       </body>
     </html>
   );

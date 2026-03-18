@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { db } from '@/lib/firebase'
 import { doc, getDoc, collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore'
 import { getContactPage, defaultContactPage, type CMSContactPage } from '@/lib/cms-data'
@@ -211,9 +212,12 @@ export default function Contact() {
       {/* Hero Section */}
       <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=1600" 
-            alt="Contact Us" 
+          <Image
+            src="https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=80&w=1600"
+            alt="Contact Us"
+            fill
+            priority
+            sizes="100vw"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-950/20 to-slate-950" />
@@ -280,7 +284,7 @@ export default function Contact() {
                     </div>
                     <div>
                       <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Email Inquiry</div>
-                      <div className="text-xl font-black group-hover:text-primary transition-colors truncate max-w-[200px] md:max-w-none">{profileData.email}</div>
+                      <div className="text-xl font-black group-hover:text-primary transition-colors truncate max-w-50 md:max-w-none">{profileData.email}</div>
                       <div className="text-slate-400 font-medium text-sm italic">Response within 2 hours</div>
                     </div>
                   </a>
@@ -456,7 +460,7 @@ export default function Contact() {
       </section>
 
       {/* Map Section */}
-      <section className="relative h-[600px] w-full bg-slate-200">
+      <section className="relative h-150 w-full bg-slate-200">
         <div className="absolute inset-0 z-0">
           <iframe 
             src={cms.mapEmbedUrl} 

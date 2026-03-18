@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { 
   Search, 
   ArrowRight, 
@@ -383,12 +382,8 @@ export default function ServicesPage() {
         </div>
         
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-6">
+          <div>
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/15 text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-6">
               Our Expertise
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
@@ -402,21 +397,16 @@ export default function ServicesPage() {
             
             {/* Firebase services indicator */}
             {firebaseServices.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 backdrop-blur-md rounded-full"
-              >
+              <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full">
                
-              </motion.div>
+              </div>
             )}
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Filter Section */}
-      <section className="sticky top-20 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 py-6">
+      <section className="sticky top-20 z-40 bg-white border-b border-slate-100 py-6">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar max-w-full">
@@ -475,13 +465,9 @@ export default function ServicesPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {category.services.map((service: any, idx: number) => (
-                      <motion.div
+                    {category.services.map((service: any) => (
+                      <div
                         key={service.id || service.name}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.05 }}
                         className="group p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden flex flex-col h-full active:scale-95"
                       >
                         {/* Firebase Service Badge */}
@@ -534,7 +520,7 @@ export default function ServicesPage() {
                         />
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
                         <ArrowRight className="absolute bottom-8 right-8 h-5 w-5 text-primary opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0" />
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -575,7 +561,7 @@ export default function ServicesPage() {
               <Link href="/book-service" className="px-12 py-6 bg-primary text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-primary/40 hover:bg-pink-600 transition-all active:scale-95">
                 Request Custom Quote
               </Link>
-              <Link href="/contact" className="px-12 py-6 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-white/10 transition-all active:scale-95 backdrop-blur-md">
+              <Link href="/contact" className="px-12 py-6 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-white/10 transition-all active:scale-95">
                 Talk to an Expert
               </Link>
             </div>
