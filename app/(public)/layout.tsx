@@ -1,7 +1,7 @@
 
 "use client"
 
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useRef } from 'react'
 import { 
   Phone, Mail, Facebook, Linkedin, Instagram, MessageCircle, ChevronDown,
   Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, 
@@ -13,9 +13,12 @@ import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { getLayoutSettings, defaultLayoutSettings, type CMSLayoutSettings } from '@/lib/cms-data'
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+  const hasShownWelcomePopup = useRef(false)
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const [profileData, setProfileData] = useState({
     phone: '80046639675',
@@ -63,14 +66,20 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    if (pathname !== '/' || hasShownWelcomePopup.current) {
+      setShowWelcomePopup(false)
+      return
+    }
+
     const timer = setTimeout(() => {
       setShowWelcomePopup(true)
+      hasShownWelcomePopup.current = true
     }, 700)
 
     return () => {
       clearTimeout(timer)
     }
-  }, [])
+  }, [pathname])
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
