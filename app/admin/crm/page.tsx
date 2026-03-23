@@ -8,6 +8,7 @@ import {
   Plus, 
   Trash2, 
   X, 
+  Download,
   TrendingUp,
   DollarSign,
   Target,
@@ -73,6 +74,7 @@ import {
   deleteDoc,
   serverTimestamp
 } from 'firebase/firestore'
+import * as XLSX from 'xlsx'
 
 interface Lead {
   id: string;
@@ -949,6 +951,73 @@ export default function UnifiedCRMDashboard() {
     setCurrentMonth(new Date().getMonth())
   }
 
+  const handleExportLeadsToExcel = useCallback(() => {
+    if (filteredLeads.length === 0) {
+      alert('No leads available to export.')
+      return
+    }
+
+    const exportRows = filteredLeads.map((lead) => ({
+      'Lead Name': lead.name,
+      Company: lead.company,
+      Status: lead.status,
+      Priority: lead.priority,
+      Tier: lead.tier,
+      Source: (lead.source || []).join(', '),
+      Value: lead.value,
+      Email: lead.email,
+      Phone: lead.phone,
+      'Survey Type': lead.surveyType,
+      Address: lead.address,
+      Industry: lead.industry,
+      Website: lead.website,
+      Employees: lead.employees,
+      'Annual Revenue': lead.annualRevenue,
+      'Join Date': lead.joinDate,
+      'Last Contact': lead.lastContact,
+      Notes: lead.notes,
+      LinkedIn: lead.linkedin,
+      Twitter: lead.twitter,
+      Instagram: lead.instagram,
+      'Budget Range': lead.budgetRange,
+      'Decision Timeline': lead.decisionTimeline,
+      'Pain Points': lead.painPoints,
+      Goals: lead.goals,
+      Competitors: lead.competitors,
+      'Preferred Contact Method': lead.preferredContactMethod,
+      'Preferred Contact Time': lead.preferredContactTime,
+      Timezone: lead.timezone,
+      Language: lead.language,
+      'Payment Terms': lead.paymentTerms,
+      'Credit Limit': lead.creditLimit,
+      'Outstanding Balance': lead.outstandingBalance,
+      'Last Payment Date': lead.lastPaymentDate || '',
+      'Satisfaction Score': lead.satisfactionScore ?? '',
+      'Response Time': lead.responseTime,
+      'Contract Renewal Probability': lead.contractRenewalProbability ?? '',
+      'Lifetime Value': lead.lifetimeValue,
+      'Created At': lead.createdAt,
+      'Updated At': lead.updatedAt,
+      'Secondary Contacts': (lead.secondaryContacts || [])
+        .map((contact) => `${contact.name} (${contact.role}) - ${contact.email} - ${contact.phone}`)
+        .join(' | '),
+      'Current Contract Start': lead.currentContract?.startDate || '',
+      'Current Contract End': lead.currentContract?.endDate || '',
+      'Current Contract Value': lead.currentContract?.value ?? '',
+      'Current Contract Services': (lead.currentContract?.services || []).join(', '),
+      'Service History': (lead.serviceHistory || [])
+        .map((service) => `${service.date}: ${service.service} (AED ${service.value}, rating ${service.rating})`)
+        .join(' | '),
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'CRM Leads')
+
+    const fileDate = new Date().toISOString().slice(0, 10)
+    XLSX.writeFile(workbook, `crm-leads-${fileDate}.xlsx`)
+  }, [filteredLeads])
+
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}
@@ -967,6 +1036,14 @@ export default function UnifiedCRMDashboard() {
           <div className="flex gap-3">
             {/* FANCY AI BUTTON */}
           
+
+            <button
+              onClick={handleExportLeadsToExcel}
+              className="group relative flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Download className="h-4 w-4" />
+              Export Excel
+            </button>
 
             <button onClick={() => setShowNewForm(true)} className="group relative flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]">
               <Plus className="h-4 w-4" />
