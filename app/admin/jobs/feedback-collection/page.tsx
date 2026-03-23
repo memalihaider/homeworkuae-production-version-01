@@ -5,10 +5,50 @@ import { MessageSquare, ThumbsUp, Zap, TrendingUp, AlertCircle, Send, ArrowLeft,
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
+interface FeedbackCategories {
+  cleaning: number
+  professionalism: number
+  timeliness: number
+  communication: number
+  valueForMoney: number
+}
+
+interface JobFeedback {
+  collected: boolean
+  npsScore: number | null
+  sentiment: string
+  sentimentScore: number
+  satisfactionRating: number
+  categories: FeedbackCategories
+  comment: string
+  collectedAt: string | null
+}
+
+interface JobItem {
+  id: number
+  clientName: string
+  serviceType: string
+  completionDate: string
+  feedback: JobFeedback
+}
+
+type FeedbackCategoryKey = keyof FeedbackCategories
+
+interface FeedbackFormState extends FeedbackCategories {
+  npsScore: number
+  satisfactionRating: number
+  comment: string
+}
+
+interface SentimentMeta {
+  text: string
+  score: number
+}
+
 function FeedbackCollectionContent() {
   const searchParams = useSearchParams()
   const jobIdParam = searchParams?.get('jobId')
-  const [jobs, setJobs] = useState<any[]>([
+  const [jobs, setJobs] = useState<JobItem[]>([
     {
       id: 1,
       clientName: 'Acme Corporation',
@@ -99,10 +139,9 @@ function FeedbackCollectionContent() {
     }
   ])
 
-  const [expandedId, setExpandedId] = useState<number | null>(null)
   const [selectedJobId, setSelectedJobId] = useState(1)
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
-  const [feedbackForm, setFeedbackForm] = useState({
+  const [feedbackForm, setFeedbackForm] = useState<FeedbackFormState>({
     npsScore: 5,
     satisfactionRating: 5,
     cleaning: 5,
@@ -114,6 +153,7 @@ function FeedbackCollectionContent() {
   })
 
   const selectedJob = jobs.find(j => j.id === selectedJobId) || jobs[0]
+  const selectedJobNpsScore = selectedJob.feedback.npsScore ?? 0
 
   const stats = useMemo(() => ({
     total: jobs.length,
@@ -124,7 +164,7 @@ function FeedbackCollectionContent() {
     promoters: jobs.filter(j => j.feedback.npsScore && j.feedback.npsScore >= 9).length,
     detractors: jobs.filter(j => j.feedback.npsScore && j.feedback.npsScore <= 6).length,
     avgSentiment: jobs.filter(j => j.feedback.sentimentScore > 0).length > 0
-      ? ((jobs.filter((j: any) => j.feedback.sentimentScore > 0).reduce((sum: number, j: any) => sum + j.feedback.sentimentScore, 0) / jobs.filter((j: any) => j.feedback.sentimentScore > 0).length) * 100).toFixed(0)
+      ? ((jobs.filter((j) => j.feedback.sentimentScore > 0).reduce((sum: number, j) => sum + j.feedback.sentimentScore, 0) / jobs.filter((j) => j.feedback.sentimentScore > 0).length) * 100).toFixed(0)
       : 0,
     veryPositive: jobs.filter(j => j.feedback.sentiment === 'Very Positive').length,
     positive: jobs.filter(j => j.feedback.sentiment === 'Positive').length,
@@ -133,15 +173,14 @@ function FeedbackCollectionContent() {
   }), [jobs])
 
   const handleSubmitFeedback = () => {
-    const sentimentScore = (feedbackForm.satisfactionRating / 5)
-    const sentimentMap: any = {
+    const sentimentMap: Record<number, SentimentMeta> = {
       5: { text: 'Very Positive', score: 0.95 },
       4: { text: 'Positive', score: 0.75 },
       3: { text: 'Neutral', score: 0.5 },
       2: { text: 'Negative', score: 0.25 },
       1: { text: 'Very Negative', score: 0.1 }
     }
-    const sentiment = sentimentMap[feedbackForm.satisfactionRating]
+    const sentiment = sentimentMap[feedbackForm.satisfactionRating] || sentimentMap[3]
 
     setJobs(jobs.map(j => 
       j.id === selectedJob.id 
@@ -249,15 +288,15 @@ function FeedbackCollectionContent() {
                 <div>
                   <p className="text-sm text-gray-600 mb-2">NPS Score</p>
                   <div className="flex items-end gap-2">
-                    <span className="text-4xl font-bold text-purple-600">{selectedJob.feedback.npsScore}</span>
+                    <span className="text-4xl font-bold text-purple-600">{selectedJobNpsScore}</span>
                     <span className="text-gray-500 mb-1">/ 10</span>
                   </div>
                   <p className={`text-sm mt-2 px-3 py-1 rounded w-fit ${
-                    selectedJob.feedback.npsScore >= 9 ? 'bg-green-100 text-green-700' :
-                    selectedJob.feedback.npsScore >= 7 ? 'bg-blue-100 text-blue-700' :
+                    selectedJobNpsScore >= 9 ? 'bg-green-100 text-green-700' :
+                    selectedJobNpsScore >= 7 ? 'bg-blue-100 text-blue-700' :
                     'bg-yellow-100 text-yellow-700'
                   }`}>
-                    {selectedJob.feedback.npsScore >= 9 ? 'Promoter' : selectedJob.feedback.npsScore >= 7 ? 'Neutral' : 'Detractor'}
+                    {selectedJobNpsScore >= 9 ? 'Promoter' : selectedJobNpsScore >= 7 ? 'Neutral' : 'Detractor'}
                   </p>
                 </div>
 
@@ -309,7 +348,7 @@ function FeedbackCollectionContent() {
                 <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-yellow-900">No feedback collected yet</p>
-                  <p className="text-sm text-yellow-800 mt-1">Click "Send Feedback Request" to collect customer satisfaction data</p>
+                  <p className="text-sm text-yellow-800 mt-1">Click &quot;Send Feedback Request&quot; to collect customer satisfaction data</p>
                 </div>
               </div>
             )}
@@ -324,7 +363,7 @@ function FeedbackCollectionContent() {
           </h2>
           {selectedJob.feedback.collected ? (
             <div className="space-y-4">
-              {Object.entries(selectedJob.feedback.categories).map(([category, rating]: any) => (
+              {Object.entries(selectedJob.feedback.categories).map(([category, rating]) => (
                 <div key={category}>
                   <div className="flex justify-between mb-1">
                     <p className="text-sm font-medium text-gray-700 capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}</p>
@@ -356,7 +395,7 @@ function FeedbackCollectionContent() {
           </h2>
           {selectedJob.feedback.collected && selectedJob.feedback.comment ? (
             <div className="p-4 bg-purple-50 border-l-4 border-purple-600 rounded">
-              <p className="text-gray-800 italic">"{selectedJob.feedback.comment}"</p>
+              <p className="text-gray-800 italic">&quot;{selectedJob.feedback.comment}&quot;</p>
             </div>
           ) : (
             <p className="text-gray-500 text-sm">No comment provided yet</p>
@@ -373,7 +412,7 @@ function FeedbackCollectionContent() {
             onClick={() => {
               if (selectedJob.feedback.collected) {
                 setFeedbackForm({
-                  npsScore: selectedJob.feedback.npsScore,
+                  npsScore: selectedJob.feedback.npsScore ?? 0,
                   satisfactionRating: selectedJob.feedback.satisfactionRating,
                   cleaning: selectedJob.feedback.categories.cleaning,
                   professionalism: selectedJob.feedback.categories.professionalism,
@@ -436,7 +475,7 @@ function FeedbackCollectionContent() {
                 </div>
               </div>
 
-              {['cleaning', 'professionalism', 'timeliness', 'communication', 'valueForMoney'].map(category => (
+              {(['cleaning', 'professionalism', 'timeliness', 'communication', 'valueForMoney'] as FeedbackCategoryKey[]).map(category => (
                 <div key={category}>
                   <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
                     {category.replace(/([A-Z])/g, ' $1').trim()} (1-5)
@@ -445,11 +484,11 @@ function FeedbackCollectionContent() {
                     type="range"
                     min="1"
                     max="5"
-                    value={(feedbackForm as any)[category]}
+                    value={feedbackForm[category]}
                     onChange={(e) => setFeedbackForm({ ...feedbackForm, [category]: parseInt(e.target.value) })}
                     className="w-full"
                   />
-                  <p className="text-right text-sm font-semibold text-gray-600">{(feedbackForm as any)[category]}/5</p>
+                  <p className="text-right text-sm font-semibold text-gray-600">{feedbackForm[category]}/5</p>
                 </div>
               ))}
 
@@ -490,7 +529,7 @@ function FeedbackCollectionContent() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold mb-2">Feedback Collected</h3>
-              <p className="text-sm text-muted-foreground">Request formal review from client for portfolio</p>
+              <p className="text-sm text-muted-foreground">Request formal review from client for the portfolio</p>
             </div>
             <div className="flex gap-2">
               <Link href={`/admin/jobs/${jobIdParam}`} className="flex items-center gap-2 px-4 py-2 border border-purple-300 bg-white rounded-lg hover:bg-purple-50 transition-colors">

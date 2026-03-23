@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ManagerSidebar } from '../_components/sidebar';
-import { Briefcase, Search, Filter, Calendar, MapPin, DollarSign, Users, TrendingUp, Menu, X } from 'lucide-react';
+import { Briefcase, Search, MapPin, DollarSign, TrendingUp, Users, Menu, X } from 'lucide-react';
 
 // Define SessionData type to match ManagerSidebar expectations
 type SessionData = {
@@ -80,20 +79,17 @@ const statusColors = {
 
 export default function Jobs() {
   const router = useRouter();
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [session] = useState<SessionData | null>(() => getSessionData());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedJob, setSelectedJob] = useState<typeof jobs[0] | null>(null);
 
   useEffect(() => {
-    const sessionData = getSessionData();
-    if (!sessionData || sessionData.portal !== 'manager') {
+    if (!session || session.portal !== 'manager') {
       router.push('/login/manager');
-      return;
     }
-    setSession(sessionData);
-  }, [router]);
+  }, [router, session]);
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -250,7 +246,7 @@ export default function Jobs() {
                   </div>
                   <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full transition-all"
+                      className="bg-linear-to-r from-indigo-500 to-indigo-600 h-full transition-all"
                       style={{ width: `${job.progress}%` }}
                     ></div>
                   </div>
@@ -309,7 +305,7 @@ export default function Jobs() {
               <p className="text-slate-400 text-sm mb-2">Progress</p>
               <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden mb-2">
                 <div
-                  className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full transition-all"
+                  className="bg-linear-to-r from-indigo-500 to-indigo-600 h-full transition-all"
                   style={{ width: `${selectedJob.progress}%` }}
                 ></div>
               </div>

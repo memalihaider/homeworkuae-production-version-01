@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ManagerSidebar } from '../_components/sidebar';
 import {
   TrendingUp,
   Users,
@@ -11,32 +10,18 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  MoreHorizontal,
   Calendar,
   Clock,
   CheckCircle2,
   AlertCircle,
-  Search,
-  Filter,
   Download,
   Plus,
-  Eye,
-  Trash2,
-  MapPin,
-  Phone,
-  Mail,
   X,
-  FileText,
-  Zap,
-  UserCheck,
   BarChart3,
-  MessageSquare,
   ChevronRight,
   Building2
 } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -144,14 +129,6 @@ const activeJobs = [
   { id: 'JOB-2024-004', client: 'Emaar Properties', title: 'HVAC Installation', status: 'In Progress', progress: 80, budget: 120000, spent: 96000, dueDate: '2024-02-10', team: 2 },
 ];
 
-const teamMembers = [
-  { id: '1', name: 'Ahmed Hassan', role: 'Senior Technician', status: 'active', currentJob: 'JOB-2024-001' },
-  { id: '2', name: 'Sara Al Maktoum', role: 'Project Coordinator', status: 'active', currentJob: 'JOB-2024-002' },
-  { id: '3', name: 'Mohammed Ali', role: 'Technician', status: 'active', currentJob: 'JOB-2024-001' },
-  { id: '4', name: 'Fatima Khalid', role: 'Quality Inspector', status: 'on-leave', currentJob: null },
-  { id: '5', name: 'Omar Rashid', role: 'Field Engineer', status: 'active', currentJob: 'JOB-2024-004' },
-];
-
 const initialPendingApprovals = [
   { id: 'APR-001', type: 'Leave Request', requester: 'Ahmed Hassan', requestDate: '2024-01-28', icon: Calendar, color: 'bg-blue-100', textColor: 'text-blue-600', details: '3 days off requested', amount: null },
   { id: 'APR-002', type: 'Expense Claim', requester: 'Sara Al Maktoum', requestDate: '2024-01-29', icon: Wallet, color: 'bg-purple-100', textColor: 'text-purple-600', details: 'Travel expenses - Dubai to Abu Dhabi', amount: 'AED 450' },
@@ -160,8 +137,7 @@ const initialPendingApprovals = [
 
 export default function ManagerDashboard() {
   const router = useRouter();
-  const [session, setSession] = useState<SessionData | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [session] = useState<SessionData | null>(() => getSessionData());
   const [exportLoading, setExportLoading] = useState(false);
   const [pendingApprovals, setPendingApprovals] = useState(initialPendingApprovals);
   const [processingApproval, setProcessingApproval] = useState<string | null>(null);
@@ -174,13 +150,10 @@ export default function ManagerDashboard() {
   ]);
 
   useEffect(() => {
-    const sessionData = getSessionData();
-    if (!sessionData || sessionData.portal !== 'manager') {
+    if (!session || session.portal !== 'manager') {
       router.push('/login/manager');
-      return;
     }
-    setSession(sessionData);
-  }, [router]);
+  }, [router, session]);
 
   const handleExportData = useCallback(() => {
     setExportLoading(true);
@@ -205,7 +178,7 @@ export default function ManagerDashboard() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleApproveApproval = useCallback((approvalId: string, approverName: string) => {
+  const handleApproveApproval = useCallback((approvalId: string, approver?: string) => {
     setProcessingApproval(approvalId);
     setTimeout(() => {
       const approval = pendingApprovals.find(a => a.id === approvalId);
@@ -216,7 +189,7 @@ export default function ManagerDashboard() {
         setRecentActivities(prev => [
           {
             id: Math.max(...prev.map(a => a.id), 0) + 1,
-            user: 'System',
+            user: approver || 'System',
             action: `approved ${approval.type.toLowerCase()}`,
             target: `${approval.requester}`,
             time: 'just now',
@@ -227,13 +200,13 @@ export default function ManagerDashboard() {
           ...prev
         ]);
         
-        showToast(`${approval.type} from ${approval.requester} approved!`, 'success');
+        showToast(`${approval.type} from ${approval.requester} approved by ${approver || 'System'}!`, 'success');
       }
       setProcessingApproval(null);
     }, 600);
   }, [pendingApprovals]);
 
-  const handleRejectApproval = useCallback((approvalId: string, approverName: string) => {
+  const handleRejectApproval = useCallback((approvalId: string, approver?: string) => {
     setProcessingApproval(approvalId);
     setTimeout(() => {
       const approval = pendingApprovals.find(a => a.id === approvalId);
@@ -244,7 +217,7 @@ export default function ManagerDashboard() {
         setRecentActivities(prev => [
           {
             id: Math.max(...prev.map(a => a.id), 0) + 1,
-            user: 'System',
+            user: approver || 'System',
             action: `rejected ${approval.type.toLowerCase()}`,
             target: `${approval.requester}`,
             time: 'just now',

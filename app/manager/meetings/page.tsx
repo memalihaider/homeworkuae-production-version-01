@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ManagerSidebar } from '../_components/sidebar';
 import { Calendar, Clock, Users, MapPin, Plus, Menu, X, Video } from 'lucide-react';
 
 // Define SessionData type to match ManagerSidebar expectations
@@ -73,19 +72,16 @@ const meetings = [
 
 export default function Meetings() {
   const router = useRouter();
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [session] = useState<SessionData | null>(() => getSessionData());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<typeof meetings[0] | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'in-person' | 'virtual'>('all');
 
   useEffect(() => {
-    const sessionData = getSessionData();
-    if (!sessionData || sessionData.portal !== 'manager') {
+    if (!session || session.portal !== 'manager') {
       router.push('/login/manager');
-      return;
     }
-    setSession(sessionData);
-  }, [router]);
+  }, [router, session]);
 
   const filteredMeetings = meetings.filter(m => filterType === 'all' || m.type === filterType);
 
@@ -163,7 +159,7 @@ export default function Meetings() {
               {['all', 'in-person', 'virtual'].map(type => (
                 <button
                   key={type}
-                  onClick={() => setFilterType(type as any)}
+                  onClick={() => setFilterType(type as 'all' | 'in-person' | 'virtual')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     filterType === type
                       ? 'bg-indigo-500 text-white'

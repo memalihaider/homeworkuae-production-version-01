@@ -54,6 +54,8 @@ import {
 } from 'firebase/firestore'
 
 // Types
+type TimestampValue = Date | string | number | Timestamp | { toDate: () => Date } | null | undefined
+
 type Lead = {
   id: string
   name: string
@@ -68,8 +70,8 @@ type Lead = {
   budget: string
   notes: string
   followUpHistory: FollowUpMessage[]
-  createdAt?: any
-  updatedAt?: any
+  createdAt?: TimestampValue
+  updatedAt?: TimestampValue
 }
 
 type Campaign = {
@@ -86,8 +88,8 @@ type Campaign = {
   endDate: string
   targetAudience: string
   description: string
-  createdAt?: any
-  updatedAt?: any
+  createdAt?: TimestampValue
+  updatedAt?: TimestampValue
 }
 
 type ScheduledEmail = {
@@ -99,7 +101,7 @@ type ScheduledEmail = {
   status: 'scheduled' | 'sent' | 'failed'
   type: 'reminder' | 'promotional' | 'follow-up'
   message: string
-  createdAt?: any
+  createdAt?: TimestampValue
 }
 
 type FollowUpMessage = {
@@ -112,7 +114,7 @@ type FollowUpMessage = {
   sentBy: string
   leadId?: string
   leadName?: string
-  createdAt?: any
+  createdAt?: TimestampValue
 }
 
 type Reminder = {
@@ -126,8 +128,8 @@ type Reminder = {
   linkedLeadId?: string
   linkedLeadName?: string
   notificationSent?: boolean
-  createdAt?: any
-  updatedAt?: any
+  createdAt?: TimestampValue
+  updatedAt?: TimestampValue
 }
 
 export default function MarketingDashboard() {
@@ -212,13 +214,7 @@ export default function MarketingDashboard() {
   // FIREBASE OPERATIONS
   // ======================
 
-  // Initialize and fetch data
-  useEffect(() => {
-    const unsubscribe = setupRealtimeListeners()
-    return () => unsubscribe()
-  }, [])
-
-  const setupRealtimeListeners = () => {
+  function setupRealtimeListeners() {
     setIsLoading(true)
     
     // Listen to leads collection
@@ -278,6 +274,19 @@ export default function MarketingDashboard() {
       remindersUnsubscribe()
     }
   }
+
+  // Initialize and fetch data
+  useEffect(() => {
+    let unsubscribe = () => {}
+    const timer = setTimeout(() => {
+      unsubscribe = setupRealtimeListeners()
+    }, 0)
+
+    return () => {
+      clearTimeout(timer)
+      unsubscribe()
+    }
+  }, [])
 
   // ======================
   // LEAD OPERATIONS
@@ -612,9 +621,10 @@ export default function MarketingDashboard() {
 
   const pushReminderNotification = (reminder: Reminder) => {
     try {
-      const existing: any[] = JSON.parse(localStorage.getItem('notifications') || '[]')
+      type NotificationEntry = { id: string; type: string; title: string; message: string; time: string; read: boolean; link: string }
+      const existing: NotificationEntry[] = JSON.parse(localStorage.getItem('notifications') || '[]')
       const notifId = `reminder-${reminder.id}`
-      if (existing.some((n: any) => n.id === notifId)) return
+      if (existing.some((n) => n.id === notifId)) return
       const newNotif = {
         id: notifId,
         type: 'reminder',
@@ -939,7 +949,7 @@ export default function MarketingDashboard() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as 'leads' | 'campaigns' | 'emails' | 'analytics' | 'followup')}
             className={`flex items-center gap-3 px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
               activeTab === tab.id
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
@@ -1243,7 +1253,7 @@ export default function MarketingDashboard() {
               ].map(f => (
                 <button
                   key={f.id}
-                  onClick={() => setReminderFilter(f.id as any)}
+                  onClick={() => setReminderFilter(f.id as 'all' | 'pending' | 'today' | 'overdue' | 'completed')}
                   className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                     reminderFilter === f.id
                       ? 'bg-amber-500 text-white shadow-md'
@@ -1261,7 +1271,7 @@ export default function MarketingDashboard() {
                 <div className="text-center py-12">
                   <AlarmClock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500 font-medium">No reminders found</p>
-                  <p className="text-gray-400 text-sm mt-1">Click "New Reminder" to create your first reminder</p>
+                  <p className="text-gray-400 text-sm mt-1">Click &quot;New Reminder&quot; to create your first reminder</p>
                 </div>
               ) : (
                 getFilteredReminders().map(reminder => {
@@ -1459,7 +1469,7 @@ export default function MarketingDashboard() {
                       </div>
                     ) : (
                       <div className="p-6 text-center">
-                        <p className="text-gray-500 text-sm">No follow-up history yet. Click "Add Follow-up" to start tracking communications.</p>
+                        <p className="text-gray-500 text-sm">No follow-up history yet. Click &quot;Add Follow-up&quot; to start tracking communications.</p>
                       </div>
                     )}
                   </div>
@@ -2170,7 +2180,7 @@ export default function MarketingDashboard() {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Communication Type *</label>
                 <select
                   value={followUpForm.type}
-                  onChange={(e) => setFollowUpForm({...followUpForm, type: e.target.value as any})}
+                  onChange={(e) => setFollowUpForm({...followUpForm, type: e.target.value as FollowUpMessage['type']})}
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="email">Email</option>
@@ -2533,7 +2543,7 @@ export default function MarketingDashboard() {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Email Type *</label>
                 <select
                   value={emailForm.type}
-                  onChange={(e) => setEmailForm({...emailForm, type: e.target.value as any})}
+                  onChange={(e) => setEmailForm({...emailForm, type: e.target.value as ScheduledEmail['type']})}
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="follow-up">Follow-up</option>

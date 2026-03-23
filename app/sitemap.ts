@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { INITIAL_BLOG_POSTS } from "@/lib/blog-data";
 
 const SITE_URL = "https://www.homeworkuae.com";
 
@@ -36,18 +37,30 @@ const staticRoutes: { url: string; priority: number; changeFrequency: MetadataRo
   { url: "/faqs",                                priority: 0.7,  changeFrequency: "monthly" },
   { url: "/testimonials",                        priority: 0.65, changeFrequency: "monthly" },
   { url: "/blog",                                priority: 0.7,  changeFrequency: "weekly" },
+  { url: "/book-service",                        priority: 0.75, changeFrequency: "monthly" },
   { url: "/quote",                               priority: 0.75, changeFrequency: "monthly" },
   { url: "/booking",                             priority: 0.75, changeFrequency: "monthly" },
   { url: "/careers",                             priority: 0.5,  changeFrequency: "monthly" },
   { url: "/privacy-policy",                      priority: 0.3,  changeFrequency: "yearly" },
+  { url: "/booking-thank-you",                   priority: 0.2,  changeFrequency: "yearly" },
+  { url: "/thank-you",                           priority: 0.2,  changeFrequency: "yearly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  return staticRoutes.map(({ url, priority, changeFrequency }) => ({
+  const staticEntries = staticRoutes.map(({ url, priority, changeFrequency }) => ({
     url: `${SITE_URL}${url}`,
     lastModified: now,
     changeFrequency,
     priority,
   }));
+
+  const blogEntries = INITIAL_BLOG_POSTS.map((post) => ({
+    url: `${SITE_URL}/blog/${post.slug}`,
+    lastModified: post.updatedAt ? new Date(post.updatedAt) : now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticEntries, ...blogEntries];
 }

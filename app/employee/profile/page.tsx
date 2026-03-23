@@ -112,7 +112,7 @@ export default function EmployeeProfilePage() {
         <div className="p-6 max-w-4xl mx-auto space-y-6">
 
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-violet-900 to-violet-800 border border-violet-700 rounded-xl p-8">
+          <div className="bg-linear-to-r from-violet-900 to-violet-800 border border-violet-700 rounded-xl p-8">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
                 <User className="w-10 h-10 text-violet-600" />

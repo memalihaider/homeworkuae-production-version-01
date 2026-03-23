@@ -170,6 +170,12 @@ service cloud.firestore {
       allow update: if isAuth();
     }
 
+    // Job audit trail for scheduling/payment/team edits
+    match /job-audit-logs/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
     match /products/{docId} {
       allow read: if isAuth();
       allow write: if isAuth();

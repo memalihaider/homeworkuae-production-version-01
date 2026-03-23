@@ -1,5 +1,24 @@
 // HR System Utilities and Helpers
 
+type SalaryInput = {
+  basic?: number | string
+  housing?: number | string
+  food?: number | string
+  transportation?: number | string
+  telephone?: number | string
+  otherAllowances?: number | string
+}
+
+type EmployeeValidationInput = {
+  name?: string
+  email?: string
+  phone?: string
+  role?: string
+  salary?: {
+    basic?: number | string
+  }
+}
+
 export const getVisaStatus = (expiryDate: string): 'active' | 'expiring-soon' | 'expired' => {
   const expiry = new Date(expiryDate)
   const today = new Date()
@@ -16,13 +35,13 @@ export const getDaysUntilExpiry = (expiryDate: string): number => {
   return Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-export const calculateSalaryTotal = (salary: any) => {
-  const basic = parseFloat(salary.basic) || 0
-  const housing = parseFloat(salary.housing) || 0
-  const food = parseFloat(salary.food) || 0
-  const transportation = parseFloat(salary.transportation) || 0
-  const telephone = parseFloat(salary.telephone) || 0
-  const otherAllowances = parseFloat(salary.otherAllowances) || 0
+export const calculateSalaryTotal = (salary: SalaryInput) => {
+  const basic = parseFloat(String(salary.basic ?? '0')) || 0
+  const housing = parseFloat(String(salary.housing ?? '0')) || 0
+  const food = parseFloat(String(salary.food ?? '0')) || 0
+  const transportation = parseFloat(String(salary.transportation ?? '0')) || 0
+  const telephone = parseFloat(String(salary.telephone ?? '0')) || 0
+  const otherAllowances = parseFloat(String(salary.otherAllowances ?? '0')) || 0
   const totalAllowances = housing + food + transportation + telephone + otherAllowances
   return {
     ...salary,
@@ -72,7 +91,7 @@ export const getStatusColor = (status: string): string => {
   }
 }
 
-export const validateEmployeeData = (data: any): { valid: boolean; errors: string[] } => {
+export const validateEmployeeData = (data: EmployeeValidationInput): { valid: boolean; errors: string[] } => {
   const errors: string[] = []
   
   if (!data.name?.trim()) errors.push('Full name is required')

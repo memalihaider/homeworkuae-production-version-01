@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ManagerSidebar } from '../_components/sidebar';
-import { getSession, clearSession, type SessionData } from '@/lib/auth';
-import { Users, Mail, Phone, Briefcase, Clock, AlertCircle, UserPlus, MoreVertical, Badge, Menu, X } from 'lucide-react';
+import { getSession, type SessionData } from '@/lib/auth';
+import { Users, Mail, Phone, Briefcase, Clock, AlertCircle, Badge, Menu, X } from 'lucide-react';
 
 const teamMembers = [
   { id: '1', name: 'Ahmed Hassan', role: 'Senior Technician', email: 'ahmed.hassan@homeware.ae', phone: '+971501234567', department: 'Operations', status: 'active', joinDate: '2023-06-15', currentJob: 'JOB-2024-001', hoursWorked: 168 },
@@ -17,19 +17,16 @@ const teamMembers = [
 
 export default function TeamManagement() {
   const router = useRouter();
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [session] = useState<SessionData | null>(() => getSession());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTeamMember, setSelectedTeamMember] = useState<typeof teamMembers[0] | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'on-leave'>('all');
 
   useEffect(() => {
-    const storedSession = getSession();
-    if (!storedSession) {
+    if (!session) {
       router.push('/login/manager');
-      return;
     }
-    setSession(storedSession);
-  }, [router]);
+  }, [router, session]);
 
   const filteredMembers = teamMembers.filter(m => filterStatus === 'all' || m.status === filterStatus);
 
@@ -108,7 +105,7 @@ export default function TeamManagement() {
             {['all', 'active', 'on-leave'].map(status => (
               <button
                 key={status}
-                onClick={() => setFilterStatus(status as any)}
+                onClick={() => setFilterStatus(status as 'all' | 'active' | 'on-leave')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filterStatus === status
                     ? 'bg-indigo-500 text-white'

@@ -24,23 +24,6 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  name: "Kitchen Deep Cleaning Dubai",
-  description: "Professional kitchen deep cleaning service in Dubai. Heavy-duty degreasing, hood cleaning, all kitchen appliances, tiles, grout and surfaces. Dubai Municipality approved.",
-  url: PAGE_URL,
-  serviceType: "Kitchen Deep Cleaning",
-  areaServed: [{ "@type": "City", name: "Dubai" }, { "@type": "State", name: "United Arab Emirates" }],
-  provider: { "@type": "LocalBusiness", "@id": "https://www.homeworkuae.com/#business", name: "Homework UAE" },
-  offers: { "@type": "Offer", priceCurrency: "AED", availability: "https://schema.org/InStock", url: PAGE_URL },
-};
-
 export default function KitchenDeepCleaningLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

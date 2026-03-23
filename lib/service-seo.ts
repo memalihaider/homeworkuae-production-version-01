@@ -91,27 +91,12 @@ export function buildServiceStructuredData(slug: string) {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'LocalBusiness',
-        '@id': `${SITE_URL}/#localbusiness`,
-        name: 'Homework UAE',
-        url: SITE_URL,
-        image: `${SITE_URL}/logo.png`,
-        areaServed: ['Dubai', 'Abu Dhabi', 'UAE'],
-        telephone: '+971-55-419-9272',
-        address: {
-          '@type': 'PostalAddress',
-          addressCountry: 'AE',
-          addressRegion: 'Dubai',
-        },
-      },
-      {
         '@type': 'Service',
         '@id': `${canonicalUrl}#service`,
         name: serviceName,
         serviceType: serviceName,
         provider: {
-          '@type': 'LocalBusiness',
-          '@id': `${SITE_URL}/#localbusiness`,
+          '@id': `${SITE_URL}/#business`,
         },
         areaServed: {
           '@type': 'Country',

@@ -29,8 +29,8 @@ interface BaseQuotation {
 
 // For QuotationBuilder and local state
 export interface LocalQuotation extends BaseQuotation {
-  services: any[];
-  products: any[];
+  services: Array<Record<string, unknown>>;
+  products: Array<Record<string, unknown>>;
   notes: string;
   terms: string;
   subtotal: number;
@@ -49,7 +49,7 @@ export default function QuotationsPage() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'list' | 'builder' | 'approval' | 'reminders'>('dashboard')
   const [editingQuotation, setEditingQuotation] = useState<LocalQuotation | null>(null)
 
-  const handleEdit = (quotation: any) => {
+  const handleEdit = (quotation: Partial<LocalQuotation> & { id?: string | number }) => {
     // Convert any quotation format to LocalQuotation
     const editedQuotation: LocalQuotation = {
       id: quotation.id?.toString() || '',

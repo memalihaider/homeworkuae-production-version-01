@@ -24,23 +24,6 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  name: "Office Deep Cleaning Dubai",
-  description: "Professional office and commercial space deep cleaning in Dubai. Includes sanitization of workstations, meeting rooms, kitchen areas and bathrooms. Dubai Municipality approved cleaning company.",
-  url: PAGE_URL,
-  serviceType: "Office Deep Cleaning",
-  areaServed: [{ "@type": "City", name: "Dubai" }, { "@type": "State", name: "United Arab Emirates" }],
-  provider: { "@type": "LocalBusiness", "@id": "https://www.homeworkuae.com/#business", name: "Homework UAE" },
-  offers: { "@type": "Offer", priceCurrency: "AED", availability: "https://schema.org/InStock", url: PAGE_URL },
-};
-
 export default function OfficeDeepCleaningLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

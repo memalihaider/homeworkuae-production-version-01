@@ -295,11 +295,20 @@ interface QuotationData {
   notes: string;
   terms: string;
   paymentMethods: string[];
-  services: any[];
-  products: any[];
+  services: QuotationLineItem[];
+  products: QuotationLineItem[];
   createdAt?: string | Date;
   updatedAt?: string | Date;
   createdBy?: string;
+}
+
+interface QuotationLineItem {
+  name?: string;
+  quantity?: number;
+  unitPrice?: number;
+  total?: number;
+  description?: string;
+  sku?: string;
 }
 
 // Format phone number for WhatsApp

@@ -1961,7 +1961,7 @@ const downloadJobPDF = () => {
   doc.setFontSize(10);
   
   if (job.requiredSkills && job.requiredSkills.length > 0) {
-    let skillsText = job.requiredSkills.join(', ');
+    const skillsText = job.requiredSkills.join(', ');
     doc.text(String(skillsText), 14, yPosition);
     yPosition += 6;
   } else {
@@ -1977,7 +1977,7 @@ const downloadJobPDF = () => {
   doc.setFontSize(10);
   
   if (job.tags && job.tags.length > 0) {
-    let tagsText = job.tags.join(', ');
+    const tagsText = job.tags.join(', ');
     doc.text(String(tagsText), 14, yPosition);
     yPosition += 6;
   } else {
@@ -1993,7 +1993,7 @@ const downloadJobPDF = () => {
   doc.setFontSize(10);
   
   if (job.equipment && job.equipment.length > 0) {
-    let equipmentText = job.equipment.join(', ');
+    const equipmentText = job.equipment.join(', ');
     doc.text(String(equipmentText), 14, yPosition);
     yPosition += 6;
   } else {
@@ -2009,7 +2009,7 @@ const downloadJobPDF = () => {
     yPosition += 6;
     doc.setFontSize(10);
     
-    let permitsText = job.permits.join(', ');
+    const permitsText = job.permits.join(', ');
     doc.text(String(permitsText), 14, yPosition);
     yPosition += 6;
   }
@@ -2022,7 +2022,7 @@ const downloadJobPDF = () => {
     yPosition += 6;
     doc.setFontSize(10);
     
-    let servicesText = job.services.join(', ');
+    const servicesText = job.services.join(', ');
     doc.text(String(servicesText), 14, yPosition);
     yPosition += 6;
   }
@@ -2307,7 +2307,7 @@ const downloadJobPDF = () => {
 
       {/* Enhanced Workflow Actions - Dynamic based on status */}
       {job.status === 'Pending' && (
-        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-yellow-900 flex items-center gap-2">
               <Clock className="w-5 h-5" />
@@ -2327,7 +2327,7 @@ const downloadJobPDF = () => {
       )}
 
       {job.status === 'Scheduled' && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
@@ -2383,7 +2383,7 @@ const downloadJobPDF = () => {
       )}
 
       {job.status === 'In Progress' && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-green-900 flex items-center gap-2">
               <Activity className="w-5 h-5" />
@@ -2440,7 +2440,7 @@ const downloadJobPDF = () => {
       )}
 
       {job.status === 'Completed' && (
-        <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6">
+        <div className="bg-linear-to-r from-emerald-50 to-green-50 border border-emerald-300 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
               <Award className="w-5 h-5" />
@@ -2771,7 +2771,7 @@ const downloadJobPDF = () => {
 
               <div className="space-y-8">
                 {/* Pre-Job Checklist with + - buttons */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-bold text-blue-900 flex items-center gap-2">
                       <ClipboardCheck className="w-5 h-5" />
@@ -2824,7 +2824,7 @@ const downloadJobPDF = () => {
                 </div>
 
                 {/* Team Readiness with Dropdown */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5" />
                     Team Readiness
@@ -2928,7 +2928,7 @@ const downloadJobPDF = () => {
                 </div>
 
                 {/* Equipment Status */}
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
+                <div className="bg-linear-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-orange-900 mb-4 flex items-center gap-2">
                     <Wrench className="w-5 h-5" />
                     Equipment Status
@@ -2975,7 +2975,7 @@ const downloadJobPDF = () => {
 
               <div className="space-y-8">
                 {/* Execution Timer Controls */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                       <h4 className="text-lg font-bold text-blue-900">Execution Time Control</h4>
@@ -3185,7 +3185,7 @@ const downloadJobPDF = () => {
 
                 {/* Execution Progress */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                  <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <CheckSquare className="w-5 h-5 text-green-600" />
                       <span className="text-sm font-bold text-green-900">Task Progress</span>
@@ -3202,7 +3202,7 @@ const downloadJobPDF = () => {
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+                  <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <Clock className="w-5 h-5 text-blue-600" />
                       <span className="text-sm font-bold text-blue-900">Time Tracking</span>
@@ -3218,7 +3218,7 @@ const downloadJobPDF = () => {
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
+                  <div className="bg-linear-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <Activity className="w-5 h-5 text-orange-600" />
                       <span className="text-sm font-bold text-orange-900">Live Updates</span>
@@ -3287,7 +3287,7 @@ const downloadJobPDF = () => {
                   <div className="space-y-3">
                     {jobNotes.length > 0 ? (
                       jobNotes.map((note, i) => (
-                        <div key={note.id || i} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5">
+                        <div key={note.id || i} className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5">
                           <div className="flex items-start justify-between mb-2">
                             <div>
                               <div className="text-sm text-gray-900">{note.text}</div>
@@ -3321,7 +3321,7 @@ const downloadJobPDF = () => {
                   <div className="space-y-3">
                     {jobReminders.length > 0 ? (
                       jobReminders.map((reminder, i) => (
-                        <div key={reminder.id || i} className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+                        <div key={reminder.id || i} className="flex items-center justify-between bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
                           <div className="flex items-center gap-4">
                             <input
                               type="checkbox"
@@ -3386,7 +3386,7 @@ const downloadJobPDF = () => {
               <div className="space-y-4">
                 {realTaskAssignments.length > 0 ? (
                   realTaskAssignments.map((assignment, idx) => (
-                    <div key={assignment.id || idx} className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                    <div key={assignment.id || idx} className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <h4 className="font-bold text-gray-900 mb-2">{assignment.taskName}</h4>
@@ -3469,7 +3469,7 @@ const downloadJobPDF = () => {
               {realTaskAssignments.length > 0 ? (
                 <div className="space-y-5">
                   {realTaskAssignments.map((assignment, idx) => (
-                    <div key={assignment.id || idx} className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
+                    <div key={assignment.id || idx} className="bg-linear-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h4 className="font-bold text-gray-900 mb-1">{assignment.taskName}</h4>
@@ -3546,7 +3546,7 @@ const downloadJobPDF = () => {
 
     {/* Milestone Form - Shows when button is clicked */}
     {showMilestoneForm && (
-      <div className="mb-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-2xl">
+      <div className="mb-8 p-6 bg-linear-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-2xl">
         <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5 text-green-600" />
           New Milestone
@@ -3667,21 +3667,21 @@ const downloadJobPDF = () => {
 
     {/* Summary Cards */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+      <div className="bg-linear-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
         <div className="text-sm font-medium text-green-700 mb-1">Total Job Cost</div>
         <div className="text-3xl font-bold text-green-900">
           AED {teamMembers.reduce((sum, m) => sum + m.totalCompensation, 0).toLocaleString()}
         </div>
         <div className="text-xs text-green-600 mt-2">{teamMembers.length} team members</div>
       </div>
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+      <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
         <div className="text-sm font-medium text-blue-700 mb-1">Average Rate/Hour</div>
         <div className="text-3xl font-bold text-blue-900">
           AED {Math.round(teamMembers.reduce((sum, m) => sum + m.hourlyRate, 0) / teamMembers.length)}
         </div>
         <div className="text-xs text-blue-600 mt-2">Across all roles</div>
       </div>
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
+      <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
         <div className="text-sm font-medium text-purple-700 mb-1">Total Estimated Hours</div>
         <div className="text-3xl font-bold text-purple-900">
           {teamMembers.reduce((sum, m) => sum + m.estimatedHours, 0)} hrs
@@ -3781,7 +3781,7 @@ const downloadJobPDF = () => {
               <div className="space-y-6">
                 {employeeFeedback.length > 0 ? (
                   employeeFeedback.map((feedback, index) => (
-                    <div key={feedback.id || index} className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6">
+                    <div key={feedback.id || index} className="bg-linear-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h4 className="font-bold text-gray-900 text-lg">{feedback.employee}</h4>
@@ -3858,7 +3858,7 @@ const downloadJobPDF = () => {
               <h3 className="text-xl font-bold text-gray-900 mb-8">Employee Reports</h3>
               
               {/* Job Data Summary */}
-              <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
+              <div className="mb-8 bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
                 <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-600" />
                   Job Data from Firebase
@@ -4027,7 +4027,7 @@ const downloadJobPDF = () => {
                 <h4 className="font-bold text-gray-900 mb-4">Individual Reports</h4>
                 <div className="space-y-6">
                   {employeeReports.map((report) => (
-                    <div key={report.id} className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-2xl p-6">
+                    <div key={report.id} className="bg-linear-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-2xl p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h4 className="font-bold text-gray-900 text-lg">{report.employee}</h4>
@@ -4112,7 +4112,7 @@ const downloadJobPDF = () => {
 
     {/* Job Completion Button */}
 
-    <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 mb-8">
+    <div className="bg-linear-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 mb-8">
       <h4 className="font-bold text-gray-900 mb-4">Final Documentation</h4>
       <p className="text-gray-700 mb-4">
         All job tasks have been completed. Please review the final documentation before closing the job.
@@ -4186,7 +4186,7 @@ const downloadJobPDF = () => {
         </div>
 
         {/* Job Details Grid */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-300 mb-8">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-300 mb-8">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
             <FileText className="w-4 h-4 text-blue-600" />
             Job Specifications
@@ -4230,7 +4230,7 @@ const downloadJobPDF = () => {
         </div>
 
         {/* Assigned Team Members */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-300 mb-8">
+        <div className="bg-linear-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-300 mb-8">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
             <Users className="w-4 h-4 text-purple-600" />
             Assigned Team Members
@@ -4258,7 +4258,7 @@ const downloadJobPDF = () => {
         {/* Tasks & Milestones */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Tasks */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-300">
+          <div className="bg-linear-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-300">
             <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-green-600" />
               Tasks Completed
@@ -4289,7 +4289,7 @@ const downloadJobPDF = () => {
           </div>
 
           {/* Milestones */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-2xl border border-amber-300">
+          <div className="bg-linear-to-r from-amber-50 to-orange-50 p-6 rounded-2xl border border-amber-300">
             <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-600" />
               Project Milestones
@@ -4325,7 +4325,7 @@ const downloadJobPDF = () => {
 
         {/* Task Assignments */}
         {job.taskAssignments && job.taskAssignments.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-300 mb-8">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-300 mb-8">
             <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" />
               Task Assignments
@@ -4411,7 +4411,7 @@ const downloadJobPDF = () => {
         </div>
 
         {/* Financial Summary */}
-        <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-6 rounded-2xl border border-emerald-300 mb-8">
+        <div className="bg-linear-to-r from-emerald-50 to-green-50 p-6 rounded-2xl border border-emerald-300 mb-8">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-600" />
             Financial Summary
@@ -4454,7 +4454,7 @@ const downloadJobPDF = () => {
 
         {/* Special Instructions & Notes */}
         {job.specialInstructions && (
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-6 rounded-2xl border border-amber-300 mb-8">
+          <div className="bg-linear-to-r from-amber-50 to-yellow-50 p-6 rounded-2xl border border-amber-300 mb-8">
             <h3 className="text-sm font-bold text-gray-700 uppercase mb-3 flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-amber-600" />
               Special Instructions
@@ -4465,7 +4465,7 @@ const downloadJobPDF = () => {
 
         {/* Execution Logs */}
         {job.executionLogs && job.executionLogs.length > 0 && (
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-6 rounded-2xl border border-gray-300 mb-8">
+          <div className="bg-linear-to-r from-gray-50 to-slate-50 p-6 rounded-2xl border border-gray-300 mb-8">
             <h3 className="text-sm font-bold text-gray-700 uppercase mb-3 flex items-center gap-2">
               <History className="w-4 h-4 text-gray-600" />
               Execution Logs

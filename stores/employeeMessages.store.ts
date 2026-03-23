@@ -11,7 +11,6 @@ import {
   serverTimestamp,
   updateDoc,
   doc,
-  writeBatch,
   orderBy
 } from 'firebase/firestore';
 
@@ -25,7 +24,7 @@ export interface Message {
   recipientRole: 'admin' | 'employee';
   recipientId?: string;
   recipientName?: string;
-  timestamp: any;
+  timestamp: Date;
   read: boolean;
   readBy?: string[];
   status: 'sent' | 'delivered' | 'seen';
@@ -40,16 +39,37 @@ export interface Message {
   replyToSender?: string;
 }
 
+interface EmployeeRecord {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface OutboundMessagePayload {
+  content: string;
+  senderId: string;
+  senderName: string;
+  senderEmail: string;
+  senderRole: 'employee' | 'admin';
+  recipientRole: 'admin' | 'employee';
+  recipientId?: string;
+  recipientName?: string;
+  imageBase64?: string;
+  imageName?: string;
+  replyToId?: string;
+  replyToContent?: string;
+  replyToSender?: string;
+}
+
 interface EmployeeMessagesStore {
   messages: Message[];
-  employees: any[];
+  employees: EmployeeRecord[];
   loading: boolean;
   error: string | null;
   selectedEmployeeId: string | null;
   
   fetchEmployees: () => Promise<void>;
-  sendMessageFromEmployee: (data: any) => Promise<void>;
-  sendReplyFromAdmin: (data: any) => Promise<void>;
+  sendMessageFromEmployee: (data: OutboundMessagePayload) => Promise<void>;
+  sendReplyFromAdmin: (data: OutboundMessagePayload) => Promise<void>;
   markAsRead: (messageId: string, collection: string, userId: string) => Promise<void>;
   deleteForMe: (messageId: string, collection: string, userId: string) => Promise<void>;
   deleteForEveryone: (messageId: string, collection: string) => Promise<void>;
@@ -85,7 +105,7 @@ export const useEmployeeMessagesStore = create<EmployeeMessagesStore>((set, get)
     }
   },
 
-  sendMessageFromEmployee: async (data) => {
+  sendMessageFromEmployee: async (data: OutboundMessagePayload) => {
     try {
       await addDoc(collection(db, 'employeeMessages'), {
         ...data,
@@ -102,7 +122,7 @@ export const useEmployeeMessagesStore = create<EmployeeMessagesStore>((set, get)
     }
   },
 
-  sendReplyFromAdmin: async (data) => {
+  sendReplyFromAdmin: async (data: OutboundMessagePayload) => {
     try {
       await addDoc(collection(db, 'employeeReplies'), {
         ...data,
@@ -197,7 +217,7 @@ export const useEmployeeMessagesStore = create<EmployeeMessagesStore>((set, get)
       
       set(state => {
         const replies = state.messages.filter(m => m.collection === 'employeeReplies');
-        return { messages: [...msgs, ...replies].sort((a, b) => a.timestamp - b.timestamp) };
+        return { messages: [...msgs, ...replies].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()) };
       });
     });
 
@@ -211,7 +231,7 @@ export const useEmployeeMessagesStore = create<EmployeeMessagesStore>((set, get)
       
       set(state => {
         const messages = state.messages.filter(m => m.collection === 'employeeMessages');
-        return { messages: [...messages, ...msgs].sort((a, b) => a.timestamp - b.timestamp) };
+        return { messages: [...messages, ...msgs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()) };
       });
     });
 
@@ -242,7 +262,7 @@ export const useEmployeeMessagesStore = create<EmployeeMessagesStore>((set, get)
       
       set(state => {
         const replies = state.messages.filter(m => m.collection === 'employeeReplies');
-        return { messages: [...msgs, ...replies].sort((a, b) => a.timestamp - b.timestamp) };
+        return { messages: [...msgs, ...replies].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()) };
       });
     });
 
@@ -256,7 +276,7 @@ export const useEmployeeMessagesStore = create<EmployeeMessagesStore>((set, get)
       
       set(state => {
         const messages = state.messages.filter(m => m.collection === 'employeeMessages');
-        return { messages: [...messages, ...msgs].sort((a, b) => a.timestamp - b.timestamp) };
+        return { messages: [...messages, ...msgs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()) };
       });
     });
 

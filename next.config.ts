@@ -34,6 +34,17 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'homeworkuae.com',
+          },
+        ],
+        destination: 'https://www.homeworkuae.com/:path*',
+        permanent: true,
+      },
+      {
         source: '/404',
         destination: '/',
         permanent: true,

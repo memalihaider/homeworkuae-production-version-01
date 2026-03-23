@@ -3,7 +3,31 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { AlertCircle, Download, TrendingUp, BarChart3, PieChart, User, Image as ImageIcon, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { db } from '@/lib/firebase'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore'
+
+type FirestoreTimestampLike = {
+  toDate?: () => Date
+}
+
+type SurveyResponseAnswer = string | number | string[] | Record<string, unknown> | null
+
+interface QuestionAggregate {
+  id: string
+  text: string
+  type: string
+  answers: SurveyResponseAnswer[]
+}
+
+interface OptionDetail {
+  option: string
+  count: number
+  percentage: number
+}
+
+interface QuestionAnalysis {
+  summary: string
+  details: Array<string | number | OptionDetail | SurveyResponseAnswer>
+}
 
 interface Survey {
   id: string
@@ -23,7 +47,7 @@ interface Survey {
   completionRate?: number
   priority?: string
   serviceType?: string
-  createdAt?: any
+  createdAt?: string | Date | FirestoreTimestampLike
 }
 
 interface SurveyResponse {
@@ -34,11 +58,11 @@ interface SurveyResponse {
     questionId: string
     questionText: string
     questionType: string
-    answer: any
+    answer: SurveyResponseAnswer
     imageCount?: number
     thumbnail?: string
   }>
-  submittedAt: any
+  submittedAt: string | Date | FirestoreTimestampLike
   timestamp: string
   userAgent: string
   images?: Record<string, string[]>
@@ -88,7 +112,7 @@ const ImageModal = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999] p-4"
+      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-9999 p-4"
       onClick={onClose}
     >
       {/* Close button */}
@@ -384,7 +408,7 @@ export default function SurveyResultsSection({ surveys }: Props) {
   }, [selectedSurvey, surveyResponses])
 
   // Analyze question answers
-  const analyzeQuestion = (question: any) => {
+  const analyzeQuestion = (question: QuestionAggregate): QuestionAnalysis => {
     const { type, answers } = question
     
     if (answers.length === 0) {
@@ -401,9 +425,9 @@ export default function SurveyResultsSection({ surveys }: Props) {
         }
       
       case 'number':
-        const numbers = answers.filter((a: any) => !isNaN(parseFloat(a)))
+        const numbers = answers.filter((a) => !isNaN(parseFloat(String(a))))
         const avg = numbers.length > 0 
-          ? (numbers.reduce((sum: number, a: any) => sum + parseFloat(a), 0) / numbers.length).toFixed(2)
+          ? (numbers.reduce((sum: number, a) => sum + parseFloat(String(a)), 0) / numbers.length).toFixed(2)
           : 0
         return {
           summary: `Average: ${avg}`,
@@ -411,9 +435,9 @@ export default function SurveyResultsSection({ surveys }: Props) {
         }
       
       case 'rating':
-        const ratings = answers.filter((a: any) => !isNaN(parseInt(a)))
+        const ratings = answers.filter((a) => !isNaN(parseInt(String(a), 10)))
         const avgRating = ratings.length > 0 
-          ? (ratings.reduce((sum: number, a: any) => sum + parseInt(a), 0) / ratings.length).toFixed(1)
+          ? (ratings.reduce((sum: number, a) => sum + parseInt(String(a), 10), 0) / ratings.length).toFixed(1)
           : 0
         return {
           summary: `Average rating: ${avgRating}/5`,
@@ -424,13 +448,13 @@ export default function SurveyResultsSection({ surveys }: Props) {
       case 'dropdown':
       case 'checkbox':
         const optionCounts: Record<string, number> = {}
-        answers.forEach((answer: any) => {
+        answers.forEach((answer) => {
           if (Array.isArray(answer)) {
             answer.forEach((opt: string) => {
               optionCounts[opt] = (optionCounts[opt] || 0) + 1
             })
           } else {
-            optionCounts[answer] = (optionCounts[answer] || 0) + 1
+            optionCounts[String(answer)] = (optionCounts[String(answer)] || 0) + 1
           }
         })
         
@@ -449,13 +473,13 @@ export default function SurveyResultsSection({ surveys }: Props) {
       
       case 'scale':
       case 'NPS':
-        const scaleAnswers = answers.filter((a: any) => !isNaN(parseInt(a)))
+        const scaleAnswers = answers.filter((a) => !isNaN(parseInt(String(a), 10)))
         const avgScale = scaleAnswers.length > 0 
-          ? (scaleAnswers.reduce((sum: number, a: any) => sum + parseInt(a), 0) / scaleAnswers.length).toFixed(1)
+          ? (scaleAnswers.reduce((sum: number, a) => sum + parseInt(String(a), 10), 0) / scaleAnswers.length).toFixed(1)
           : 0
         return {
           summary: `Average score: ${avgScale}`,
-          details: answers.map((a: any) => parseInt(a))
+          details: answers.map((a) => parseInt(String(a), 10))
         }
       
       case 'date':
@@ -714,24 +738,26 @@ export default function SurveyResultsSection({ surveys }: Props) {
                                question.type === 'dropdown' || 
                                question.type === 'checkbox' ? (
                                 <div className="space-y-1">
-                                  {analysis.details.map((detail: any, idx: number) => (
+                                  {analysis.details.map((detail, idx: number) => {
+                                    const optionDetail = detail as OptionDetail
+                                    return (
                                     <div key={idx} className="flex items-center justify-between text-xs">
-                                      <span className="text-gray-700">{detail.option}</span>
+                                      <span className="text-gray-700">{optionDetail.option}</span>
                                       <div className="flex items-center gap-2">
-                                        <span className="text-gray-600">{detail.count} ({detail.percentage}%)</span>
+                                        <span className="text-gray-600">{optionDetail.count} ({optionDetail.percentage}%)</span>
                                         <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                                           <div 
                                             className="h-full bg-blue-600"
-                                            style={{ width: `${detail.percentage}%` }}
+                                            style={{ width: `${optionDetail.percentage}%` }}
                                           ></div>
                                         </div>
                                       </div>
                                     </div>
-                                  ))}
+                                  )})}
                                 </div>
                               ) : (
                                 <div className="max-h-32 overflow-y-auto">
-                                  {analysis.details.slice(0, 10).map((answer: any, idx: number) => (
+                                  {analysis.details.slice(0, 10).map((answer, idx: number) => (
                                     <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-1">
                                       {typeof answer === 'object' ? JSON.stringify(answer) : String(answer)}
                                     </div>

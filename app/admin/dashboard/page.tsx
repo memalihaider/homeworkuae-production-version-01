@@ -69,6 +69,8 @@ import {
 } from 'firebase/firestore'
 
 // Types
+type TimestampValue = Date | string | number | Timestamp | { toDate: () => Date } | null | undefined
+
 type Job = {
   id: string
   title: string
@@ -78,7 +80,7 @@ type Job = {
   priority: string
   budget: number
   actualCost: number
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Lead = {
@@ -89,7 +91,7 @@ type Lead = {
   email: string
   phone: string
   value: number
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Quotation = {
@@ -99,7 +101,7 @@ type Quotation = {
   client: string
   total: number
   date: string
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Client = {
@@ -109,7 +111,7 @@ type Client = {
   email: string
   status: string
   totalSpent: number
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Booking = {
@@ -119,7 +121,7 @@ type Booking = {
   date: string
   status: string
   email: string
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Employee = {
@@ -129,7 +131,7 @@ type Employee = {
   department: string
   status: string
   salary: number
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Service = {
@@ -138,7 +140,7 @@ type Service = {
   price: number
   categoryName: string
   status: string
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Product = {
@@ -147,7 +149,7 @@ type Product = {
   price: number
   stock: number
   status: string
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Survey = {
@@ -155,7 +157,7 @@ type Survey = {
   title: string
   status: string
   responsesCount: number
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Department = {
@@ -164,7 +166,7 @@ type Department = {
   manager: string
   budget: number
   active: boolean
-  createdAt: any
+  createdAt: TimestampValue
 }
 
 type Activity = {
@@ -174,7 +176,7 @@ type Activity = {
   action: string
   target: string
   time: string
-  timestamp: any
+  timestamp: TimestampValue
 }
 
 export default function AdminDashboard() {
@@ -185,66 +187,66 @@ export default function AdminDashboard() {
   // Real-time data states with initial cached data
   const [jobs, setJobs] = useState<Job[]>([
     { id: '1', title: 'Office Cleaning', status: 'In Progress', client: 'Tech Corp', scheduledDate: '2026-02-05', priority: 'High', budget: 1200, actualCost: 0, createdAt: new Date() },
-    { id: '2', title: 'Home Renovation', status: 'Scheduled', client: 'Residential', scheduledDate: '2026-02-06', priority: 'Medium', budget: 2500, actualCost: 0, createdAt: new Date(Date.now() - 86400000) },
-    { id: '3', title: 'Garden Maintenance', status: 'Pending', client: 'Green Spaces', scheduledDate: '2026-02-07', priority: 'Low', budget: 800, actualCost: 0, createdAt: new Date(Date.now() - 172800000) }
+    { id: '2', title: 'Home Renovation', status: 'Scheduled', client: 'Residential', scheduledDate: '2026-02-06', priority: 'Medium', budget: 2500, actualCost: 0, createdAt: new Date('2026-02-04T00:00:00Z') },
+    { id: '3', title: 'Garden Maintenance', status: 'Pending', client: 'Green Spaces', scheduledDate: '2026-02-07', priority: 'Low', budget: 800, actualCost: 0, createdAt: new Date('2026-02-03T00:00:00Z') }
   ])
 
   const [leads, setLeads] = useState<Lead[]>([
     { id: '1', name: 'John Smith', status: 'New', company: 'ABC Corp', email: 'john@abccorp.com', phone: '+971501234567', value: 5000, createdAt: new Date() },
-    { id: '2', name: 'Sarah Johnson', status: 'Contacted', company: 'XYZ Ltd', email: 'sarah@xyzltd.com', phone: '+971502345678', value: 8000, createdAt: new Date(Date.now() - 43200000) },
-    { id: '3', name: 'Michael Brown', status: 'Won', company: 'Global Inc', email: 'michael@global.com', phone: '+971503456789', value: 12000, createdAt: new Date(Date.now() - 86400000) },
-    { id: '4', name: 'Emma Wilson', status: 'New', company: 'Startup Co', email: 'emma@startup.com', phone: '+971504567890', value: 3000, createdAt: new Date(Date.now() - 129600000) }
+    { id: '2', name: 'Sarah Johnson', status: 'Contacted', company: 'XYZ Ltd', email: 'sarah@xyzltd.com', phone: '+971502345678', value: 8000, createdAt: new Date('2026-02-04T12:00:00Z') },
+    { id: '3', name: 'Michael Brown', status: 'Won', company: 'Global Inc', email: 'michael@global.com', phone: '+971503456789', value: 12000, createdAt: new Date('2026-02-04T00:00:00Z') },
+    { id: '4', name: 'Emma Wilson', status: 'New', company: 'Startup Co', email: 'emma@startup.com', phone: '+971504567890', value: 3000, createdAt: new Date('2026-02-03T12:00:00Z') }
   ])
 
   const [quotations, setQuotations] = useState<Quotation[]>([
     { id: '1', quoteNumber: '#QT-2024-001', status: 'Sent', client: 'Tech Corp', total: 4500, date: '2026-02-03', createdAt: new Date() },
-    { id: '2', quoteNumber: '#QT-2024-002', status: 'Approved', client: 'Residential', total: 3200, date: '2026-02-02', createdAt: new Date(Date.now() - 86400000) },
-    { id: '3', quoteNumber: '#QT-2024-003', status: 'Pending', client: 'Green Spaces', total: 1800, date: '2026-02-01', createdAt: new Date(Date.now() - 172800000) }
+    { id: '2', quoteNumber: '#QT-2024-002', status: 'Approved', client: 'Residential', total: 3200, date: '2026-02-02', createdAt: new Date('2026-02-04T00:00:00Z') },
+    { id: '3', quoteNumber: '#QT-2024-003', status: 'Pending', client: 'Green Spaces', total: 1800, date: '2026-02-01', createdAt: new Date('2026-02-03T00:00:00Z') }
   ])
 
   const [clients, setClients] = useState<Client[]>([
     { id: '1', name: 'Abdullah', company: 'Google', email: 'abdullah@gmail.com', status: 'Active', totalSpent: 15000, createdAt: new Date() },
-    { id: '2', name: 'Sarah', company: 'Microsoft', email: 'sarah@microsoft.com', status: 'Active', totalSpent: 22000, createdAt: new Date(Date.now() - 86400000) },
-    { id: '3', name: 'Michael', company: 'Apple', email: 'michael@apple.com', status: 'Active', totalSpent: 18000, createdAt: new Date(Date.now() - 172800000) }
+    { id: '2', name: 'Sarah', company: 'Microsoft', email: 'sarah@microsoft.com', status: 'Active', totalSpent: 22000, createdAt: new Date('2026-02-04T00:00:00Z') },
+    { id: '3', name: 'Michael', company: 'Apple', email: 'michael@apple.com', status: 'Active', totalSpent: 18000, createdAt: new Date('2026-02-03T00:00:00Z') }
   ])
 
   const [bookings, setBookings] = useState<Booking[]>([
     { id: '1', name: 'Ahmed Khan', service: 'Office Cleaning', date: '2026-02-05', status: 'confirmed', email: 'ahmed@email.com', createdAt: new Date() },
-    { id: '2', name: 'Fatima Ali', service: 'Home Cleaning', date: '2026-02-06', status: 'confirmed', email: 'fatima@email.com', createdAt: new Date(Date.now() - 43200000) }
+    { id: '2', name: 'Fatima Ali', service: 'Home Cleaning', date: '2026-02-06', status: 'confirmed', email: 'fatima@email.com', createdAt: new Date('2026-02-04T12:00:00Z') }
   ])
 
   const [employees, setEmployees] = useState<Employee[]>([
     { id: '1', name: 'John Doe', position: 'Senior Developer', department: 'IT', status: 'Active', salary: 15000, createdAt: new Date() },
-    { id: '2', name: 'Jane Smith', position: 'Project Manager', department: 'Operations', status: 'Active', salary: 18000, createdAt: new Date(Date.now() - 86400000) },
-    { id: '3', name: 'Robert Brown', position: 'Marketing Executive', department: 'Marketing', status: 'Active', salary: 12000, createdAt: new Date(Date.now() - 172800000) }
+    { id: '2', name: 'Jane Smith', position: 'Project Manager', department: 'Operations', status: 'Active', salary: 18000, createdAt: new Date('2026-02-04T00:00:00Z') },
+    { id: '3', name: 'Robert Brown', position: 'Marketing Executive', department: 'Marketing', status: 'Active', salary: 12000, createdAt: new Date('2026-02-03T00:00:00Z') }
   ])
 
   const [services, setServices] = useState<Service[]>([
     { id: '1', name: 'Deep Cleaning', price: 450, categoryName: 'Cleaning', status: 'ACTIVE', createdAt: new Date() },
-    { id: '2', name: 'AC Maintenance', price: 300, categoryName: 'Maintenance', status: 'ACTIVE', createdAt: new Date(Date.now() - 86400000) },
-    { id: '3', name: 'Garden Care', price: 250, categoryName: 'Gardening', status: 'ACTIVE', createdAt: new Date(Date.now() - 172800000) }
+    { id: '2', name: 'AC Maintenance', price: 300, categoryName: 'Maintenance', status: 'ACTIVE', createdAt: new Date('2026-02-04T00:00:00Z') },
+    { id: '3', name: 'Garden Care', price: 250, categoryName: 'Gardening', status: 'ACTIVE', createdAt: new Date('2026-02-03T00:00:00Z') }
   ])
 
   const [products, setProducts] = useState<Product[]>([
     { id: '1', name: 'Cleaning Kit', price: 120, stock: 45, status: 'ACTIVE', createdAt: new Date() },
-    { id: '2', name: 'Tools Set', price: 350, stock: 28, status: 'ACTIVE', createdAt: new Date(Date.now() - 86400000) }
+    { id: '2', name: 'Tools Set', price: 350, stock: 28, status: 'ACTIVE', createdAt: new Date('2026-02-04T00:00:00Z') }
   ])
 
   const [surveys, setSurveys] = useState<Survey[]>([
     { id: '1', title: 'Customer Satisfaction', status: 'published', responsesCount: 45, createdAt: new Date() },
-    { id: '2', title: 'Service Feedback', status: 'published', responsesCount: 32, createdAt: new Date(Date.now() - 86400000) }
+    { id: '2', title: 'Service Feedback', status: 'published', responsesCount: 32, createdAt: new Date('2026-02-04T00:00:00Z') }
   ])
 
   const [departments, setDepartments] = useState<Department[]>([
     { id: '1', name: 'Operations', manager: 'John Smith', budget: 50000, active: true, createdAt: new Date() },
-    { id: '2', name: 'Marketing', manager: 'Sarah Johnson', budget: 35000, active: true, createdAt: new Date(Date.now() - 86400000) }
+    { id: '2', name: 'Marketing', manager: 'Sarah Johnson', budget: 35000, active: true, createdAt: new Date('2026-02-04T00:00:00Z') }
   ])
 
   const [recentActivities, setRecentActivities] = useState<Activity[]>([
     { id: '1', type: 'job', user: 'Ahmed Khan', action: 'completed job', target: 'Office Cleaning', time: '2 mins ago', timestamp: new Date() },
-    { id: '2', type: 'lead', user: 'Sarah Smith', action: 'added new lead', target: 'ABC Corporation', time: '15 mins ago', timestamp: new Date(Date.now() - 900000) },
-    { id: '3', type: 'quotation', user: 'System', action: 'created quotation', target: '#QT-2024-001', time: '1 hour ago', timestamp: new Date(Date.now() - 3600000) },
-    { id: '4', type: 'booking', user: 'John Doe', action: 'made booking', target: 'Home Cleaning', time: '3 hours ago', timestamp: new Date(Date.now() - 10800000) }
+    { id: '2', type: 'lead', user: 'Sarah Smith', action: 'added new lead', target: 'ABC Corporation', time: '15 mins ago', timestamp: new Date('2026-02-05T09:45:00Z') },
+    { id: '3', type: 'quotation', user: 'System', action: 'created quotation', target: '#QT-2024-001', time: '1 hour ago', timestamp: new Date('2026-02-05T09:00:00Z') },
+    { id: '4', type: 'booking', user: 'John Doe', action: 'made booking', target: 'Home Cleaning', time: '3 hours ago', timestamp: new Date('2026-02-05T07:00:00Z') }
   ])
 
   // Stats states - Calculated from initial data
@@ -266,26 +268,102 @@ export default function AdminDashboard() {
   // FIREBASE REAL-TIME LISTENERS - OPTIMIZED
   // ======================
 
-  useEffect(() => {
-    // Immediately calculate stats from initial data
-    calculateAllStats()
-    
-    // Set up real-time listeners in background
-    const unsubscribe = setupRealtimeListeners()
-    
-    // Mark initial load as complete after 100ms
-    const timer = setTimeout(() => {
-      setIsInitialLoad(false)
-    }, 100)
-    
-    // Cleanup
-    return () => {
-      unsubscribe()
-      clearTimeout(timer)
-    }
-  }, [])
+  async function fetchRecentActivities() {
+    try {
+      const getTimeValue = (timestamp: TimestampValue): number => {
+        if (!timestamp) return 0
 
-  const setupRealtimeListeners = () => {
+        if (typeof timestamp === 'object') {
+          if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate().getTime()
+          }
+
+          if ('getTime' in timestamp && typeof (timestamp as Date).getTime === 'function') {
+            return (timestamp as Date).getTime()
+          }
+        }
+
+        if (typeof timestamp === 'string') {
+          const date = new Date(timestamp)
+          const time = date.getTime()
+          return isNaN(time) ? 0 : time
+        }
+
+        if (typeof timestamp === 'number') {
+          return timestamp
+        }
+
+        return 0
+      }
+
+      const formatRelativeTime = (timestamp: TimestampValue): string => {
+        const timestampValue = getTimeValue(timestamp)
+        const date = new Date(timestampValue)
+        const now = new Date()
+        const diffMs = now.getTime() - date.getTime()
+        const diffMins = Math.floor(diffMs / 60000)
+        const diffHours = Math.floor(diffMs / 3600000)
+        const diffDays = Math.floor(diffMs / 86400000)
+
+        if (diffMins < 60) return `${diffMins}m ago`
+        if (diffHours < 24) return `${diffHours}h ago`
+        if (diffDays < 7) return `${diffDays}d ago`
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }
+
+      const activities: Activity[] = []
+
+      // Get recent jobs (last 3)
+      const jobsQuery = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(3))
+      const jobsSnapshot = await getDocs(jobsQuery)
+      jobsSnapshot.docs.forEach(doc => {
+        const job = doc.data() as Job
+        activities.push({
+          id: doc.id,
+          type: 'job',
+          user: job.client || 'Client',
+          action: 'created job',
+          target: job.title || 'New Job',
+          time: formatRelativeTime(job.createdAt),
+          timestamp: job.createdAt
+        })
+      })
+
+      // Get recent leads (last 2)
+      const leadsQuery = query(collection(db, 'leads'), orderBy('createdAt', 'desc'), limit(2))
+      const leadsSnapshot = await getDocs(leadsQuery)
+      leadsSnapshot.docs.forEach(doc => {
+        const lead = doc.data() as Lead
+        activities.push({
+          id: doc.id,
+          type: 'lead',
+          user: lead.name || 'New Lead',
+          action: 'added to CRM',
+          target: lead.company || 'New Company',
+          time: formatRelativeTime(lead.createdAt),
+          timestamp: lead.createdAt
+        })
+      })
+
+      // Sort activities by timestamp and take 10 most recent
+      const sortedActivities = activities
+        .sort((a, b) => {
+          const timeA = getTimeValue(a.timestamp)
+          const timeB = getTimeValue(b.timestamp)
+          return timeB - timeA
+        })
+        .slice(0, 10)
+
+      // Only update if we have new data
+      if (sortedActivities.length > 0) {
+        setRecentActivities(sortedActivities)
+      }
+    } catch (error) {
+      console.error('Error fetching activities:', error)
+      // Keep using initial activities if Firebase fails
+    }
+  }
+  function setupRealtimeListeners() {
     // Jobs listener
     const jobsUnsubscribe = onSnapshot(collection(db, 'jobs'), (snapshot) => {
       const jobsData = snapshot.docs.map(doc => ({
@@ -388,7 +466,7 @@ export default function AdminDashboard() {
   // STATS CALCULATION - IMMEDIATE
   // ======================
 
-  const calculateAllStats = () => {
+  function calculateAllStats() {
     // Calculate stats from current state (initial or real-time)
     const totalRevenue = quotations
       .filter(q => q.status === 'Sent' || q.status === 'Approved' || q.status === 'Paid')
@@ -443,69 +521,43 @@ export default function AdminDashboard() {
     })
   }
 
+  useEffect(() => {
+    const statsTimer = setTimeout(() => {
+      calculateAllStats()
+    }, 0)
+
+    // Set up real-time listeners in background
+    let unsubscribe = () => {}
+    const listenersTimer = setTimeout(() => {
+      unsubscribe = setupRealtimeListeners()
+    }, 0)
+
+    // Mark initial load as complete after 100ms
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false)
+    }, 100)
+
+    // Cleanup
+    return () => {
+      clearTimeout(listenersTimer)
+      unsubscribe()
+      clearTimeout(statsTimer)
+      clearTimeout(timer)
+    }
+  }, [])
+
   // Recalculate stats when data changes
   useEffect(() => {
-    calculateAllStats()
+    const timer = setTimeout(() => {
+      calculateAllStats()
+    }, 0)
+
+    return () => clearTimeout(timer)
   }, [jobs, leads, quotations, clients, bookings, employees, services, products, surveys])
 
   // ======================
   // RECENT ACTIVITIES - BACKGROUND FETCH
   // ======================
-
-  const fetchRecentActivities = async () => {
-    try {
-      const activities: Activity[] = []
-
-      // Get recent jobs (last 3)
-      const jobsQuery = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(3))
-      const jobsSnapshot = await getDocs(jobsQuery)
-      jobsSnapshot.docs.forEach(doc => {
-        const job = doc.data() as Job
-        activities.push({
-          id: doc.id,
-          type: 'job',
-          user: job.client || 'Client',
-          action: 'created job',
-          target: job.title || 'New Job',
-          time: formatTimestamp(job.createdAt),
-          timestamp: job.createdAt
-        })
-      })
-
-      // Get recent leads (last 2)
-      const leadsQuery = query(collection(db, 'leads'), orderBy('createdAt', 'desc'), limit(2))
-      const leadsSnapshot = await getDocs(leadsQuery)
-      leadsSnapshot.docs.forEach(doc => {
-        const lead = doc.data() as Lead
-        activities.push({
-          id: doc.id,
-          type: 'lead',
-          user: lead.name || 'New Lead',
-          action: 'added to CRM',
-          target: lead.company || 'New Company',
-          time: formatTimestamp(lead.createdAt),
-          timestamp: lead.createdAt
-        })
-      })
-
-      // Sort activities by timestamp and take 10 most recent
-      const sortedActivities = activities
-        .sort((a, b) => {
-          const timeA = getTimestampValue(a.timestamp)
-          const timeB = getTimestampValue(b.timestamp)
-          return timeB - timeA
-        })
-        .slice(0, 10)
-
-      // Only update if we have new data
-      if (sortedActivities.length > 0) {
-        setRecentActivities(sortedActivities)
-      }
-    } catch (error) {
-      console.error('Error fetching activities:', error)
-      // Keep using initial activities if Firebase fails
-    }
-  }
 
   // ======================
   // CHART DATA GENERATION - IMMEDIATE
@@ -565,15 +617,17 @@ export default function AdminDashboard() {
   // ======================
 
   // Get timestamp value from any format
-  const getTimestampValue = (timestamp: any): number => {
-    if (!timestamp) return Date.now()
+  const getTimestampValue = (timestamp: TimestampValue): number => {
+    if (!timestamp) return 0
     
-    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-      return timestamp.toDate().getTime()
-    }
-    
-    if (timestamp.getTime && typeof timestamp.getTime === 'function') {
-      return timestamp.getTime()
+    if (typeof timestamp === 'object') {
+      if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().getTime()
+      }
+      
+      if ('getTime' in timestamp && typeof (timestamp as Date).getTime === 'function') {
+        return (timestamp as Date).getTime()
+      }
     }
     
     if (typeof timestamp === 'string') {
@@ -587,10 +641,10 @@ export default function AdminDashboard() {
       return timestamp
     }
     
-    return Date.now()
+    return 0
   }
 
-  const formatTimestamp = (timestamp: any): string => {
+  const formatTimestamp = (timestamp: TimestampValue): string => {
     const timestampValue = getTimestampValue(timestamp)
     const date = new Date(timestampValue)
     const now = new Date()

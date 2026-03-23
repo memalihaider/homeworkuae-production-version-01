@@ -3,18 +3,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { 
   Search, 
-  AlertTriangle, 
   AlertCircle, 
-  Eye, 
   Download, 
   Filter, 
   Zap, 
   TrendingUp, 
-  Shield, 
   Clock, 
-  ExternalLink,
   X,
-  ChevronDown,
   ArrowUpRight,
   Activity,
   ShieldAlert,
@@ -30,7 +25,7 @@ import {
 
 // Firebase imports - aap ke config file se import karein
 import { db } from '@/lib/firebase' // Adjust path as needed
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore'
+import { collection, getDocs, query } from 'firebase/firestore'
 
 // Type definitions
 interface AuditLog {
@@ -50,6 +45,102 @@ interface AuditLog {
   after: string;
   allowedPages?: string[];
   roleName?: string;
+}
+
+type GenericData = Record<string, unknown>
+
+function getAllowedPages(data: GenericData): string[] {
+  return Array.isArray(data.allowedPages)
+    ? data.allowedPages.filter((item): item is string => typeof item === 'string')
+    : []
+}
+
+function getRoleName(data: GenericData): string {
+  return typeof data.roleName === 'string' ? data.roleName : ''
+}
+
+function getName(data: GenericData): string {
+  return typeof data.name === 'string' ? data.name : 'Unknown User'
+}
+
+function getEmail(data: GenericData): string {
+  return typeof data.email === 'string' ? data.email : ''
+}
+
+function generateActionFromUserData(data: GenericData): string {
+  const actions = [
+    'USER_CREATED',
+    'ROLE_ASSIGNED',
+    'PERMISSION_UPDATED',
+    'PROFILE_UPDATED',
+    'LOGIN_ATTEMPT',
+    'PAGES_ACCESS_CHANGED',
+    'DATA_ACCESSED'
+  ]
+
+  const roleName = getRoleName(data)
+  const allowedPages = getAllowedPages(data)
+  if (roleName === 'admin') return 'ROLE_ASSIGNED'
+  if (roleName === 'customer') return 'USER_CREATED'
+  if (allowedPages.length > 0) return 'PAGES_ACCESS_CHANGED'
+
+  return actions[Math.floor(Math.random() * actions.length)]
+}
+
+function determineResource(data: GenericData): string {
+  const roleName = getRoleName(data)
+  const allowedPages = getAllowedPages(data)
+  if (roleName) return 'User Management'
+  if (allowedPages.length > 0) return 'Permissions'
+  return 'System'
+}
+
+function calculateRiskScore(data: GenericData): number {
+  let score = 0
+  const roleName = getRoleName(data)
+  const allowedPages = getAllowedPages(data)
+
+  if (roleName === 'admin') score += 30
+  score += Math.min(allowedPages.length * 5, 40)
+  score += Math.floor(Math.random() * 30)
+
+  return Math.min(score, 100)
+}
+
+function determineChangeType(action: string): string {
+  if (action.includes('CREATED') || action.includes('ASSIGNED')) return 'create'
+  if (action.includes('UPDATED') || action.includes('CHANGED')) return 'update'
+  if (action.includes('LOGIN') || action.includes('ACCESSED')) return 'access'
+  return 'security'
+}
+
+function getBeforeState(data: GenericData): string {
+  const roleName = getRoleName(data)
+  const allowedPages = getAllowedPages(data)
+  if (roleName) return `Role: ${roleName === 'admin' ? 'customer' : 'none'}`
+  if (allowedPages.length > 0) return 'No page access'
+  return 'N/A'
+}
+
+function getAfterState(data: GenericData): string {
+  const roleName = getRoleName(data)
+  const allowedPages = getAllowedPages(data)
+  if (roleName) return `Role assigned: ${roleName}`
+  if (allowedPages.length > 0) {
+    return `Pages granted: ${allowedPages.slice(0, 3).join(', ')}${allowedPages.length > 3 ? '...' : ''}`
+  }
+  return `User: ${getEmail(data) || getName(data) || 'Unknown'}`
+}
+
+function generateRandomIP(): string {
+  return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
+}
+
+function getRiskLevel(score: number): string {
+  if (score <= 5) return 'Low'
+  if (score <= 25) return 'Medium'
+  if (score <= 50) return 'High'
+  return 'Critical'
 }
 
 export default function AuditLogs() {
@@ -116,9 +207,9 @@ export default function AuditLogs() {
           }
 
           // Real user data se log generate karein
-          const action = generateActionFromUserData(data)
-          const resource = determineResource(data)
-          const riskScore = calculateRiskScore(data)
+          const action = generateActionFromUserData(data as GenericData)
+          const resource = determineResource(data as GenericData)
+          const riskScore = calculateRiskScore(data as GenericData)
           const anomalyDetected = riskScore > 50
           
           const log: AuditLog = {
@@ -134,10 +225,53 @@ export default function AuditLogs() {
             riskScore: riskScore,
             anomalyDetected: anomalyDetected,
             changeType: determineChangeType(action),
-            before: getBeforeState(data),
-            after: getAfterState(data),
+            before: getBeforeState(data as GenericData),
+            after: getAfterState(data as GenericData),
             allowedPages: data.allowedPages || [],
             roleName: data.roleName || 'unknown'
+          }
+
+          logs.push(log)
+          userSet.add(log.userId)
+          actionSet.add(log.action)
+        })
+
+        // Also include real job audit events
+        const jobAuditSnapshot = await getDocs(query(collection(db, 'job-audit-logs')))
+        jobAuditSnapshot.forEach((jobLogDoc) => {
+          const data = jobLogDoc.data()
+          let createdAtIso = new Date().toISOString()
+          let timestamp = new Date().toLocaleString()
+
+          if (data.createdAt) {
+            if (typeof data.createdAt === 'string') {
+              createdAtIso = data.createdAt
+              timestamp = new Date(data.createdAt).toLocaleString()
+            } else if (data.createdAt.toDate) {
+              const d = data.createdAt.toDate()
+              createdAtIso = d.toISOString()
+              timestamp = d.toLocaleString()
+            }
+          }
+
+          const action = String(data.action || 'JOB_UPDATED').toUpperCase()
+          const log: AuditLog = {
+            id: `job-${jobLogDoc.id}`,
+            userId: data.actorId || 'unknown',
+            userEmail: data.actorId || '',
+            userName: data.actorName || 'Unknown User',
+            action,
+            resource: `Job ${data.jobId || ''}`.trim(),
+            timestamp,
+            createdAt: createdAtIso,
+            ipAddress: 'N/A',
+            riskScore: action.includes('OVERRIDE') ? 65 : 35,
+            anomalyDetected: action.includes('OVERRIDE'),
+            changeType: determineChangeType(action),
+            before: 'N/A',
+            after: data.summary || 'Job updated',
+            allowedPages: [],
+            roleName: 'operations'
           }
 
           logs.push(log)
@@ -170,8 +304,8 @@ export default function AuditLogs() {
               setDateFrom(minDate.toISOString().split('T')[0])
               setDateTo(maxDate.toISOString().split('T')[0])
             }
-          } catch (dateError) {
-            console.log('Error setting date range:', dateError)
+          } catch {
+            console.log('Error setting date range')
           }
         }
 
@@ -185,90 +319,6 @@ export default function AuditLogs() {
     // Immediate fetch
     fetchData()
   }, [])
-
-  // Helper functions for generating audit log data from user data
-  const generateActionFromUserData = (data: any): string => {
-    if (!data) return 'UNKNOWN_ACTION'
-    
-    const actions = [
-      'USER_CREATED',
-      'ROLE_ASSIGNED',
-      'PERMISSION_UPDATED',
-      'PROFILE_UPDATED',
-      'LOGIN_ATTEMPT',
-      'PAGES_ACCESS_CHANGED',
-      'DATA_ACCESSED'
-    ]
-    
-    if (data.roleName === 'admin') return 'ROLE_ASSIGNED'
-    if (data.roleName === 'customer') return 'USER_CREATED'
-    if (data.allowedPages && data.allowedPages.length > 0) return 'PAGES_ACCESS_CHANGED'
-    
-    return actions[Math.floor(Math.random() * actions.length)]
-  }
-
-  const determineResource = (data: any): string => {
-    if (!data) return 'Unknown'
-    
-    if (data.roleName) return 'User Management'
-    if (data.allowedPages && data.allowedPages.length > 0) return 'Permissions'
-    return 'System'
-  }
-
-  const calculateRiskScore = (data: any): number => {
-    if (!data) return 0
-    
-    let score = 0
-    
-    // Admin role = higher risk
-    if (data.roleName === 'admin') score += 30
-    
-    // More allowed pages = higher risk
-    if (data.allowedPages && Array.isArray(data.allowedPages)) {
-      score += Math.min(data.allowedPages.length * 5, 40)
-    }
-    
-    // Add some randomness for demo
-    score += Math.floor(Math.random() * 30)
-    
-    return Math.min(score, 100)
-  }
-
-  const determineChangeType = (action: string): string => {
-    if (action.includes('CREATED') || action.includes('ASSIGNED')) return 'create'
-    if (action.includes('UPDATED') || action.includes('CHANGED')) return 'update'
-    if (action.includes('LOGIN') || action.includes('ACCESSED')) return 'access'
-    return 'security'
-  }
-
-  const getBeforeState = (data: any): string => {
-    if (!data) return 'N/A'
-    
-    if (data.roleName) return `Role: ${data.roleName === 'admin' ? 'customer' : 'none'}`
-    if (data.allowedPages) return 'No page access'
-    return 'N/A'
-  }
-
-  const getAfterState = (data: any): string => {
-    if (!data) return 'N/A'
-    
-    if (data.roleName) return `Role assigned: ${data.roleName}`
-    if (data.allowedPages && Array.isArray(data.allowedPages)) {
-      return `Pages granted: ${data.allowedPages.slice(0, 3).join(', ')}${data.allowedPages.length > 3 ? '...' : ''}`
-    }
-    return `User: ${data.email || data.name || 'Unknown'}`
-  }
-
-  const generateRandomIP = (): string => {
-    return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
-  }
-
-  const getRiskLevel = (score: number) => {
-    if (score <= 5) return 'Low'
-    if (score <= 25) return 'Medium'
-    if (score <= 50) return 'High'
-    return 'Critical'
-  }
 
   const filteredLogs = useMemo(() => {
     return auditLogs.filter(log => {
@@ -293,7 +343,7 @@ export default function AuditLogs() {
           toDate.setDate(toDate.getDate() + 1) // Include end date
           
           matchesDate = logDate >= fromDate && logDate <= toDate
-        } catch (dateError) {
+        } catch {
           matchesDate = true // If date parsing fails, include the log
         }
       }
@@ -368,14 +418,14 @@ export default function AuditLogs() {
                 second: '2-digit'
               })
             }
-          } catch (error) {
+          } catch {
             timestamp = new Date().toLocaleString()
           }
         }
 
-        const action = generateActionFromUserData(data)
-        const resource = determineResource(data)
-        const riskScore = calculateRiskScore(data)
+        const action = generateActionFromUserData(data as GenericData)
+        const resource = determineResource(data as GenericData)
+        const riskScore = calculateRiskScore(data as GenericData)
         const anomalyDetected = riskScore > 50
         
         const log: AuditLog = {
@@ -391,10 +441,52 @@ export default function AuditLogs() {
           riskScore: riskScore,
           anomalyDetected: anomalyDetected,
           changeType: determineChangeType(action),
-          before: getBeforeState(data),
-          after: getAfterState(data),
+          before: getBeforeState(data as GenericData),
+          after: getAfterState(data as GenericData),
           allowedPages: data.allowedPages || [],
           roleName: data.roleName || 'unknown'
+        }
+
+        logs.push(log)
+        userSet.add(log.userId)
+        actionSet.add(log.action)
+      })
+
+      const jobAuditSnapshot = await getDocs(query(collection(db, 'job-audit-logs')))
+      jobAuditSnapshot.forEach((jobLogDoc) => {
+        const data = jobLogDoc.data()
+        let createdAtIso = new Date().toISOString()
+        let timestamp = new Date().toLocaleString()
+
+        if (data.createdAt) {
+          if (typeof data.createdAt === 'string') {
+            createdAtIso = data.createdAt
+            timestamp = new Date(data.createdAt).toLocaleString()
+          } else if (data.createdAt.toDate) {
+            const d = data.createdAt.toDate()
+            createdAtIso = d.toISOString()
+            timestamp = d.toLocaleString()
+          }
+        }
+
+        const action = String(data.action || 'JOB_UPDATED').toUpperCase()
+        const log: AuditLog = {
+          id: `job-${jobLogDoc.id}`,
+          userId: data.actorId || 'unknown',
+          userEmail: data.actorId || '',
+          userName: data.actorName || 'Unknown User',
+          action,
+          resource: `Job ${data.jobId || ''}`.trim(),
+          timestamp,
+          createdAt: createdAtIso,
+          ipAddress: 'N/A',
+          riskScore: action.includes('OVERRIDE') ? 65 : 35,
+          anomalyDetected: action.includes('OVERRIDE'),
+          changeType: determineChangeType(action),
+          before: 'N/A',
+          after: data.summary || 'Job updated',
+          allowedPages: [],
+          roleName: 'operations'
         }
 
         logs.push(log)
@@ -432,7 +524,7 @@ export default function AuditLogs() {
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-black">Audit Logs</h1>
             <p className="text-gray-600 mt-3 text-lg font-medium max-w-xl">
-              Real-time activity monitoring from Firebase users-role collection
+              Real-time activity monitoring from Firebase users-role and job-audit-logs collections
             </p>
           </div>
           <div className="flex gap-3">
@@ -458,7 +550,7 @@ export default function AuditLogs() {
 
       {/* Security Alert Banner - Only show if there are anomalies */}
       {(anomalyCount > 0 || criticalCount > 0) && (
-        <div className="relative overflow-hidden bg-red-50 border border-red-200 rounded-[24px] p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="relative overflow-hidden bg-red-50 border border-red-200 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center border border-red-200 animate-pulse">
               <ShieldAlert className="h-6 w-6 text-red-600" />
@@ -526,7 +618,7 @@ export default function AuditLogs() {
           {/* Logs Timeline */}
           <div className="space-y-4">
             {filteredLogs.length > 0 ? (
-              filteredLogs.map((log, idx) => (
+              filteredLogs.map((log) => (
                 <div 
                   key={log.id} 
                   onClick={() => setSelectedLog(log)}

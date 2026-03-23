@@ -29,44 +29,6 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  name: "AC Duct Cleaning Dubai",
-  alternateName: ["Air Duct Cleaning UAE", "HVAC Cleaning Dubai", "AC Cleaning Dubai"],
-  description:
-    "Professional AC and air duct cleaning service in Dubai. We remove dust, mould, allergens and bacteria from your air conditioning ducts to improve indoor air quality and system efficiency. Dubai Municipality approved.",
-  url: PAGE_URL,
-  serviceType: "AC Duct Cleaning",
-  areaServed: [{ "@type": "City", name: "Dubai" }, { "@type": "State", name: "United Arab Emirates" }],
-  provider: {
-    "@type": "LocalBusiness",
-    "@id": "https://www.homeworkuae.com/#business",
-    name: "Homework UAE",
-    url: "https://www.homeworkuae.com",
-  },
-  offers: {
-    "@type": "Offer",
-    priceCurrency: "AED",
-    availability: "https://schema.org/InStock",
-    url: PAGE_URL,
-  },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    bestRating: "5",
-    reviewCount: "412",
-  },
-};
-
 export default function ACDuctCleaningLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

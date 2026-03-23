@@ -2,10 +2,10 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut,
-  updateProfile,
-  User
+  updateProfile
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
+import { FirebaseError } from 'firebase/app'
 import { auth, db } from '@/lib/firebase'
 
 const ADMIN_PAGE_ALIASES: Record<string, string> = {
@@ -75,7 +75,6 @@ export interface UserRole {
 }
 
 export interface SessionData {
-  name(arg0: string, name: any): unknown
   roleName: string
   user: {
     uid: string
@@ -114,7 +113,18 @@ export async function createUserWithRole(
     // Firestore mein user-role collection mein store karna
     const userRoleRef = doc(db, 'users-role', userCredential.user.uid)
     
-    const userData: any = {
+    const userData: {
+      email: string
+      name: string
+      allowedPages: string[]
+      portal: 'admin' | 'employee'
+      roleName: string
+      allowedActions: string[]
+      createdAt: string
+      updatedAt: string
+      employeeId?: string
+      employeeName?: string
+    } = {
       email,
       name,
       allowedPages,
@@ -135,9 +145,10 @@ export async function createUserWithRole(
     
     console.log('✅ User created successfully:', userCredential.user.uid)
     return { success: true, userId: userCredential.user.uid }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const firebaseError = error as FirebaseError
     console.error('❌ Error creating user:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: firebaseError.message }
   }
 }
 
@@ -212,9 +223,10 @@ export async function updateUserRole(uid: string, data: Partial<UserRole>) {
       updatedAt: new Date().toISOString()
     })
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const firebaseError = error as FirebaseError
     console.error('Error updating user role:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: firebaseError.message }
   }
 }
 
@@ -223,9 +235,10 @@ export async function deleteUserRole(uid: string) {
     const userRoleRef = doc(db, 'users-role', uid)
     await setDoc(userRoleRef, { deleted: true })
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const firebaseError = error as FirebaseError
     console.error('Error deleting user role:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: firebaseError.message }
   }
 }
 
@@ -276,10 +289,7 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
       employeeId: userRole.employeeId,
       employeeName: userRole.employeeName,
       loggedInAt: new Date().toISOString(),
-      roleName: '',
-      name: function (arg0: string, name: any): unknown {
-        throw new Error('Function not implemented.')
-      }
+      roleName: userRole.roleName || userRole.portal
     }
     
     // Determine redirect path based on portal
@@ -290,24 +300,25 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
       session,
       redirectTo
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const firebaseError = error as FirebaseError
     console.error('❌ Login error:', error)
     
     let message = 'Login failed. Please check your credentials.'
-    if (error.code === 'auth/user-not-found') {
+    if (firebaseError.code === 'auth/user-not-found') {
       message = 'User not found.'
-    } else if (error.code === 'auth/wrong-password') {
+    } else if (firebaseError.code === 'auth/wrong-password') {
       message = 'Incorrect password.'
-    } else if (error.code === 'auth/invalid-email') {
+    } else if (firebaseError.code === 'auth/invalid-email') {
       message = 'Invalid email format.'
-    } else if (error.code === 'auth/too-many-requests') {
+    } else if (firebaseError.code === 'auth/too-many-requests') {
       message = 'Too many failed attempts. Please try again later.'
     }
     
     return { 
       success: false, 
       message, 
-      error: error.code,
+      error: firebaseError.code,
       redirectTo: null
     }
   }
@@ -341,9 +352,10 @@ export async function logout() {
     await signOut(auth)
     clearSession()
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const firebaseError = error as FirebaseError
     console.error('Logout error:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: firebaseError.message }
   }
 }
 

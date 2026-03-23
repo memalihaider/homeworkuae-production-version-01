@@ -134,7 +134,7 @@ export function ManagerSidebar({ session, open, onOpenChange }: ManagerSidebarPr
               className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-700/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-10 h-10 bg-linear-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                   {getUserInitials()}
                 </div>
                 <div className="text-left">

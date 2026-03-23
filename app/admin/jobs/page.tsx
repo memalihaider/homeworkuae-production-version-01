@@ -21,17 +21,13 @@ import {
   ShoppingCart,
   Edit,
   Zap,
-  AlertTriangle,
-  Check,
-  TrendingUp,
   UserPlus,
-  ExternalLink,
   ChevronDown,
   ListTodo,
   FileText
 } from 'lucide-react'
 import Link from 'next/link'
-import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, where, getDoc } from 'firebase/firestore'
+import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, where, getDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 
@@ -62,7 +58,7 @@ interface Job {
   createdAt: string
   updatedAt: string
   completedAt?: string
-  executionLogs: any[]
+  executionLogs: Array<Record<string, unknown>>
   assignedTo: string[]
   assignedEmployees: { id: string; name: string; email: string }[]
   jobCreatedBy: string // 👈 NEW FIELD ADDED
@@ -77,6 +73,15 @@ interface Job {
   tasks?: JobTask[]
   listingDurationDays?: number
   listingExpiresAt?: string
+  quotationRequired?: boolean
+  quotationStatus?: 'Not Required' | 'Pending' | 'Approved' | 'Rejected'
+  surveyRequired?: boolean
+  surveyStatus?: 'Not Required' | 'Pending' | 'Completed'
+  paymentStatus?: 'Pending' | 'Paid' | 'Partially Paid' | 'Collect After Job'
+  paymentMethod?: 'Payment Link' | 'Bank Transfer' | 'Cash' | 'Card' | 'N/A'
+  paymentReference?: string
+  paymentLinkGeneratedBy?: string
+  availabilityOverride?: boolean
 }
 
 interface JobService {
@@ -190,6 +195,15 @@ interface NewJobForm {
   selectedPermits: string[]
   selectedServices: string[]
   listingDurationDays: number
+  quotationRequired: boolean
+  quotationStatus: 'Not Required' | 'Pending' | 'Approved' | 'Rejected'
+  surveyRequired: boolean
+  surveyStatus: 'Not Required' | 'Pending' | 'Completed'
+  paymentStatus: 'Pending' | 'Paid' | 'Partially Paid' | 'Collect After Job'
+  paymentMethod: 'Payment Link' | 'Bank Transfer' | 'Cash' | 'Card' | 'N/A'
+  paymentReference: string
+  paymentLinkGeneratedBy: string
+  allowValidationOverride: boolean
 }
 
 const JOB_TAX_RATE = 0.05
@@ -215,6 +229,9 @@ export default function JobsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showTasksSection, setShowTasksSection] = useState(false)
+  const [totalTeamCapacity, setTotalTeamCapacity] = useState(10)
+  const [travelBufferMinutes, setTravelBufferMinutes] = useState(30)
+  const [lunchBufferMinutes, setLunchBufferMinutes] = useState(30)
 
   const [newJobForm, setNewJobForm] = useState<NewJobForm>({
     title: '',
@@ -242,7 +259,16 @@ export default function JobsPage() {
     selectedEquipment: [],
     selectedPermits: [],
     selectedServices: [],
-    listingDurationDays: 0
+    listingDurationDays: 0,
+    quotationRequired: false,
+    quotationStatus: 'Not Required',
+    surveyRequired: false,
+    surveyStatus: 'Not Required',
+    paymentStatus: 'Pending',
+    paymentMethod: 'N/A',
+    paymentReference: '',
+    paymentLinkGeneratedBy: '',
+    allowValidationOverride: false
   })
 
   // Fetch jobs, employees, clients, equipment, permits and services from Firebase
@@ -296,7 +322,16 @@ export default function JobsPage() {
             overtimeReason: data.overtimeReason || '',
             overtimeApproved: data.overtimeApproved || false,
             listingDurationDays: data.listingDurationDays || 0,
-            listingExpiresAt: data.listingExpiresAt || ''
+            listingExpiresAt: data.listingExpiresAt || '',
+            quotationRequired: data.quotationRequired || false,
+            quotationStatus: data.quotationStatus || 'Not Required',
+            surveyRequired: data.surveyRequired || false,
+            surveyStatus: data.surveyStatus || 'Not Required',
+            paymentStatus: data.paymentStatus || 'Pending',
+            paymentMethod: data.paymentMethod || 'N/A',
+            paymentReference: data.paymentReference || '',
+            paymentLinkGeneratedBy: data.paymentLinkGeneratedBy || '',
+            availabilityOverride: data.availabilityOverride || false
           } as Job
         })
 
@@ -308,7 +343,7 @@ export default function JobsPage() {
         for (const expiredJob of expiredJobs) {
           try {
             await updateDoc(doc(db, 'jobs', expiredJob.id), { status: 'Expired', updatedAt: new Date().toISOString() })
-            expiredJob.status = 'Expired' as any
+            expiredJob.status = 'Expired'
           } catch (e) {
             console.error('Failed to expire job', expiredJob.id, e)
           }
@@ -474,7 +509,7 @@ export default function JobsPage() {
           .map(p => p.id)
 
         const selectedServices = services
-          .filter(svc => jobData.services?.some((s: any) => s.name === svc.name))
+          .filter(svc => jobData.services?.some((s: JobService) => s.name === svc.name))
           .map(svc => svc.id)
 
         setNewJobForm({
@@ -496,14 +531,23 @@ export default function JobsPage() {
           tags: jobData.tags?.join(', ') || '',
           specialInstructions: jobData.specialInstructions || '',
           recurring: jobData.recurring || false,
-          selectedEmployees: jobData.assignedEmployees?.map((emp: any) => emp.id) || [],
+          selectedEmployees: jobData.assignedEmployees?.map((emp: { id: string }) => emp.id) || [],
           jobCreatedBy: jobData.jobCreatedBy || '', // 👈 NEW FIELD ADDED TO EDIT
           services: jobData.services || [],
           tasks: jobData.tasks || [],
           selectedEquipment: selectedEquipment,
           selectedPermits: selectedPermits,
           selectedServices: selectedServices,
-          listingDurationDays: jobData.listingDurationDays || 0
+          listingDurationDays: jobData.listingDurationDays || 0,
+          quotationRequired: jobData.quotationRequired || false,
+          quotationStatus: jobData.quotationStatus || 'Not Required',
+          surveyRequired: jobData.surveyRequired || false,
+          surveyStatus: jobData.surveyStatus || 'Not Required',
+          paymentStatus: jobData.paymentStatus || 'Pending',
+          paymentMethod: jobData.paymentMethod || 'N/A',
+          paymentReference: jobData.paymentReference || '',
+          paymentLinkGeneratedBy: jobData.paymentLinkGeneratedBy || '',
+          allowValidationOverride: false
         })
         
         setEditingJobId(jobId)
@@ -539,6 +583,209 @@ export default function JobsPage() {
     }
   }
 
+  const toMinutes = (value?: string) => {
+    if (!value || !value.includes(':')) return null
+    const [hours, minutes] = value.split(':').map(Number)
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null
+    return (hours * 60) + minutes
+  }
+
+  const toTimeLabel = (minutes: number) => {
+    const safe = Math.max(0, Math.min(minutes, 23 * 60 + 59))
+    const hrs = Math.floor(safe / 60)
+    const mins = safe % 60
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
+  }
+
+  const doesOverlap = (startA: number, endA: number, startB: number, endB: number) => {
+    return startA < endB && startB < endA
+  }
+
+  const schedulingInsights = useMemo(() => {
+    if (!newJobForm.scheduledDate) {
+      return {
+        hasSchedule: false,
+        isValidTimeRange: true,
+        availableAtRequested: totalTeamCapacity,
+        isRequestedSlotAvailable: true,
+        nextAvailableTime: null as string | null,
+        blockingJobs: [] as string[]
+      }
+    }
+
+    const requestedStart = toMinutes(newJobForm.scheduledTime)
+    const requestedEnd = toMinutes(newJobForm.endTime)
+    const fallbackEnd = requestedStart != null ? requestedStart + 120 : null
+    const slotStart = requestedStart
+    const slotEnd = requestedEnd ?? fallbackEnd
+    const bufferMinutes = Math.max(0, travelBufferMinutes) + Math.max(0, lunchBufferMinutes)
+    const hasSchedule = slotStart != null && slotEnd != null
+
+    if (!hasSchedule) {
+      return {
+        hasSchedule: false,
+        isValidTimeRange: true,
+        availableAtRequested: totalTeamCapacity,
+        isRequestedSlotAvailable: true,
+        nextAvailableTime: null as string | null,
+        blockingJobs: [] as string[]
+      }
+    }
+
+    const activeJobs = jobs.filter((job) => {
+      if (editingJobId && job.id === editingJobId) return false
+      if (job.scheduledDate !== newJobForm.scheduledDate) return false
+      if (!job.scheduledTime || !job.endTime) return false
+      return ['Pending', 'Scheduled', 'In Progress'].includes(job.status)
+    })
+
+    const requestedStartBooked = activeJobs.reduce((sum, job) => {
+      const jobStart = toMinutes(job.scheduledTime)
+      const jobEnd = toMinutes(job.endTime)
+      if (jobStart == null || jobEnd == null) return sum
+      const adjustedEnd = jobEnd + bufferMinutes
+      if (requestedStart != null && requestedStart >= jobStart && requestedStart < adjustedEnd) {
+        return sum + Math.max(1, Number(job.teamRequired) || 1)
+      }
+      return sum
+    }, 0)
+
+    const availableAtRequested = Math.max(0, totalTeamCapacity - requestedStartBooked)
+
+    const blockingJobs = activeJobs
+      .filter((job) => {
+        const jobStart = toMinutes(job.scheduledTime)
+        const jobEnd = toMinutes(job.endTime)
+        if (jobStart == null || jobEnd == null || slotStart == null || slotEnd == null) return false
+        const adjustedEnd = jobEnd + bufferMinutes
+        return doesOverlap(slotStart, slotEnd, jobStart, adjustedEnd)
+      })
+      .map((job) => `${job.title} (${job.scheduledTime}-${job.endTime})`)
+
+    const requiredTeam = Math.max(1, Number(newJobForm.teamRequired) || 1)
+    const isValidTimeRange = slotEnd > slotStart
+
+    const isRequestedSlotAvailable =
+      isValidTimeRange &&
+      availableAtRequested >= requiredTeam &&
+      activeJobs.every((job) => {
+        const jobStart = toMinutes(job.scheduledTime)
+        const jobEnd = toMinutes(job.endTime)
+        if (jobStart == null || jobEnd == null || slotStart == null || slotEnd == null) return true
+        if (!doesOverlap(slotStart, slotEnd, jobStart, jobEnd + bufferMinutes)) return true
+
+        // Check net manpower during overlap windows.
+        const bookedInOverlap = activeJobs.reduce((sum, innerJob) => {
+          const innerStart = toMinutes(innerJob.scheduledTime)
+          const innerEnd = toMinutes(innerJob.endTime)
+          if (innerStart == null || innerEnd == null) return sum
+          if (!doesOverlap(slotStart, slotEnd, innerStart, innerEnd + bufferMinutes)) return sum
+          return sum + Math.max(1, Number(innerJob.teamRequired) || 1)
+        }, 0)
+
+        return bookedInOverlap + requiredTeam <= totalTeamCapacity
+      })
+
+    let nextAvailableTime: string | null = null
+    if (!isRequestedSlotAvailable && slotStart != null && slotEnd != null) {
+      const duration = slotEnd - slotStart
+      const dayEnd = toMinutes('18:00') ?? 1080
+      for (let start = slotStart; start <= dayEnd - duration; start += 15) {
+        const candidateEnd = start + duration
+        const canFit = activeJobs.reduce((sum, job) => {
+          const jobStart = toMinutes(job.scheduledTime)
+          const jobEnd = toMinutes(job.endTime)
+          if (jobStart == null || jobEnd == null) return sum
+          if (!doesOverlap(start, candidateEnd, jobStart, jobEnd + bufferMinutes)) return sum
+          return sum + Math.max(1, Number(job.teamRequired) || 1)
+        }, 0) + requiredTeam <= totalTeamCapacity
+
+        if (canFit) {
+          nextAvailableTime = toTimeLabel(start)
+          break
+        }
+      }
+    }
+
+    return {
+      hasSchedule,
+      isValidTimeRange,
+      availableAtRequested,
+      isRequestedSlotAvailable,
+      nextAvailableTime,
+      blockingJobs
+    }
+  }, [
+    newJobForm.scheduledDate,
+    newJobForm.scheduledTime,
+    newJobForm.endTime,
+    newJobForm.teamRequired,
+    totalTeamCapacity,
+    travelBufferMinutes,
+    lunchBufferMinutes,
+    jobs,
+    editingJobId
+  ])
+
+  // Helper function to get creator name
+  const getCreatorName = useCallback((creatorId: string) => {
+    const creator = employees.find(e => e.id === creatorId)
+    return creator ? creator.name : 'Unknown'
+  }, [employees])
+
+  const createJobAuditLog = useCallback(async (action: string, jobId: string, summary: string) => {
+    try {
+      await addDoc(collection(db, 'job-audit-logs'), {
+        jobId,
+        action,
+        summary,
+        actorId: newJobForm.jobCreatedBy || 'unknown',
+        actorName: getCreatorName(newJobForm.jobCreatedBy),
+        createdAt: serverTimestamp()
+      })
+    } catch (error) {
+      console.error('Failed to create job audit log:', error)
+    }
+  }, [newJobForm.jobCreatedBy, getCreatorName])
+
+  const createOperationsNotification = useCallback(async (jobId: string, message: string) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        type: 'job_scheduled',
+        audience: 'operations',
+        jobId,
+        message,
+        status: 'unread',
+        createdAt: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Failed to create operations notification:', error)
+    }
+  }, [])
+
+  const createAssignmentNotifications = useCallback(async (jobId: string, jobTitle: string, assigned: { id: string; name: string; email: string }[]) => {
+    if (assigned.length === 0) return
+    try {
+      await Promise.all(
+        assigned.map((employee) =>
+          addDoc(collection(db, 'notifications'), {
+            type: 'job_assignment',
+            audience: 'employee',
+            employeeId: employee.id,
+            employeeName: employee.name,
+            employeeEmail: employee.email,
+            jobId,
+            message: `You have been assigned to job: ${jobTitle}`,
+            status: 'unread',
+            createdAt: new Date().toISOString()
+          })
+        )
+      )
+    } catch (error) {
+      console.error('Failed to create assignment notifications:', error)
+    }
+  }, [])
+
   const handleSaveJob = useCallback(async () => {
     if (!newJobForm.title || !newJobForm.client || !newJobForm.location) {
       alert('Please fill in all required fields: Title, Client, and Location')
@@ -548,6 +795,36 @@ export default function JobsPage() {
     if (!newJobForm.jobCreatedBy) {
       alert('Please select the member who is creating this job')
       return
+    }
+
+    if (newJobForm.quotationRequired && newJobForm.quotationStatus !== 'Approved' && !newJobForm.allowValidationOverride) {
+      alert('Quotation must be approved before scheduling this job. Enable override to proceed anyway.')
+      return
+    }
+
+    if (newJobForm.surveyRequired && newJobForm.surveyStatus !== 'Completed' && !newJobForm.allowValidationOverride) {
+      alert('Survey must be completed before scheduling this job. Enable override to proceed anyway.')
+      return
+    }
+
+    if (newJobForm.paymentStatus === 'Pending' && !newJobForm.allowValidationOverride) {
+      alert('Payment is pending. Scheduling is blocked unless override is enabled.')
+      return
+    }
+
+    if (newJobForm.scheduledDate && (newJobForm.scheduledTime || newJobForm.endTime)) {
+      if (!schedulingInsights.isValidTimeRange) {
+        alert('End time must be greater than start time.')
+        return
+      }
+
+      if (!schedulingInsights.isRequestedSlotAvailable && !newJobForm.allowValidationOverride) {
+        const nextSlotText = schedulingInsights.nextAvailableTime
+          ? `Next available slot is ${schedulingInsights.nextAvailableTime}.`
+          : 'No slot is available in current working hours.'
+        alert(`Insufficient manpower for this slot. ${nextSlotText} You can enable override to proceed anyway.`)
+        return
+      }
     }
 
     try {
@@ -603,6 +880,15 @@ export default function JobsPage() {
         assignedTo: selectedEmployeesDetails.map(emp => emp.name),
         assignedEmployees: selectedEmployeesDetails,
         jobCreatedBy: newJobForm.jobCreatedBy, // 👈 NEW FIELD SAVED TO FIREBASE
+        quotationRequired: newJobForm.quotationRequired,
+        quotationStatus: newJobForm.quotationRequired ? newJobForm.quotationStatus : 'Not Required',
+        surveyRequired: newJobForm.surveyRequired,
+        surveyStatus: newJobForm.surveyRequired ? newJobForm.surveyStatus : 'Not Required',
+        paymentStatus: newJobForm.paymentStatus,
+        paymentMethod: newJobForm.paymentMethod,
+        paymentReference: newJobForm.paymentReference,
+        paymentLinkGeneratedBy: newJobForm.paymentLinkGeneratedBy,
+        availabilityOverride: newJobForm.allowValidationOverride,
         actualCost: 0,
         reminderEnabled: false,
         listingDurationDays: newJobForm.listingDurationDays || 0,
@@ -614,6 +900,30 @@ export default function JobsPage() {
       if (editingJobId) {
         const jobRef = doc(db, 'jobs', editingJobId)
         await updateDoc(jobRef, jobData)
+        await createJobAuditLog('updated', editingJobId, 'Job updated with schedule/payment/team details')
+        if (newJobForm.allowValidationOverride) {
+          await createJobAuditLog('override_used', editingJobId, 'Validation override used during job update')
+        }
+        await createAssignmentNotifications(editingJobId, newJobForm.title, selectedEmployeesDetails)
+
+        if (jobData.scheduledDate && jobData.scheduledTime) {
+          await createOperationsNotification(editingJobId, `Job scheduled: ${newJobForm.title} on ${jobData.scheduledDate} at ${jobData.scheduledTime}`)
+        }
+
+        if (jobData.recurring && jobData.scheduledDate) {
+          await addDoc(collection(db, 'reminders'), {
+            type: 'weekly_payment_followup',
+            jobId: editingJobId,
+            customerName: newJobForm.client,
+            triggerDate: jobData.scheduledDate,
+            repeat: 'weekly',
+            assignedTo: newJobForm.jobCreatedBy,
+            message: `Collect weekly advance payment for ${newJobForm.client}`,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+        }
         
         setJobs(jobs.map(j =>
           j.id === editingJobId
@@ -624,7 +934,7 @@ export default function JobsPage() {
       } else {
         const newJobData = {
           ...jobData,
-          status: 'Pending',
+          status: jobData.scheduledDate && jobData.scheduledTime ? 'Scheduled' : 'Pending',
           createdAt: new Date().toISOString(),
           completedAt: '',
           executionLogs: [],
@@ -636,6 +946,30 @@ export default function JobsPage() {
         }
 
         const docRef = await addDoc(collection(db, 'jobs'), newJobData)
+        await createJobAuditLog('created', docRef.id, 'Job created with schedule/payment/team details')
+        if (newJobForm.allowValidationOverride) {
+          await createJobAuditLog('override_used', docRef.id, 'Validation override used during job creation')
+        }
+        await createAssignmentNotifications(docRef.id, newJobForm.title, selectedEmployeesDetails)
+
+        if (newJobData.status === 'Scheduled') {
+          await createOperationsNotification(docRef.id, `Job scheduled: ${newJobForm.title} on ${newJobData.scheduledDate} at ${newJobData.scheduledTime}`)
+        }
+
+        if (newJobData.recurring && newJobData.scheduledDate) {
+          await addDoc(collection(db, 'reminders'), {
+            type: 'weekly_payment_followup',
+            jobId: docRef.id,
+            customerName: newJobForm.client,
+            triggerDate: newJobData.scheduledDate,
+            repeat: 'weekly',
+            assignedTo: newJobForm.jobCreatedBy,
+            message: `Collect weekly advance payment for ${newJobForm.client}`,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+        }
         
         const newJob: Job = {
           id: docRef.id,
@@ -654,7 +988,18 @@ export default function JobsPage() {
     } finally {
       setLoading(false)
     }
-  }, [newJobForm, jobs, editingJobId, employees, equipment, permits])
+  }, [
+    newJobForm,
+    jobs,
+    editingJobId,
+    employees,
+    equipment,
+    permits,
+    schedulingInsights,
+    createJobAuditLog,
+    createOperationsNotification,
+    createAssignmentNotifications
+  ])
 
   const stats = useMemo(() => ({
     total: jobs.length,
@@ -737,7 +1082,16 @@ export default function JobsPage() {
       selectedEquipment: [],
       selectedPermits: [],
       selectedServices: [],
-      listingDurationDays: 0
+      listingDurationDays: 0,
+      quotationRequired: false,
+      quotationStatus: 'Not Required',
+      surveyRequired: false,
+      surveyStatus: 'Not Required',
+      paymentStatus: 'Pending',
+      paymentMethod: 'N/A',
+      paymentReference: '',
+      paymentLinkGeneratedBy: '',
+      allowValidationOverride: false
     })
     setShowNewJobModal(true)
   }
@@ -824,7 +1178,7 @@ export default function JobsPage() {
     }))
   }
 
-  const updateTask = (index: number, field: keyof JobTask, value: any) => {
+  const updateTask = (index: number, field: keyof JobTask, value: JobTask[keyof JobTask]) => {
     const updatedTasks = [...(newJobForm.tasks || [])]
     updatedTasks[index] = {
       ...updatedTasks[index],
@@ -883,11 +1237,33 @@ export default function JobsPage() {
 
   const handleUpdateJobStatus = useCallback(async (jobId: string, newStatus: Job['status']) => {
     try {
+      const selectedJob = jobs.find(j => j.id === jobId)
+      if (selectedJob && newStatus === 'Scheduled') {
+        if (selectedJob.quotationRequired && selectedJob.quotationStatus !== 'Approved') {
+          alert('Cannot schedule: quotation is not approved.')
+          return
+        }
+        if (selectedJob.surveyRequired && selectedJob.surveyStatus !== 'Completed') {
+          alert('Cannot schedule: survey is not completed.')
+          return
+        }
+        if (selectedJob.paymentStatus === 'Pending') {
+          alert('Cannot schedule: payment is pending.')
+          return
+        }
+      }
+
       const jobRef = doc(db, 'jobs', jobId)
       await updateDoc(jobRef, {
         status: newStatus,
         updatedAt: new Date().toISOString()
       })
+
+      await createJobAuditLog('status_updated', jobId, `Job status changed to ${newStatus}`)
+
+      if (newStatus === 'Scheduled') {
+        await createOperationsNotification(jobId, `Job moved to Scheduled status.`)
+      }
 
       setJobs(jobs.map(j =>
         j.id === jobId
@@ -899,7 +1275,7 @@ export default function JobsPage() {
       console.error('Error updating job status:', error)
       alert('Error updating job status')
     }
-  }, [jobs])
+  }, [jobs, createJobAuditLog, createOperationsNotification])
 
   const handleStartExecution = (job: Job) => {
     setSelectedJobForExecution(job)
@@ -983,12 +1359,6 @@ export default function JobsPage() {
       const svc = services.find(s => s.id === svcId)
       return svc ? svc.name : ''
     }).filter(name => name)
-  }
-
-  // Helper function to get creator name
-  const getCreatorName = (creatorId: string) => {
-    const creator = employees.find(e => e.id === creatorId)
-    return creator ? creator.name : 'Unknown'
   }
 
   return (
@@ -1192,7 +1562,7 @@ export default function JobsPage() {
                           <p className="text-xs font-semibold text-gray-600">Assigned Team:</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {job.assignedEmployees.map((employee, idx) => (
+                          {job.assignedEmployees.map((employee) => (
                             <span
                               key={employee.id}
                               className={`text-xs px-2 py-1 rounded-full border font-medium ${
@@ -1577,7 +1947,7 @@ export default function JobsPage() {
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Priority *</label>
                     <select
                       value={newJobForm.priority}
-                      onChange={(e) => setNewJobForm({...newJobForm, priority: e.target.value as any})}
+                      onChange={(e) => setNewJobForm({...newJobForm, priority: e.target.value as NewJobForm['priority']})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                       <option value="Low">Low</option>
@@ -1590,13 +1960,143 @@ export default function JobsPage() {
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Risk Level *</label>
                     <select
                       value={newJobForm.riskLevel}
-                      onChange={(e) => setNewJobForm({...newJobForm, riskLevel: e.target.value as any})}
+                      onChange={(e) => setNewJobForm({...newJobForm, riskLevel: e.target.value as NewJobForm['riskLevel']})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
                       <option value="High">High</option>
                     </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Commercial & Compliance */}
+              <div className="space-y-4 border-b pb-6">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Commercial & Compliance
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={newJobForm.quotationRequired}
+                        onChange={(e) => setNewJobForm({
+                          ...newJobForm,
+                          quotationRequired: e.target.checked,
+                          quotationStatus: e.target.checked ? 'Pending' : 'Not Required'
+                        })}
+                        className="w-4 h-4 rounded"
+                      />
+                      Quotation Required
+                    </label>
+                    <select
+                      value={newJobForm.quotationStatus}
+                      onChange={(e) => setNewJobForm({
+                        ...newJobForm,
+                        quotationStatus: e.target.value as NewJobForm['quotationStatus']
+                      })}
+                      disabled={!newJobForm.quotationRequired}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
+                    >
+                      <option value="Not Required">Not Required</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={newJobForm.surveyRequired}
+                        onChange={(e) => setNewJobForm({
+                          ...newJobForm,
+                          surveyRequired: e.target.checked,
+                          surveyStatus: e.target.checked ? 'Pending' : 'Not Required'
+                        })}
+                        className="w-4 h-4 rounded"
+                      />
+                      Survey Required
+                    </label>
+                    <select
+                      value={newJobForm.surveyStatus}
+                      onChange={(e) => setNewJobForm({
+                        ...newJobForm,
+                        surveyStatus: e.target.value as NewJobForm['surveyStatus']
+                      })}
+                      disabled={!newJobForm.surveyRequired}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
+                    >
+                      <option value="Not Required">Not Required</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Payment Status</label>
+                    <select
+                      value={newJobForm.paymentStatus}
+                      onChange={(e) => setNewJobForm({
+                        ...newJobForm,
+                        paymentStatus: e.target.value as NewJobForm['paymentStatus']
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Partially Paid">Partially Paid</option>
+                      <option value="Collect After Job">Collect After Job</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Payment Method</label>
+                    <select
+                      value={newJobForm.paymentMethod}
+                      onChange={(e) => setNewJobForm({
+                        ...newJobForm,
+                        paymentMethod: e.target.value as NewJobForm['paymentMethod']
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="N/A">N/A</option>
+                      <option value="Payment Link">Payment Link</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Payment Reference (Optional)</label>
+                    <input
+                      type="text"
+                      value={newJobForm.paymentReference}
+                      onChange={(e) => setNewJobForm({ ...newJobForm, paymentReference: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="Txn ID / Ref number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Payment Link Generated By</label>
+                    <input
+                      type="text"
+                      value={newJobForm.paymentLinkGeneratedBy}
+                      onChange={(e) => setNewJobForm({ ...newJobForm, paymentLinkGeneratedBy: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="e.g., Mamta"
+                    />
                   </div>
                 </div>
               </div>
@@ -1616,6 +2116,39 @@ export default function JobsPage() {
                     onChange={(e) => setNewJobForm({...newJobForm, scheduledDate: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Total Team Capacity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={totalTeamCapacity}
+                      onChange={(e) => setTotalTeamCapacity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Travel Buffer (mins)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={travelBufferMinutes}
+                      onChange={(e) => setTravelBufferMinutes(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Lunch Buffer (mins)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={lunchBufferMinutes}
+                      onChange={(e) => setLunchBufferMinutes(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1660,6 +2193,35 @@ export default function JobsPage() {
                     />
                   </div>
                 </div>
+
+                {newJobForm.scheduledDate && newJobForm.scheduledTime && (
+                  <div className={`rounded-lg border p-3 text-sm ${schedulingInsights.isRequestedSlotAvailable ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                    <p className="font-semibold">
+                      Available manpower at selected start time: {schedulingInsights.availableAtRequested} / {totalTeamCapacity}
+                    </p>
+                    {!schedulingInsights.isRequestedSlotAvailable && (
+                      <>
+                        <p className="mt-1">Selected slot cannot fit required manpower ({newJobForm.teamRequired}).</p>
+                        {schedulingInsights.nextAvailableTime && (
+                          <p className="mt-1 font-semibold">Suggested next slot: {schedulingInsights.nextAvailableTime}</p>
+                        )}
+                        {schedulingInsights.blockingJobs.length > 0 && (
+                          <p className="mt-1">Conflicts: {schedulingInsights.blockingJobs.slice(0, 2).join(' | ')}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={newJobForm.allowValidationOverride}
+                    onChange={(e) => setNewJobForm({ ...newJobForm, allowValidationOverride: e.target.checked })}
+                    className="w-4 h-4 rounded"
+                  />
+                  Proceed with override when validation fails (creates audit log)
+                </label>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-1">Listing Duration (days)</label>

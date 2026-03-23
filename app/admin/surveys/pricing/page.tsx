@@ -120,6 +120,36 @@ interface SurveyQuestion {
   required: boolean
 }
 
+interface QuoteFactors {
+  complexity: number
+  accessibility: number
+  urgency: number
+  seasonality: number
+}
+
+interface QuoteItem {
+  id: number
+  clientName: string
+  serviceType: string
+  area: number
+  basePrice: number
+  recommendedPrice: number
+  variance: number
+  riskScore: number
+  approvalStatus: 'Pending' | 'Approved' | 'Rejected'
+  createdDate: string
+  factors: QuoteFactors
+  rejectionReason?: string
+}
+
+const BASE_PRICING_MAP: Record<string, number> = {
+  'Deep Cleaning': 3,
+  'Regular Cleaning': 2,
+  'Medical Facility Sanitization': 4,
+  'Office Cleaning': 2.5,
+  'Carpet Cleaning': 2.8
+}
+
 const surveyQuestions: SurveyQuestion[] = [
   { id: 1, type: 'rating', question: 'How satisfied are you with our overall service?', required: true },
   { id: 2, type: 'rating', question: 'How would you rate the cleanliness of your facility after our service?', required: true },
@@ -131,7 +161,7 @@ const surveyQuestions: SurveyQuestion[] = [
 ]
 
 export default function SurveyReviewAndPricing() {
-  const [quotations, setQuotations] = useState([
+  const [quotations, setQuotations] = useState<QuoteItem[]>([
     {
       id: 1,
       clientName: 'Al Manara Hotel',
@@ -209,7 +239,7 @@ export default function SurveyReviewAndPricing() {
   const [surveys, setSurveys] = useState<CompletedSurvey[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
-  const [selectedQuote, setSelectedQuote] = useState<any>(null)
+  const [selectedQuote, setSelectedQuote] = useState<QuoteItem | null>(null)
   const [selectedSurvey, setSelectedSurvey] = useState<CompletedSurvey | null>(null)
   const [approvalComment, setApprovalComment] = useState('')
   const [reviewNotes, setReviewNotes] = useState('')
@@ -523,7 +553,7 @@ export default function SurveyReviewAndPricing() {
         localStorage.setItem('clientSurveys', JSON.stringify(storedSurveys))
       }
 
-      const enhancedSurveys = storedSurveys.map((survey: any) => ({
+      const enhancedSurveys = (storedSurveys as CompletedSurvey[]).map((survey) => ({
         ...survey,
         status: survey.status || 'completed',
         reviewStatus: survey.reviewStatus || 'pending',
@@ -544,18 +574,9 @@ export default function SurveyReviewAndPricing() {
     return () => clearInterval(interval)
   }, [calculateComplianceScore, calculateRiskLevel])
 
-  // Base pricing by service type
-  const basePricingMap: any = {
-    'Deep Cleaning': 3,
-    'Regular Cleaning': 2,
-    'Medical Facility Sanitization': 4,
-    'Office Cleaning': 2.5,
-    'Carpet Cleaning': 2.8
-  }
-
   // Enhanced AI price recommendation considering survey data
-  const calculateAIPriceRecommendation = useCallback((quote: any) => {
-    const basePerSqm = basePricingMap[quote.serviceType] || 2.5
+  const calculateAIPriceRecommendation = useCallback((quote: QuoteItem) => {
+    const basePerSqm = BASE_PRICING_MAP[quote.serviceType] || 2.5
     const calculatedBase = quote.area * basePerSqm
 
     let multiplier = 1.0
@@ -604,10 +625,10 @@ export default function SurveyReviewAndPricing() {
         reviewStatus: latestSurvey.reviewStatus
       } : null
     }
-  }, [basePricingMap, surveys])
+  }, [surveys])
 
   // Variance detection and approval rules
-  const analyzeVariance = useCallback((quote: any) => {
+  const analyzeVariance = useCallback((quote: QuoteItem) => {
     const { variance } = calculateAIPriceRecommendation(quote)
 
     let rule = 'Standard'
@@ -671,13 +692,13 @@ export default function SurveyReviewAndPricing() {
     return { pricing: pricingStats, surveys: surveyStats }
   }, [quotations, filteredSurveys])
 
-  const handleApproveQuote = useCallback((quote: any) => {
+  const handleApproveQuote = useCallback((quote: QuoteItem) => {
     setQuotations(quotations.map(q => q.id === quote.id ? { ...q, approvalStatus: 'Approved' } : q))
     setSelectedQuote(null)
     alert('Quote approved!')
   }, [quotations])
 
-  const handleRejectQuote = useCallback((quote: any) => {
+  const handleRejectQuote = useCallback((quote: QuoteItem) => {
     if (!approvalComment) {
       alert('Please provide a reason for rejection')
       return
@@ -708,7 +729,7 @@ export default function SurveyReviewAndPricing() {
 
     // Update survey management page data
     const managementSurveys = JSON.parse(localStorage.getItem('surveyAssignments') || '[]')
-    const updatedManagement = managementSurveys.map((s: any) =>
+    const updatedManagement = (managementSurveys as Array<Record<string, unknown>>).map((s) =>
       s.id === surveyId ? { ...s, status: 'reviewed', reviewStatus: 'approved' } : s
     )
     localStorage.setItem('surveyAssignments', JSON.stringify(updatedManagement))
@@ -738,7 +759,7 @@ export default function SurveyReviewAndPricing() {
 
     // Update survey management page data
     const managementSurveys = JSON.parse(localStorage.getItem('surveyAssignments') || '[]')
-    const updatedManagement = managementSurveys.map((s: any) =>
+    const updatedManagement = (managementSurveys as Array<Record<string, unknown>>).map((s) =>
       s.id === surveyId ? { ...s, status: 'reviewed', reviewStatus: 'rejected' } : s
     )
     localStorage.setItem('surveyAssignments', JSON.stringify(updatedManagement))

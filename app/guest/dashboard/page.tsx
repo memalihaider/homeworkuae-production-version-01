@@ -130,7 +130,7 @@ export default function GuestDashboard() {
           {/* Logo */}
           <div className="p-4 border-b border-slate-700">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-linear-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
                 <Eye className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -143,7 +143,7 @@ export default function GuestDashboard() {
           {/* Guest notice */}
           <div className="p-4 border-b border-slate-700 bg-amber-500/5">
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+              <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
               <p className="text-xs text-slate-400">
                 You're browsing as a guest. <Link href="/login" className="text-amber-400 hover:text-amber-300">Sign in</Link> for full access.
               </p>
@@ -252,7 +252,7 @@ export default function GuestDashboard() {
         {/* Dashboard content */}
         <div className="p-4 lg:p-6 space-y-6">
           {/* About Banner */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+          <div className="bg-linear-to-br from-slate-800 to-slate-800/50 border border-slate-700/50 rounded-xl p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-3">About Homeware</h2>
@@ -387,7 +387,7 @@ export default function GuestDashboard() {
           </div>
 
           {/* CTA Banner */}
-          <div className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl p-6 text-center">
+          <div className="bg-linear-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 rounded-xl p-6 text-center">
             <h2 className="text-xl font-bold text-white mb-2">Ready to Get Started?</h2>
             <p className="text-slate-400 mb-4">Sign in or register for full access to our services, quotations, and support.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ManagerSidebar } from '../_components/sidebar';
-import { BarChart3, TrendingUp, Users, Clock, DollarSign, CheckCircle, Menu, X } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, DollarSign, CheckCircle, Menu, X } from 'lucide-react';
 
 // Temporary function to replace getStoredSession
 // Temporary function to replace getStoredSession
@@ -63,14 +62,6 @@ type SessionData = {
   allowedPages: string[];
 };
 
-type UserSession = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  portal: 'manager' | 'guest' | 'employee' | 'supervisor';
-};
-
 const reports = [
   { id: '1', title: 'Team Performance', period: 'January 2024', completionRate: 87, teamProductivity: 92, avgTaskTime: 4.5 },
   { id: '2', title: 'Project Status', period: 'January 2024', onTime: 4, delayed: 0, completed: 1 },
@@ -81,17 +72,15 @@ const reports = [
 export default function Reports() {
   const router = useRouter();
  
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [session] = useState<SessionData | null>(() => getSessionData());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<typeof reports[0] | null>(null);
 useEffect(() => {
-  const sessionData = getSessionData();
-  if (!sessionData || sessionData.portal !== 'manager') {
+  if (!session || session.portal !== 'manager') {
     router.push('/login/manager');
     return;
   }
-  setSession(sessionData);
-}, [router]);
+}, [router, session]);
 
   if (!session) {
     return (

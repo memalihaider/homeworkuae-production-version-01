@@ -28,7 +28,7 @@ export default function AdminLogin() {
       console.log('📡 Auth response:', authResponse);
       
       if (authResponse.success && authResponse.session) {
-        console.log('✅ Login successful for admin:', authResponse.session.name);
+        console.log('✅ Login successful for admin:', authResponse.session.user.name);
         
         // Store session
         storeSession(authResponse.session);

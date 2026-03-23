@@ -3,6 +3,26 @@
 import { useState, useCallback } from 'react'
 import { Plus, Trash2, Upload, Camera, Video, Ruler, MapPin, Phone, Mail, FileText } from 'lucide-react'
 
+type MeasurementType = 'Room' | 'Floor' | 'Corridor' | 'Facility'
+
+interface Measurement {
+  id: number
+  areaName: string
+  length: string
+  width: string
+  type: MeasurementType
+  area: number
+  addedDate: string
+}
+
+interface MediaItem {
+  id: number
+  name: string
+  size: string
+  type: 'photo' | 'video'
+  uploadedDate: string
+}
+
 export default function SurveyForm() {
   const [formData, setFormData] = useState({
     clientName: '',
@@ -13,17 +33,17 @@ export default function SurveyForm() {
     notes: ''
   })
 
-  const [measurements, setMeasurements] = useState<any[]>([])
-  const [media, setMedia] = useState({ photos: [] as any[], videos: [] as any[] })
+  const [measurements, setMeasurements] = useState<Measurement[]>([])
+  const [media, setMedia] = useState<{ photos: MediaItem[]; videos: MediaItem[] }>({ photos: [], videos: [] })
   const [showMeasurementModal, setShowMeasurementModal] = useState(false)
   const [measurementData, setMeasurementData] = useState({
     areaName: '',
     length: '',
     width: '',
-    type: 'Room'
+    type: 'Room' as MeasurementType
   })
 
-  const calculateArea = useCallback((length: any, width: any) => {
+  const calculateArea = useCallback((length: string, width: string) => {
     return (parseFloat(length) * parseFloat(width)).toFixed(2)
   }, [])
 
@@ -47,20 +67,21 @@ export default function SurveyForm() {
     alert('Measurement added successfully')
   }, [measurementData, calculateArea, measurements])
 
-  const handleDeleteMeasurement = useCallback((id: any) => {
+  const handleDeleteMeasurement = useCallback((id: number) => {
     if (confirm('Delete this measurement?')) {
       setMeasurements(measurements.filter(m => m.id !== id))
     }
   }, [measurements])
 
-  const handleAddMedia = useCallback((type: any) => {
+  const handleAddMedia = useCallback((type: 'photo' | 'video') => {
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
     fileInput.accept = type === 'photo' ? 'image/*' : 'video/*'
-    fileInput.onchange = (e: any) => {
-      const file = e.target.files[0]
+    fileInput.onchange = (e: Event) => {
+      const input = e.target as HTMLInputElement | null
+      const file = input?.files?.[0]
       if (file) {
-        const mediaItem = {
+        const mediaItem: MediaItem = {
           id: Date.now(),
           name: file.name,
           size: (file.size / 1024 / 1024).toFixed(2),
@@ -79,7 +100,7 @@ export default function SurveyForm() {
     fileInput.click()
   }, [media])
 
-  const handleDeleteMedia = useCallback((id: any, type: any) => {
+  const handleDeleteMedia = useCallback((id: number, type: 'photo' | 'video') => {
     if (type === 'photo') {
       setMedia({ ...media, photos: media.photos.filter(p => p.id !== id) })
     } else {
@@ -394,7 +415,7 @@ export default function SurveyForm() {
                 <label className="text-sm font-medium">Type</label>
                 <select
                   value={measurementData.type}
-                  onChange={(e) => setMeasurementData({ ...measurementData, type: e.target.value })}
+                  onChange={(e) => setMeasurementData({ ...measurementData, type: e.target.value as MeasurementType })}
                   className="w-full px-3 py-2 bg-muted border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none mt-1"
                 >
                   <option>Room</option>

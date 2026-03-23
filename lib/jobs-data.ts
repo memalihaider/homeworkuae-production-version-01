@@ -68,7 +68,7 @@ export interface Job {
 }
 
 // In-memory storage (replace with API calls to backend in production)
-let jobsData: Job[] = [
+const jobsData: Job[] = [
   {
     id: 1,
     title: 'Office Deep Cleaning - Downtown Tower',

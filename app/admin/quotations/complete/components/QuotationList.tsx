@@ -10,6 +10,43 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, deleteDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
+interface FirestoreTimestampLike {
+  toDate?: () => Date
+  seconds?: number
+}
+
+interface QuotationDocPayload {
+  createdBy?: string
+  createdById?: string
+  [key: string]: unknown
+}
+
+const getErrorCode = (error: unknown): string | undefined => {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code
+    return typeof code === 'string' ? code : undefined
+  }
+  return undefined
+}
+
+const toDateValue = (value: string | Date | FirestoreTimestampLike | undefined): Date | null => {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value === 'string') {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+  if (typeof value === 'object' && value !== null) {
+    if (typeof value.toDate === 'function') {
+      return value.toDate()
+    }
+    if (typeof value.seconds === 'number') {
+      return new Date(value.seconds * 1000)
+    }
+  }
+  return null
+}
+
 interface FirebaseQuotation {
   id: string;
   quoteNumber: string;
@@ -51,8 +88,8 @@ interface FirebaseQuotation {
     unitPrice: number;
     total: number;
   }>;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: string | Date | FirestoreTimestampLike;
+  updatedAt: string | Date | FirestoreTimestampLike;
   createdBy: string;
   createdById?: string; // Optional field for employee ID
 }
@@ -60,11 +97,10 @@ interface FirebaseQuotation {
 interface Props {
   onEdit?: (quotation: FirebaseQuotation) => void
   onView?: (quotation: FirebaseQuotation) => void
-  onSend?: (quotation: FirebaseQuotation) => void
   refreshTrigger?: boolean
 }
 
-export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }: Props) {
+export default function QuotationList({ onEdit, onView, refreshTrigger }: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [quotations, setQuotations] = useState<FirebaseQuotation[]>([])
@@ -76,7 +112,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
-  const normalizeQuotations = (snapshot: { docs: Array<{ id: string; data: () => Record<string, any> }> }) => {
+  const normalizeQuotations = (snapshot: { docs: Array<{ id: string; data: () => QuotationDocPayload }> }) => {
     return snapshot.docs.map((docSnapshot) => {
       const data = docSnapshot.data()
 
@@ -114,7 +150,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
       setQuotations(quotationsData)
       setLastUpdated(new Date().toISOString())
     } catch (error) {
-      if ((error as any)?.code === 'permission-denied') {
+      if (getErrorCode(error) === 'permission-denied') {
         setFetchError('You do not have permission to view quotations.')
         console.warn('Skipping quotation list load due to Firestore permissions for current user.')
         return
@@ -165,7 +201,7 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
           setIsRealtimeConnected(false)
           setLoading(false)
 
-          if ((error as any)?.code === 'permission-denied') {
+          if (getErrorCode(error) === 'permission-denied') {
             setFetchError('You do not have permission to view quotations.')
             return
           }
@@ -223,8 +259,8 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
       const quotationData = {
         ...quotation,
         // Add any missing properties with default values
-        createdAt: quotation.createdAt || new Date(),
-        updatedAt: quotation.updatedAt || new Date(),
+        createdAt: toDateValue(quotation.createdAt) || new Date(),
+        updatedAt: toDateValue(quotation.updatedAt) || new Date(),
         createdBy: quotation.createdBy || 'admin'
       }
       
@@ -310,10 +346,11 @@ export default function QuotationList({ onEdit, onView, onSend, refreshTrigger }
   }
 
   // Format timestamp
-  const formatTimestamp = (timestamp: any) => {
+  const formatTimestamp = (timestamp: string | Date | FirestoreTimestampLike | undefined) => {
     if (!timestamp) return 'N/A'
     try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+      const date = toDateValue(timestamp)
+      if (!date) return 'N/A'
       return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'

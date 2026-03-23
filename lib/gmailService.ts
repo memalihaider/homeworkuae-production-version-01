@@ -33,8 +33,17 @@ interface QuotationData {
   notes: string;
   terms: string;
   paymentMethods: string[];
-  services: any[];
-  products: any[];
+  services: QuotationLineItem[];
+  products: QuotationLineItem[];
+}
+
+interface QuotationLineItem {
+  name?: string;
+  quantity?: number;
+  unitPrice?: number;
+  total?: number;
+  description?: string;
+  sku?: string;
 }
 
 // Generate HTML email template

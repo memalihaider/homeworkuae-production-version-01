@@ -29,44 +29,6 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  name: "Villa Deep Cleaning Dubai",
-  alternateName: ["Villa Cleaning Dubai", "Villa Deep Clean UAE"],
-  description:
-    "Professional villa deep cleaning service in Dubai covering all interior rooms, bathrooms, kitchen, and exterior/outdoor areas. Dubai Municipality approved, with trained and vetted cleaning teams.",
-  url: PAGE_URL,
-  serviceType: "Villa Deep Cleaning",
-  areaServed: [{ "@type": "City", name: "Dubai" }, { "@type": "State", name: "United Arab Emirates" }],
-  provider: {
-    "@type": "LocalBusiness",
-    "@id": "https://www.homeworkuae.com/#business",
-    name: "Homework UAE",
-    url: "https://www.homeworkuae.com",
-  },
-  offers: {
-    "@type": "Offer",
-    priceCurrency: "AED",
-    availability: "https://schema.org/InStock",
-    url: PAGE_URL,
-  },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    bestRating: "5",
-    reviewCount: "534",
-  },
-};
-
 export default function VillaDeepCleaningLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

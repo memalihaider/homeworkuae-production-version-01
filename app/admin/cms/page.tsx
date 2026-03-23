@@ -27,6 +27,11 @@ import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase
 import WebsiteCMS from './website/page'
 import ServicePagesCMS from './service-pages/page'
 
+interface FirestoreTimestampLike {
+  seconds?: number
+  toDate?: () => Date
+}
+
 const OPTIMIZED_IMAGE_HOSTS = new Set([
   'images.unsplash.com',
   'randomuser.me',
@@ -45,6 +50,22 @@ const canUseNextImage = (src: string) => {
   }
 }
 
+type TimestampLike = Date | string | { seconds: number } | { toDate: () => Date } | null | undefined
+
+const normalizeDate = (value: TimestampLike): Date => {
+  if (!value) return new Date(0)
+  if (value instanceof Date) return value
+  if (typeof value === 'string') {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed
+  }
+  if (typeof value === 'object') {
+    if ('toDate' in value && typeof value.toDate === 'function') return value.toDate()
+    if ('seconds' in value && typeof value.seconds === 'number') return new Date(value.seconds * 1000)
+  }
+  return new Date(0)
+}
+
 // Blog Post Type
 type BlogPost = {
   id: string;
@@ -56,7 +77,7 @@ type BlogPost = {
   imageURL: string;
   featured: boolean;
   tags: string[];
-  createdAt: any;
+  createdAt: TimestampLike;
   author?: string;
   status?: string;
   date?: string;
@@ -71,7 +92,7 @@ type Testimonial = {
   rating: number;
   imageURL: string;
   location: string;
-  createdAt: any;
+  createdAt: TimestampLike;
   date?: string;
   featured?: boolean;
 }
@@ -83,8 +104,8 @@ type FAQ = {
   answer: string;
   category?: string;
   order?: number;
-  createdAt: any;
-  updatedAt?: any;
+  createdAt: TimestampLike;
+  updatedAt?: TimestampLike;
 }
 
 // Privacy Policy Type
@@ -93,8 +114,8 @@ type PrivacyPolicy = {
   title: string;
   content: string;
   order?: number;
-  createdAt: any;
-  updatedAt?: any;
+  createdAt: TimestampLike;
+  updatedAt?: TimestampLike;
 }
 
 export default function CMS() {
@@ -197,8 +218,8 @@ You have the right to request access to the personal data we hold about you, to 
       })
       
       setBlogPosts(posts.sort((a, b) => 
-        new Date(b.createdAt?.toDate?.() || 0).getTime() - 
-        new Date(a.createdAt?.toDate?.() || 0).getTime()
+        normalizeDate(b.createdAt).getTime() - 
+        normalizeDate(a.createdAt).getTime()
       ))
     } catch (error) {
       console.error('Error fetching blog posts:', error)
@@ -232,8 +253,8 @@ You have the right to request access to the personal data we hold about you, to 
       })
       
       setTestimonials(testimonialsData.sort((a, b) => 
-        new Date(b.createdAt?.toDate?.() || 0).getTime() - 
-        new Date(a.createdAt?.toDate?.() || 0).getTime()
+        normalizeDate(b.createdAt).getTime() - 
+        normalizeDate(a.createdAt).getTime()
       ))
     } catch (error) {
       console.error('Error fetching testimonials:', error)
@@ -302,15 +323,19 @@ You have the right to request access to the personal data we hold about you, to 
 
   // Fetch data on component mount
   useEffect(() => {
-    if (activeTab === 'blog') {
-      fetchBlogPosts()
-    } else if (activeTab === 'testimonials') {
-      fetchTestimonials()
-    } else if (activeTab === 'faq') {
-      fetchFAQs()
-    } else if (activeTab === 'privacy') {
-      fetchPrivacyPolicies()
-    }
+    const timer = setTimeout(() => {
+      if (activeTab === 'blog') {
+        void fetchBlogPosts()
+      } else if (activeTab === 'testimonials') {
+        void fetchTestimonials()
+      } else if (activeTab === 'faq') {
+        void fetchFAQs()
+      } else if (activeTab === 'privacy') {
+        void fetchPrivacyPolicies()
+      }
+    }, 0)
+
+    return () => clearTimeout(timer)
   }, [activeTab])
 
   // Open Blog Modal
@@ -1016,7 +1041,7 @@ You have the right to request access to the personal data we hold about you, to 
 
                   {/* Testimonial Text */}
                   <p className="text-sm italic text-muted-foreground mb-4 line-clamp-3">
-                    "{testimonial.description}"
+                    &quot;{testimonial.description}&quot;
                   </p>
 
                   {/* User Info */}

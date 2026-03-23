@@ -25,23 +25,6 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  name: "Post Construction Cleaning Dubai",
-  description: "Specialist post-construction cleaning service in Dubai. We remove construction dust, building debris, silicone and chemical residue from new builds and recently renovated properties. Dubai Municipality approved.",
-  url: PAGE_URL,
-  serviceType: "Post Construction Cleaning",
-  areaServed: [{ "@type": "City", name: "Dubai" }, { "@type": "State", name: "United Arab Emirates" }],
-  provider: { "@type": "LocalBusiness", "@id": "https://www.homeworkuae.com/#business", name: "Homework UAE" },
-  offers: { "@type": "Offer", priceCurrency: "AED", availability: "https://schema.org/InStock", url: PAGE_URL },
-};
-
 export default function PostConstructionCleaningLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

@@ -452,7 +452,7 @@ export default function EmployeeTasksPage() {
                 <Mail className="w-4 h-4 text-violet-400" />
                 <span className="text-sm text-violet-300">{loggedInEmployee.email}</span>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">
                 {getUserInitials()}
               </div>
             </div>
@@ -473,7 +473,7 @@ export default function EmployeeTasksPage() {
         {/* Content */}
         <div className="p-6 max-w-7xl mx-auto space-y-6">
           {/* Welcome Banner */}
-          <div className="bg-gradient-to-r from-violet-600/20 to-purple-600/20 rounded-xl border border-violet-500/30 p-6">
+          <div className="bg-linear-to-r from-violet-600/20 to-purple-600/20 rounded-xl border border-violet-500/30 p-6">
             <h2 className="text-xl font-bold text-white mb-2">Welcome, {loggedInEmployee.name}!</h2>
             <p className="text-slate-300">You have {stats.pending} pending tasks and {stats.inProgress} tasks in progress.</p>
           </div>

@@ -27,5 +27,5 @@ export async function testCredentials() {
 
 // Run test if in browser
 if (typeof window !== 'undefined') {
-  (window as any).testCredentials = testCredentials;
+  ;(window as Window & { testCredentials?: typeof testCredentials }).testCredentials = testCredentials;
 }

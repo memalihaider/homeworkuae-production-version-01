@@ -49,8 +49,8 @@ interface QuotationData {
     unitPrice: number;
     total: number;
   }>;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: string | Date;
+  updatedAt: string | Date;
   createdBy: string;
 }
 
@@ -60,12 +60,10 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
   let yPos = margin;
-  let currentPage = 1;
 
   const checkPageBreak = (requiredSpace: number) => {
     if (yPos + requiredSpace > pageHeight - 15) {
       doc.addPage();
-      currentPage++;
       yPos = margin;
       addHeader();
       yPos = 32;
@@ -91,7 +89,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       doc.setDrawColor(120, 120, 120);
       doc.setLineWidth(0.5);
       doc.circle(logoX + (logoSize / 2), logoY + (logoSize / 2), logoSize / 2);
-    } catch (error) {
+    } catch {
       console.log('Logo not found, using text only');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(10);
@@ -327,12 +325,13 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
         data.cell.styles.fontStyle = 'bold'
       }
     },
-    didDrawPage: (data) => {
+    didDrawPage: () => {
       addHeader();
     }
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 4;
+  const docWithTable = doc as jsPDF & { lastAutoTable?: { finalY: number } };
+  yPos = (docWithTable.lastAutoTable?.finalY ?? yPos) + 4;
 
   // ==================== FINANCIAL SUMMARY ====================
   checkPageBreak(35);
@@ -443,7 +442,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     
     if (yPos + notesRequiredSpace > pageHeight - 15) {
       doc.addPage();
-      currentPage++;
       yPos = margin;
       addHeader();
       yPos = 32;
@@ -484,7 +482,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       
       if (maxLinesPerPage <= 0) {
         doc.addPage();
-        currentPage++;
         currentY = margin;
         addHeader();
         currentY = 32;
@@ -505,7 +502,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       // Agar next page pe continue karna hai to simple terms header with same label
       if (termsIndex < termsLines.length) {
         doc.addPage();
-        currentPage++;
         currentY = margin;
         addHeader();
         currentY = 32;
@@ -541,7 +537,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     if (yPos + totalConfirmHeight > pageHeight - 15) {
       console.log('Not enough space, adding new page for confirmation letter');
       doc.addPage();
-      currentPage++;
       yPos = margin;
       addHeader();
       yPos = 32;
@@ -576,7 +571,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     if (yPos + 35 > pageHeight - 15) {
       console.log('Not enough space for signature div, adding new page');
       doc.addPage();
-      currentPage++;
       yPos = margin;
       addHeader();
       yPos = 32;
@@ -652,7 +646,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     
     if (yPos + bankDetailsHeight > pageHeight - 15) {
       doc.addPage();
-      currentPage++;
       yPos = margin;
       addHeader();
       yPos = 32;
