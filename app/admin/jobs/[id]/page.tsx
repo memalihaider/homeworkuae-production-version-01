@@ -77,7 +77,7 @@ import {
   onSnapshot
 } from 'firebase/firestore'
 import { db, storage } from '@/lib/firebase'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage'
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -130,6 +130,9 @@ const [milestones, setMilestones] = useState<Array<{
   const [reminderTime, setReminderTime] = useState('08:00')
   const [reminderText, setReminderText] = useState('')
   const [selectedTaskForReminder, setSelectedTaskForReminder] = useState<any>(null)
+  const [selectedAdditionalMemberId, setSelectedAdditionalMemberId] = useState('')
+  const [manualStartTimeInput, setManualStartTimeInput] = useState('')
+  const [manualEndTimeInput, setManualEndTimeInput] = useState('')
 
   // NEW STATES FOR REQUIREMENTS
   const [allEmployees, setAllEmployees] = useState<any[]>([]) // Firebase employees collection
@@ -145,6 +148,14 @@ const [milestones, setMilestones] = useState<Array<{
   // NEW STATES FOR NOTES & REMINDERS
   const [allJobNotes, setAllJobNotes] = useState<any[]>([])
   const [allJobReminders, setAllJobReminders] = useState<any[]>([])
+  const [permitDocuments, setPermitDocuments] = useState<any[]>([])
+  const [isUploadingPermit, setIsUploadingPermit] = useState(false)
+  const [permitUploadProgress, setPermitUploadProgress] = useState(0)
+  const [paymentStatus, setPaymentStatus] = useState('Pending')
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('Pending')
+  const [paymentReceiptDocuments, setPaymentReceiptDocuments] = useState<any[]>([])
+  const [isUploadingPaymentReceipt, setIsUploadingPaymentReceipt] = useState(false)
+  const [paymentReceiptUploadProgress, setPaymentReceiptUploadProgress] = useState(0)
   const [savingNotes, setSavingNotes] = useState(false)
   const [savingReminders, setSavingReminders] = useState(false)
   
@@ -183,6 +194,46 @@ const [milestones, setMilestones] = useState<Array<{
   const getEstimatedHours = (duration: string): number => {
     const match = duration?.toString().match(/\d+/)
     return match ? parseInt(match[0], 10) : 0
+  }
+
+  const normalizeUploadedDocuments = (docs: any[] = []) => {
+    const byName = new Map<string, any>()
+
+    docs.forEach((docItem) => {
+      if (!docItem?.fileName) return
+      const existing = byName.get(docItem.fileName)
+
+      if (!existing) {
+        byName.set(docItem.fileName, docItem)
+        return
+      }
+
+      const existingTime = existing.uploadedAt ? new Date(existing.uploadedAt).getTime() : 0
+      const incomingTime = docItem.uploadedAt ? new Date(docItem.uploadedAt).getTime() : 0
+
+      if (incomingTime >= existingTime) {
+        byName.set(docItem.fileName, docItem)
+      }
+    })
+
+    return Array.from(byName.values()).sort((a, b) => {
+      const aTime = a?.uploadedAt ? new Date(a.uploadedAt).getTime() : 0
+      const bTime = b?.uploadedAt ? new Date(b.uploadedAt).getTime() : 0
+      return bTime - aTime
+    })
+  }
+
+  const toDateTimeLocalInputValue = (isoValue?: string) => {
+    if (!isoValue) return ''
+    const date = new Date(isoValue)
+    if (Number.isNaN(date.getTime())) return ''
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
   }
 
   const buildExecutionClock = (
@@ -275,6 +326,9 @@ const [milestones, setMilestones] = useState<Array<{
           permitss: jobData.permits || [],
           notes: jobData.notes || [],
           reminders: jobData.reminders || [],
+          permitDocuments: jobData.permitDocuments || [],
+          paymentStatus: jobData.paymentStatus || 'Pending',
+          paymentReceipts: jobData.paymentReceipts || [],
           taskAssignments: jobData.taskAssignments || [],
           additionalTeamMembers: jobData.additionalTeamMembers || [],
           preJobChecklist: jobData.preJobChecklist || [],
@@ -325,6 +379,21 @@ const [milestones, setMilestones] = useState<Array<{
             enabled: reminder.enabled !== false,
             createdAt: reminder.createdAt ? convertTimestamp(reminder.createdAt) : new Date().toISOString()
           })))
+        }
+
+        // Set permit documents from Firebase
+        if (Array.isArray(jobData.permitDocuments)) {
+          setPermitDocuments(normalizeUploadedDocuments(jobData.permitDocuments))
+        } else {
+          setPermitDocuments([])
+        }
+
+        setPaymentStatus(jobData.paymentStatus || 'Pending')
+        setSelectedPaymentStatus(jobData.paymentStatus || 'Pending')
+        if (Array.isArray(jobData.paymentReceipts)) {
+          setPaymentReceiptDocuments(normalizeUploadedDocuments(jobData.paymentReceipts))
+        } else {
+          setPaymentReceiptDocuments([])
         }
 
         // Set REAL task assignments from Firebase
@@ -586,6 +655,21 @@ const [milestones, setMilestones] = useState<Array<{
           trackingLastUpdate
         )
       )
+
+      if (Array.isArray(data.permitDocuments)) {
+        setPermitDocuments(normalizeUploadedDocuments(data.permitDocuments))
+      } else {
+        setPermitDocuments([])
+      }
+
+      const latestPaymentStatus = data.paymentStatus || 'Pending'
+      setPaymentStatus(latestPaymentStatus)
+      setSelectedPaymentStatus(latestPaymentStatus)
+      if (Array.isArray(data.paymentReceipts)) {
+        setPaymentReceiptDocuments(normalizeUploadedDocuments(data.paymentReceipts))
+      } else {
+        setPaymentReceiptDocuments([])
+      }
     })
 
     return () => unsubscribe()
@@ -1021,6 +1105,264 @@ const handleDeleteMilestone = async (milestoneId: string) => {
     }
   }
 
+  const handleUploadPermitDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    const isImage = file.type.startsWith('image/')
+    const isAllowed = isImage || allowedMimeTypes.includes(file.type)
+
+    if (!isAllowed) {
+      alert('Unsupported file type. Please upload PDF, DOC, DOCX, or image files.')
+      e.target.value = ''
+      return
+    }
+
+    try {
+      setIsUploadingPermit(true)
+      setPermitUploadProgress(0)
+
+      const now = new Date()
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const filePath = `job-permits/${jobId}/${now.getTime()}_${safeName}`
+      const storageRef = ref(storage, filePath)
+      const jobRef = doc(db, 'jobs', jobId)
+
+      const existingSameNameDocs = permitDocuments.filter((docItem) => docItem.fileName === file.name)
+      if (existingSameNameDocs.length > 0) {
+        for (const oldDoc of existingSameNameDocs) {
+          await updateDoc(jobRef, {
+            permitDocuments: arrayRemove(oldDoc),
+            updatedAt: Timestamp.fromDate(now)
+          })
+
+          if (oldDoc.storagePath) {
+            try {
+              await deleteObject(ref(storage, oldDoc.storagePath))
+            } catch (deleteError) {
+              console.warn('Old permit file could not be deleted from storage:', deleteError)
+            }
+          }
+        }
+      }
+
+      const uploadTask = uploadBytesResumable(storageRef, file)
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            setPermitUploadProgress(Math.round(progress))
+          },
+          (error) => reject(error),
+          () => resolve()
+        )
+      })
+      const downloadURL = await getDownloadURL(storageRef)
+
+      const newPermitDocument = {
+        id: `permit-${now.getTime()}`,
+        fileName: file.name,
+        storagePath: filePath,
+        url: downloadURL,
+        mimeType: file.type,
+        size: file.size,
+        uploadedAt: now.toISOString(),
+        uploadedBy: 'Current User'
+      }
+
+      await updateDoc(jobRef, {
+        permitDocuments: arrayUnion(newPermitDocument),
+        updatedAt: Timestamp.fromDate(now)
+      })
+
+      setPermitDocuments((prev) => normalizeUploadedDocuments([newPermitDocument, ...prev]))
+      addActivityLog('Permit Uploaded', `${file.name} uploaded to Notes & Reminders`)
+      alert('Permit file uploaded successfully!')
+    } catch (error) {
+      console.error('Error uploading permit document:', error)
+      alert('Error uploading permit document')
+    } finally {
+      setIsUploadingPermit(false)
+      setPermitUploadProgress(0)
+      e.target.value = ''
+    }
+  }
+
+  const handleUploadPaymentReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    const isImage = file.type.startsWith('image/')
+    const isAllowed = isImage || allowedMimeTypes.includes(file.type)
+
+    if (!isAllowed) {
+      alert('Unsupported file type. Please upload PDF, DOC, DOCX, or image files.')
+      e.target.value = ''
+      return
+    }
+
+    try {
+      setIsUploadingPaymentReceipt(true)
+      setPaymentReceiptUploadProgress(0)
+
+      const now = new Date()
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const filePath = `job-payment-receipts/${jobId}/${now.getTime()}_${safeName}`
+      const storageRef = ref(storage, filePath)
+      const jobRef = doc(db, 'jobs', jobId)
+
+      const existingSameNameReceipts = paymentReceiptDocuments.filter((docItem) => docItem.fileName === file.name)
+      if (existingSameNameReceipts.length > 0) {
+        for (const oldReceipt of existingSameNameReceipts) {
+          await updateDoc(jobRef, {
+            paymentReceipts: arrayRemove(oldReceipt),
+            updatedAt: Timestamp.fromDate(now)
+          })
+
+          if (oldReceipt.storagePath) {
+            try {
+              await deleteObject(ref(storage, oldReceipt.storagePath))
+            } catch (deleteError) {
+              console.warn('Old payment receipt could not be deleted from storage:', deleteError)
+            }
+          }
+        }
+      }
+
+      const uploadTask = uploadBytesResumable(storageRef, file)
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            setPaymentReceiptUploadProgress(Math.round(progress))
+          },
+          (error) => reject(error),
+          () => resolve()
+        )
+      })
+
+      const downloadURL = await getDownloadURL(storageRef)
+      const newReceiptDocument = {
+        id: `receipt-${now.getTime()}`,
+        fileName: file.name,
+        storagePath: filePath,
+        url: downloadURL,
+        mimeType: file.type,
+        size: file.size,
+        uploadedAt: now.toISOString(),
+        uploadedBy: 'Current User'
+      }
+
+      await updateDoc(jobRef, {
+        paymentReceipts: arrayUnion(newReceiptDocument),
+        updatedAt: Timestamp.fromDate(now)
+      })
+
+      setPaymentReceiptDocuments((prev) => normalizeUploadedDocuments([newReceiptDocument, ...prev]))
+      addActivityLog('Payment Receipt Uploaded', `${file.name} uploaded for payment verification`)
+      alert('Payment receipt uploaded successfully!')
+    } catch (error) {
+      console.error('Error uploading payment receipt:', error)
+      alert('Error uploading payment receipt')
+    } finally {
+      setIsUploadingPaymentReceipt(false)
+      setPaymentReceiptUploadProgress(0)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemovePaymentReceipt = async (receiptDoc: any) => {
+    const shouldDelete = window.confirm(`Delete payment receipt "${receiptDoc.fileName}"?`)
+    if (!shouldDelete) return
+
+    try {
+      const jobRef = doc(db, 'jobs', jobId)
+      await updateDoc(jobRef, {
+        paymentReceipts: arrayRemove(receiptDoc),
+        updatedAt: Timestamp.fromDate(new Date())
+      })
+
+      if (receiptDoc.storagePath) {
+        try {
+          await deleteObject(ref(storage, receiptDoc.storagePath))
+        } catch (storageError) {
+          console.warn('Receipt metadata removed but physical file delete failed:', storageError)
+        }
+      }
+
+      setPaymentReceiptDocuments((prev) => prev.filter((item) => item.id !== receiptDoc.id))
+      addActivityLog('Payment Receipt Removed', `${receiptDoc.fileName} removed`)
+      alert('Payment receipt removed successfully!')
+    } catch (error) {
+      console.error('Error removing payment receipt:', error)
+      alert('Error removing payment receipt')
+    }
+  }
+
+  const handleUpdatePaymentStatus = async () => {
+    try {
+      const now = new Date()
+      const jobRef = doc(db, 'jobs', jobId)
+      await updateDoc(jobRef, {
+        paymentStatus: selectedPaymentStatus,
+        updatedAt: Timestamp.fromDate(now),
+        paymentUpdatedAt: Timestamp.fromDate(now)
+      })
+
+      setPaymentStatus(selectedPaymentStatus)
+      setJob((prev: any) => ({
+        ...prev,
+        paymentStatus: selectedPaymentStatus,
+        updatedAt: now.toISOString()
+      }))
+      addActivityLog('Payment Status Updated', `Payment status changed to ${selectedPaymentStatus}`)
+      alert(`Payment status updated to ${selectedPaymentStatus}`)
+    } catch (error) {
+      console.error('Error updating payment status:', error)
+      alert('Error updating payment status')
+    }
+  }
+
+  const handleRemovePermitDocument = async (permitDoc: any) => {
+    const shouldDelete = window.confirm(`Delete permit file "${permitDoc.fileName}"?`)
+    if (!shouldDelete) return
+
+    try {
+      const jobRef = doc(db, 'jobs', jobId)
+      await updateDoc(jobRef, {
+        permitDocuments: arrayRemove(permitDoc),
+        updatedAt: Timestamp.fromDate(new Date())
+      })
+
+      if (permitDoc.storagePath) {
+        try {
+          await deleteObject(ref(storage, permitDoc.storagePath))
+        } catch (storageError) {
+          console.warn('File metadata removed but physical file delete failed:', storageError)
+        }
+      }
+
+      setPermitDocuments((prev) => prev.filter((item) => item.id !== permitDoc.id))
+      addActivityLog('Permit Removed', `${permitDoc.fileName} removed from Notes & Reminders`)
+      alert('Permit file removed successfully!')
+    } catch (error) {
+      console.error('Error removing permit document:', error)
+      alert('Error removing permit document')
+    }
+  }
+
   // ========== NEW: ASSIGN TASK (FIREBASE INTEGRATED) ==========
   const handleAssignTask = async () => {
     if (selectedTask && selectedTeamMember) {
@@ -1133,8 +1475,24 @@ const handleDeleteMilestone = async (milestoneId: string) => {
   // ========== NEW: TEAM READINESS FUNCTIONS ==========
   
   const addTeamMember = (employeeId: string) => {
+    const teamLimit = Math.max(1, Number(job?.teamRequired) || 1)
+    const currentTotalTeamCount = teamMembers.length + additionalTeamMembers.length
+
+    if (currentTotalTeamCount >= teamLimit) {
+      alert(`Team limit reached (${teamLimit}). Please increase team size in Edit Job before adding more members.`)
+      return
+    }
+
     const employee = allEmployees.find(emp => emp.id === employeeId)
-    if (employee && !additionalTeamMembers.find(member => member.id === employeeId)) {
+    const alreadyInAdditional = additionalTeamMembers.find(member => member.id === employeeId)
+    const alreadyInAssigned = teamMembers.find(member => member.id === employeeId)
+
+    if (alreadyInAdditional || alreadyInAssigned) {
+      alert('This team member is already selected for this job.')
+      return
+    }
+
+    if (employee) {
       setAdditionalTeamMembers([
         ...additionalTeamMembers,
         {
@@ -1145,6 +1503,7 @@ const handleDeleteMilestone = async (milestoneId: string) => {
           department: employee.department
         }
       ])
+      setSelectedAdditionalMemberId('')
     }
   }
 
@@ -1365,6 +1724,80 @@ const handleDeleteMilestone = async (milestoneId: string) => {
     } catch (error) {
       console.error('Error starting execution timer:', error)
       alert('Error starting execution timer')
+    }
+  }
+
+  const handleApplyManualExecutionTime = async () => {
+    const nextStartedAtIso = manualStartTimeInput
+      ? new Date(manualStartTimeInput).toISOString()
+      : executionTime.startedAt
+    const nextEndedAtIso = manualEndTimeInput
+      ? new Date(manualEndTimeInput).toISOString()
+      : executionTime.endedAt
+
+    if (!nextStartedAtIso) {
+      alert('Please provide a manual start time.')
+      return
+    }
+
+    const startedAtDate = new Date(nextStartedAtIso)
+    if (Number.isNaN(startedAtDate.getTime())) {
+      alert('Invalid start time format.')
+      return
+    }
+
+    const endedAtDate = nextEndedAtIso ? new Date(nextEndedAtIso) : null
+    if (endedAtDate && Number.isNaN(endedAtDate.getTime())) {
+      alert('Invalid end time format.')
+      return
+    }
+
+    if (endedAtDate && endedAtDate.getTime() < startedAtDate.getTime()) {
+      alert('End time cannot be earlier than start time.')
+      return
+    }
+
+    try {
+      const now = new Date()
+      const isRunning = !endedAtDate
+      const elapsedMinutes = endedAtDate
+        ? Math.max(0, Math.floor((endedAtDate.getTime() - startedAtDate.getTime()) / (1000 * 60)))
+        : Math.max(0, Math.floor((now.getTime() - startedAtDate.getTime()) / (1000 * 60)))
+      const jobRef = doc(db, 'jobs', jobId)
+
+      await updateDoc(jobRef, {
+        executionTracking: {
+          startedAt: Timestamp.fromDate(startedAtDate),
+          endedAt: endedAtDate ? Timestamp.fromDate(endedAtDate) : null,
+          isRunning,
+          elapsedMinutes,
+          lastUpdated: Timestamp.fromDate(now)
+        },
+        updatedAt: Timestamp.fromDate(now),
+        executionLogs: arrayUnion({
+          type: 'EXECUTION_TIME_MANUAL_EDIT',
+          timestamp: Timestamp.fromDate(now),
+          notes: `Manual time edit applied. Start: ${startedAtDate.toISOString()} | End: ${endedAtDate ? endedAtDate.toISOString() : 'running'}`
+        })
+      })
+
+      setExecutionTime(
+        buildExecutionClock(
+          startedAtDate.toISOString(),
+          endedAtDate ? endedAtDate.toISOString() : '',
+          executionTime.estimatedCompletion,
+          isRunning,
+          now.toISOString()
+        )
+      )
+
+      setManualStartTimeInput('')
+      setManualEndTimeInput('')
+      addActivityLog('Execution Time Manually Edited', 'Execution start/end time updated manually')
+      alert('Manual execution time updated successfully!')
+    } catch (error) {
+      console.error('Error applying manual execution time:', error)
+      alert('Error updating manual execution time')
     }
   }
 
@@ -1593,6 +2026,10 @@ const handleDeleteMilestone = async (milestoneId: string) => {
   }
 
   const progressMetrics = calculateProgressMetrics()
+  const requiredTeamLimit = Math.max(1, Number(job?.teamRequired) || 1)
+  const currentTeamTotal = teamMembers.length + additionalTeamMembers.length
+  const availableTeamSlots = Math.max(0, requiredTeamLimit - currentTeamTotal)
+  const canAddMoreTeamMembers = availableTeamSlots > 0
 
   // PDF Download Function
 
@@ -2829,6 +3266,10 @@ const downloadJobPDF = () => {
                     <Users className="w-5 h-5" />
                     Team Readiness
                   </h4>
+
+                  <div className="mb-4 rounded-xl border border-purple-200 bg-white p-3 text-sm text-purple-900">
+                    Team limit: <span className="font-bold">{requiredTeamLimit}</span> | Current selected: <span className="font-bold">{currentTeamTotal}</span> | Remaining slots: <span className="font-bold">{availableTeamSlots}</span>
+                  </div>
                   
                   {/* Add Team Member Dropdown */}
                   <div className="mb-6">
@@ -2837,12 +3278,9 @@ const downloadJobPDF = () => {
                     </label>
                     <div className="flex gap-2">
                       <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            addTeamMember(e.target.value)
-                            e.target.value = ''
-                          }
-                        }}
+                        value={selectedAdditionalMemberId}
+                        onChange={(e) => setSelectedAdditionalMemberId(e.target.value)}
+                        disabled={!canAddMoreTeamMembers}
                         className="flex-1 px-4 py-2 border border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
                       >
                         <option value="">Select an employee...</option>
@@ -2854,17 +3292,21 @@ const downloadJobPDF = () => {
                       </select>
                       <button
                         onClick={() => {
-                          const select = document.querySelector('select') as HTMLSelectElement
-                          if (select?.value) {
-                            addTeamMember(select.value)
-                            select.value = ''
+                          if (selectedAdditionalMemberId) {
+                            addTeamMember(selectedAdditionalMemberId)
                           }
                         }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all"
+                        disabled={!selectedAdditionalMemberId || !canAddMoreTeamMembers}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Add
                       </button>
                     </div>
+                    {!canAddMoreTeamMembers && (
+                      <p className="mt-2 text-xs font-medium text-red-600">
+                        Team limit reached. Increase team size in Edit Job to add more members.
+                      </p>
+                    )}
                   </div>
 
                   {/* Additional Team Members List */}
@@ -3021,6 +3463,62 @@ const downloadJobPDF = () => {
                       <p className="text-sm font-bold text-gray-900 mt-1">
                         {executionTime.elapsedHours}h {executionTime.elapsedMinutes}m
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-blue-200 bg-white p-4">
+                    <h5 className="text-sm font-bold text-blue-900 mb-3">Manual Time Edit</h5>
+                    <p className="text-xs text-blue-700 mb-3">
+                      Use this to correct execution timestamps manually. Leave end time empty to keep timer running.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-1">Manual Start</label>
+                        <input
+                          type="datetime-local"
+                          value={manualStartTimeInput}
+                          onChange={(e) => setManualStartTimeInput(e.target.value)}
+                          className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <button
+                          onClick={() => setManualStartTimeInput(toDateTimeLocalInputValue(executionTime.startedAt))}
+                          className="mt-2 text-xs text-blue-700 hover:text-blue-900 font-medium"
+                        >
+                          Use current start
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-1">Manual End</label>
+                        <input
+                          type="datetime-local"
+                          value={manualEndTimeInput}
+                          onChange={(e) => setManualEndTimeInput(e.target.value)}
+                          className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <button
+                          onClick={() => setManualEndTimeInput(toDateTimeLocalInputValue(executionTime.endedAt))}
+                          className="mt-2 text-xs text-blue-700 hover:text-blue-900 font-medium"
+                        >
+                          Use current end
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={handleApplyManualExecutionTime}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium"
+                      >
+                        Apply Manual Time
+                      </button>
+                      <button
+                        onClick={() => {
+                          setManualStartTimeInput('')
+                          setManualEndTimeInput('')
+                        }}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium"
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -3345,6 +3843,84 @@ const downloadJobPDF = () => {
                     ) : (
                       <div className="text-center py-8 text-gray-500">
                         No reminders added yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Permit Uploads */}
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-indigo-600" />
+                      Permit Documents
+                    </h4>
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      <span>{isUploadingPermit ? 'Uploading...' : 'Upload Permit'}</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,image/*"
+                        onChange={handleUploadPermitDocument}
+                        disabled={isUploadingPermit}
+                      />
+                    </label>
+                  </div>
+
+                  <p className="text-xs text-gray-600 mb-3">
+                    Accepted formats: PDF, DOC, DOCX, JPG, PNG and other image files.
+                  </p>
+
+                  {isUploadingPermit && (
+                    <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                      <div className="flex items-center justify-between text-xs font-medium text-indigo-800 mb-1">
+                        <span>Uploading permit file...</span>
+                        <span>{permitUploadProgress}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-indigo-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-indigo-600 transition-all duration-200"
+                          style={{ width: `${permitUploadProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {permitDocuments.length > 0 ? (
+                      permitDocuments.map((permitDoc, i) => (
+                        <div key={permitDoc.id || i} className="flex items-center justify-between bg-linear-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <FileText className="w-4 h-4 text-indigo-700 shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">{permitDoc.fileName}</div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                Uploaded {permitDoc.uploadedAt ? new Date(permitDoc.uploadedAt).toLocaleString() : 'recently'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <a
+                              href={permitDoc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-indigo-700 hover:text-indigo-900"
+                            >
+                              View
+                            </a>
+                            <button
+                              onClick={() => handleRemovePermitDocument(permitDoc)}
+                              className="text-gray-400 hover:text-red-600 transition-all"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500 border border-dashed border-gray-300 rounded-2xl">
+                        No permit documents uploaded yet
                       </div>
                     )}
                   </div>
@@ -4135,6 +4711,136 @@ const downloadJobPDF = () => {
           'Mark Job as Completed'
         )}
       </button>
+    </div>
+
+    <div className="bg-linear-to-r from-slate-50 to-gray-100 border border-gray-300 rounded-2xl p-6 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div className="flex-1">
+          <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-emerald-700" />
+            Payment Status
+          </h4>
+          <p className="text-sm text-gray-700 mb-3">
+            Track whether payment is completed. If still unpaid, keep it as Pending and update later.
+          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white">
+            <span className="text-xs font-bold text-gray-600 uppercase">Current</span>
+            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+              paymentStatus === 'Paid'
+                ? 'bg-green-100 text-green-700'
+                : paymentStatus === 'Partially Paid'
+                  ? 'bg-blue-100 text-blue-700'
+                  : paymentStatus === 'Collect After Job'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-amber-100 text-amber-700'
+            }`}>
+              {paymentStatus || 'Pending'}
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full lg:max-w-md space-y-3">
+          <label className="block text-xs font-bold text-gray-700 uppercase">Update Payment Status</label>
+          <select
+            value={selectedPaymentStatus}
+            onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 font-medium"
+          >
+            <option value="Pending">Payment Still Pending</option>
+            <option value="Partially Paid">Partially Paid</option>
+            <option value="Paid">Paid</option>
+            <option value="Collect After Job">Collect After Job</option>
+          </select>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                setSelectedPaymentStatus('Paid')
+              }}
+              className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700"
+            >
+              Mark as Paid
+            </button>
+            <button
+              onClick={handleUpdatePaymentStatus}
+              className="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black"
+            >
+              Save Payment Status
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-600">
+            Receipt upload is optional but recommended for payment verification.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 border-t border-gray-300 pt-5">
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="text-sm font-bold text-gray-900">Payment Receipts (Optional)</h5>
+          <label className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 cursor-pointer">
+            <Plus className="w-4 h-4" />
+            <span>{isUploadingPaymentReceipt ? 'Uploading...' : 'Upload Receipt'}</span>
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,image/*"
+              onChange={handleUploadPaymentReceipt}
+              disabled={isUploadingPaymentReceipt}
+            />
+          </label>
+        </div>
+
+        {isUploadingPaymentReceipt && (
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+            <div className="flex items-center justify-between text-xs font-medium text-indigo-800 mb-1">
+              <span>Uploading payment receipt...</span>
+              <span>{paymentReceiptUploadProgress}%</span>
+            </div>
+            <div className="h-2 w-full bg-indigo-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-indigo-600 transition-all duration-200"
+                style={{ width: `${paymentReceiptUploadProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {paymentReceiptDocuments.length > 0 ? (
+            paymentReceiptDocuments.map((receiptDoc, idx) => (
+              <div key={receiptDoc.id || idx} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{receiptDoc.fileName}</div>
+                  <div className="text-xs text-gray-600">
+                    Uploaded {receiptDoc.uploadedAt ? new Date(receiptDoc.uploadedAt).toLocaleString() : 'recently'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <a
+                    href={receiptDoc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-indigo-700 hover:text-indigo-900"
+                  >
+                    View
+                  </a>
+                  <button
+                    onClick={() => handleRemovePaymentReceipt(receiptDoc)}
+                    className="text-gray-400 hover:text-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-xl">
+              No payment receipt uploaded yet
+            </div>
+          )}
+        </div>
+      </div>
     </div>
     
     {/* JOB REPORT INVOICE - PROFESSIONAL SECTION */}

@@ -183,6 +183,17 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [showNewBookingModal, setShowNewBookingModal] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [currentTime, setCurrentTime] = useState('')
+
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+    }
+
+    updateTime()
+    const interval = setInterval(updateTime, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Real-time data states with initial cached data
   const [jobs, setJobs] = useState<Job[]>([
@@ -1044,8 +1055,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="text-center">
-              <p className="text-xs text-gray-600 mb-2">Last updated: {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-             
+              <p className="text-xs text-gray-600 mb-2">Last updated: {currentTime || 'Loading...'}</p>
             </div>
           </div>
           <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-blue-300/10 rounded-full blur-3xl"></div>

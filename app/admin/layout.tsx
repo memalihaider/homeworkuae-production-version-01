@@ -22,7 +22,6 @@ import {
   MessageSquare,
   UserCheck,
   Ruler,
-  Map,
   DollarSign,
   Eye,
   CheckCircle,
@@ -74,10 +73,20 @@ type Notification = {
   read: boolean;
   link?: string;
   bookingId?: string;
+  jobId?: string;
   firestoreId?: string;
 };
 
-const playNotificationSound = () => {
+const showBrowserNotification = (title: string, body: string) => {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, {
+      body,
+      icon: "/favicon.ico",
+    });
+  }
+};
+
+const playNotificationSound = (title?: string, body?: string) => {
   try {
     const audioContext = new (
       window.AudioContext || (window as any).webkitAudioContext
@@ -100,11 +109,8 @@ const playNotificationSound = () => {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
 
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("New Booking Received", {
-        body: "A new booking has been added",
-        icon: "/favicon.ico",
-      });
+    if (title && body) {
+      showBrowserNotification(title, body);
     }
   } catch (error) {
     console.log("Sound play failed, using fallback");
@@ -442,6 +448,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   // Initialize as Set
   const processedBookingIds = useRef<Set<string>>(new Set());
+  const processedJobEventIds = useRef<Set<string>>(new Set());
+  const knownJobsById = useRef<Map<string, Record<string, any>>>(new Map());
   const readNotificationIds = useRef<Set<string>>(new Set());
 
   // Load data from localStorage on component mount
@@ -459,6 +467,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       if (savedReadIds) {
         const idsArray = JSON.parse(savedReadIds);
         readNotificationIds.current = new Set(idsArray);
+      }
+
+      // Load processed job event IDs
+      const savedJobEventIds = localStorage.getItem("processedJobEventIds");
+      if (savedJobEventIds) {
+        const idsArray = JSON.parse(savedJobEventIds);
+        processedJobEventIds.current = new Set(idsArray);
       }
     }
   }, []);
@@ -504,6 +519,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Save processed job event IDs to localStorage
+  const saveProcessedJobEventIds = useCallback(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "processedJobEventIds",
+        JSON.stringify(Array.from(processedJobEventIds.current)),
+      );
+    }
+  }, []);
+
   useEffect(() => {
     if (!userSession) {
       return;
@@ -511,8 +536,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
     console.log("Setting up Firebase real-time listener for bookings...");
 
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeBookings: (() => void) | undefined;
+    let unsubscribeJobs: (() => void) | undefined;
     let unsubscribeAuth: (() => void) | undefined;
+    let hasInitializedJobsSnapshot = false;
 
     const setupListener = async () => {
       try {
@@ -522,7 +549,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           limit(50),
         );
 
-        unsubscribe = onSnapshot(
+        unsubscribeBookings = onSnapshot(
           bookingsQuery,
           (snapshot) => {
             snapshot.docChanges().forEach((change) => {
@@ -547,7 +574,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 processedBookingIds.current.add(bookingId);
                 saveProcessedBookingIds();
 
-                playNotificationSound();
+                playNotificationSound(
+                  "New Booking Received",
+                  "A new booking has been added",
+                );
 
                 const newNotification: Notification = {
                   id: notificationId,
@@ -597,6 +627,131 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           },
         );
 
+        const jobsQuery = query(collection(db, "jobs"), limit(200));
+
+        unsubscribeJobs = onSnapshot(
+          jobsQuery,
+          (snapshot) => {
+            // Seed baseline jobs from first snapshot to avoid flood on initial load.
+            if (!hasInitializedJobsSnapshot) {
+              snapshot.docs.forEach((jobDoc) => {
+                knownJobsById.current.set(jobDoc.id, jobDoc.data());
+              });
+              hasInitializedJobsSnapshot = true;
+              return;
+            }
+
+            snapshot.docChanges().forEach((change) => {
+              const jobId = change.doc.id;
+              const currentJob = change.doc.data() as Record<string, any>;
+              const previousJob = knownJobsById.current.get(jobId);
+              const jobTitle =
+                currentJob.title || previousJob?.title || `Job ${jobId}`;
+
+              if (change.type === "removed") {
+                knownJobsById.current.delete(jobId);
+              } else {
+                knownJobsById.current.set(jobId, currentJob);
+              }
+
+              // Ignore duplicate event IDs across refreshes.
+              const eventStamp =
+                currentJob.updatedAt ||
+                currentJob.createdAt ||
+                previousJob?.updatedAt ||
+                previousJob?.createdAt ||
+                Date.now();
+
+              const isCompletionEvent =
+                change.type === "modified" &&
+                previousJob?.status !== "Completed" &&
+                currentJob.status === "Completed";
+
+              const eventType =
+                change.type === "added"
+                  ? "created"
+                  : change.type === "removed"
+                    ? "removed"
+                    : isCompletionEvent
+                      ? "completed"
+                      : "updated";
+
+              const eventId = `job-${jobId}-${eventType}-${String(eventStamp)}`;
+              if (processedJobEventIds.current.has(eventId)) {
+                return;
+              }
+
+              processedJobEventIds.current.add(eventId);
+              saveProcessedJobEventIds();
+
+              const titleByEvent: Record<string, string> = {
+                created: "New Job Created",
+                updated: "Job Updated",
+                completed: "Job Completed",
+                removed: "Job Removed",
+              };
+
+              const messageByEvent: Record<string, string> = {
+                created: `${jobTitle} was created.`,
+                updated: `${jobTitle} was updated.`,
+                completed: `${jobTitle} was marked as completed.`,
+                removed: `${jobTitle} was removed.`,
+              };
+
+              const notificationType: Notification["type"] =
+                eventType === "removed"
+                  ? "alert"
+                  : eventType === "completed"
+                    ? "success"
+                    : "info";
+
+              playNotificationSound(
+                titleByEvent[eventType],
+                messageByEvent[eventType],
+              );
+
+              const newNotification: Notification = {
+                id: eventId,
+                type: notificationType,
+                title: titleByEvent[eventType],
+                message: messageByEvent[eventType],
+                time: formatTime(currentJob.updatedAt || currentJob.createdAt),
+                read: false,
+                link:
+                  change.type === "removed"
+                    ? "/admin/jobs"
+                    : `/admin/jobs/${jobId}`,
+                jobId,
+              };
+
+              setNotifications((prev) => {
+                if (prev.some((n) => n.id === newNotification.id)) {
+                  return prev;
+                }
+
+                const updatedNotifications = [newNotification, ...prev];
+                return updatedNotifications.slice(0, 20);
+              });
+
+              if (
+                "Notification" in window &&
+                Notification.permission === "default"
+              ) {
+                Notification.requestPermission();
+              }
+            });
+          },
+          (error) => {
+            if ((error as any)?.code === "permission-denied") {
+              console.warn(
+                "Skipping jobs listener due to Firestore permissions for current user.",
+              );
+              return;
+            }
+            console.error("Jobs listener error:", error);
+          },
+        );
+
         setIsListening(true);
       } catch (error) {
         console.error("Error setting up Firebase listener:", error);
@@ -614,12 +769,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       if (unsubscribeAuth) {
         unsubscribeAuth();
       }
-      if (unsubscribe) {
-        unsubscribe();
+      if (unsubscribeBookings) {
+        unsubscribeBookings();
+      }
+      if (unsubscribeJobs) {
+        unsubscribeJobs();
       }
       setIsListening(false);
     };
-  }, [userSession, saveProcessedBookingIds]);
+  }, [userSession, saveProcessedBookingIds, saveProcessedJobEventIds]);
 
   useEffect(() => {
     const session = getSession();

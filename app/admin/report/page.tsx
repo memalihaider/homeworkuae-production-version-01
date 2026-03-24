@@ -64,6 +64,15 @@ const parseTimestampLike = (value: TimestampLike): Date | null => {
   return null
 }
 
+const normalizeJobPaymentStatus = (value?: string): string => {
+  if (!value) return 'Pending'
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'paid') return 'Paid'
+  if (normalized === 'partially paid') return 'Partially Paid'
+  if (normalized === 'collect after job') return 'Collect After Job'
+  return 'Pending'
+}
+
 // ============= INTERFACES =============
 
 interface Survey {
@@ -143,6 +152,8 @@ interface Job {
   clientId: string
   location: string
   status: string
+  paymentStatus?: string
+  paymentMethod?: string
   priority: string
   riskLevel: string
   scheduledDate: string
@@ -346,6 +357,9 @@ interface FinancialMetrics {
   jobCost: number
   jobProfit: number
   jobMargin: number
+  paidJobs: number
+  unpaidJobs: number
+  collectAfterJobJobs: number
   
   // Client metrics
   totalClients: number
@@ -624,6 +638,8 @@ export default function FinanceReportPage() {
           clientId: docData.clientId || '',
           location: docData.location || '',
           status: docData.status || 'Pending',
+          paymentStatus: docData.paymentStatus || 'Pending',
+          paymentMethod: docData.paymentMethod || 'N/A',
           priority: docData.priority || 'Medium',
           riskLevel: docData.riskLevel || 'Low',
           scheduledDate: docData.scheduledDate || '',
@@ -1139,6 +1155,12 @@ export default function FinanceReportPage() {
   const inProgressJobs = filteredJobs.filter(j => j.status === 'In Progress' || j.status === 'Active').length
   const pendingJobs = filteredJobs.filter(j => j.status === 'Pending' || j.status === 'Scheduled').length
   const cancelledJobs = filteredJobs.filter(j => j.status === 'Cancelled').length
+  const paidJobs = filteredJobs.filter(j => normalizeJobPaymentStatus(j.paymentStatus) === 'Paid').length
+  const collectAfterJobJobs = filteredJobs.filter(j => normalizeJobPaymentStatus(j.paymentStatus) === 'Collect After Job').length
+  const unpaidJobs = filteredJobs.filter(j => {
+    const paymentStatus = normalizeJobPaymentStatus(j.paymentStatus)
+    return paymentStatus === 'Pending' || paymentStatus === 'Partially Paid'
+  }).length
 
   // ===== CLIENT METRICS =====
   const totalClients = filteredClients.length
@@ -1285,6 +1307,9 @@ export default function FinanceReportPage() {
     jobCost,
     jobProfit,
     jobMargin,
+    paidJobs,
+    unpaidJobs,
+    collectAfterJobJobs,
     
     // Clients
     totalClients,
@@ -1397,6 +1422,98 @@ export default function FinanceReportPage() {
 
   const formatPercentage = (value: number): string => {
     return `${value.toFixed(1)}%`
+  }
+
+  const escapeCsvValue = (value: unknown): string => {
+    const stringValue = String(value ?? '')
+    const escaped = stringValue.replace(/"/g, '""')
+    return `"${escaped}"`
+  }
+
+  const getJobsForDetailedExport = (): Job[] => {
+    return jobs.filter(j => isInDateRange(j.createdAt) || isInDateRange(j.completedAt))
+  }
+
+  const handleExportReport = () => {
+    const exportJobs = getJobsForDetailedExport()
+    const headers = [
+      'Job ID',
+      'Title',
+      'Client',
+      'Location',
+      'Job Status',
+      'Payment Status',
+      'Payment Method',
+      'Priority',
+      'Risk Level',
+      'Scheduled Date',
+      'Scheduled Time',
+      'Completed At',
+      'Budget (AED)',
+      'Actual Cost (AED)',
+      'Profit (AED)',
+      'Team Required',
+      'Created At',
+      'Updated At'
+    ]
+
+    const rows = exportJobs.map(job => {
+      const completedAt = parseTimestampLike(job.completedAt)
+      const createdAt = parseTimestampLike(job.createdAt)
+      const updatedAt = parseTimestampLike(job.updatedAt)
+      return [
+        job.id,
+        job.title,
+        job.client,
+        job.location,
+        job.status,
+        normalizeJobPaymentStatus(job.paymentStatus),
+        job.paymentMethod || 'N/A',
+        job.priority,
+        job.riskLevel,
+        job.scheduledDate || 'N/A',
+        job.scheduledTime || 'N/A',
+        completedAt ? format(completedAt, 'yyyy-MM-dd HH:mm') : 'N/A',
+        Number(job.budget || 0).toFixed(2),
+        Number(job.actualCost || 0).toFixed(2),
+        Number((job.budget || 0) - (job.actualCost || 0)).toFixed(2),
+        String(job.teamRequired || 0),
+        createdAt ? format(createdAt, 'yyyy-MM-dd HH:mm') : 'N/A',
+        updatedAt ? format(updatedAt, 'yyyy-MM-dd HH:mm') : 'N/A'
+      ]
+    })
+
+    const summaryRows = [
+      ['Report', 'Deterox Job & Payment Detailed Report'],
+      ['Date Range', dateRange],
+      ['Total Jobs', String(exportJobs.length)],
+      ['Completed Jobs', String(exportJobs.filter(j => j.status === 'Completed').length)],
+      ['Pending/Scheduled Jobs', String(exportJobs.filter(j => j.status === 'Pending' || j.status === 'Scheduled').length)],
+      ['In Progress Jobs', String(exportJobs.filter(j => j.status === 'In Progress' || j.status === 'Active').length)],
+      ['Paid Jobs', String(exportJobs.filter(j => normalizeJobPaymentStatus(j.paymentStatus) === 'Paid').length)],
+      ['Unpaid Jobs', String(exportJobs.filter(j => {
+        const paymentStatus = normalizeJobPaymentStatus(j.paymentStatus)
+        return paymentStatus === 'Pending' || paymentStatus === 'Partially Paid'
+      }).length)],
+      ['Collect After Job', String(exportJobs.filter(j => normalizeJobPaymentStatus(j.paymentStatus) === 'Collect After Job').length)]
+    ]
+
+    const summaryCsv = summaryRows.map(row => row.map(col => escapeCsvValue(col)).join(',')).join('\n')
+    const headerCsv = headers.map(header => escapeCsvValue(header)).join(',')
+    const detailsCsv = rows.map(row => row.map(col => escapeCsvValue(col)).join(',')).join('\n')
+    const content = `${summaryCsv}\n\n${headerCsv}\n${detailsCsv}`
+
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const exportDate = format(new Date(), 'yyyy-MM-dd_HH-mm')
+    link.href = url
+    link.download = `deterox_jobs_payment_report_${exportDate}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    setShowExportModal(false)
   }
 
   // ============= MAIN RENDER =============
@@ -1585,7 +1702,7 @@ export default function FinanceReportPage() {
               { id: 'revenue', label: 'Revenue', icon: TrendingUp },
               { id: 'profit-loss', label: 'Profit & Loss', icon: Calculator },
               { id: 'quotations', label: 'Quotations', icon: FileText },
-              { id: 'jobs', label: 'Jobs', icon: Briefcase },
+              { id: 'jobs', label: 'Deterox Report', icon: Briefcase },
               { id: 'clients', label: 'Clients', icon: Users },
               { id: 'employees', label: 'Employees', icon: HardHat },
               { id: 'services', label: 'Services', icon: Zap },
@@ -2288,7 +2405,7 @@ export default function FinanceReportPage() {
         {/* JOBS TAB */}
         {activeTab === 'jobs' && (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
               <MetricCard
                 title="Total Jobs"
                 value={formatNumber(metrics.totalJobs)}
@@ -2315,9 +2432,27 @@ export default function FinanceReportPage() {
                 subValue={`Margin: ${formatPercentage(metrics.jobMargin)}`}
                 color="emerald"
               />
+              <MetricCard
+                title="Paid"
+                value={formatNumber(metrics.paidJobs)}
+                icon={CheckCircle}
+                color="green"
+              />
+              <MetricCard
+                title="Unpaid"
+                value={formatNumber(metrics.unpaidJobs)}
+                icon={AlertTriangle}
+                color="amber"
+              />
+              <MetricCard
+                title="After Job"
+                value={formatNumber(metrics.collectAfterJobJobs)}
+                icon={Clock}
+                color="purple"
+              />
             </div>
 
-            <TableCard title="Recent Jobs" icon={Briefcase}>
+            <TableCard title="Deterox Jobs & Payment Status (Detailed)" icon={Briefcase}>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -2329,14 +2464,15 @@ export default function FinanceReportPage() {
                       <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Actual Cost</th>
                       <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Profit</th>
                       <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                      <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Payment</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {jobs.slice(0, 10).map(job => (
+                    {jobs.map(job => (
                       <tr key={job.id} className="border-b border-slate-100 hover:bg-slate-50">
                         <td className="py-3 px-4 font-black text-primary">{job.title}</td>
                         <td className="py-3 px-4 font-medium">{job.client}</td>
-                        <td className="py-3 px-4 text-slate-600">{job.scheduledDate}</td>
+                        <td className="py-3 px-4 text-slate-600">{job.scheduledDate || 'N/A'}</td>
                         <td className="py-3 px-4 text-right font-black">{formatCurrency(job.budget)}</td>
                         <td className="py-3 px-4 text-right font-black text-red-600">{formatCurrency(job.actualCost)}</td>
                         <td className="py-3 px-4 text-right font-black text-green-600">{formatCurrency(job.budget - job.actualCost)}</td>
@@ -2348,6 +2484,16 @@ export default function FinanceReportPage() {
                             'bg-red-100 text-red-700'
                           }`}>
                             {job.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-block px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                            normalizeJobPaymentStatus(job.paymentStatus) === 'Paid' ? 'bg-green-100 text-green-700' :
+                            normalizeJobPaymentStatus(job.paymentStatus) === 'Collect After Job' ? 'bg-purple-100 text-purple-700' :
+                            normalizeJobPaymentStatus(job.paymentStatus) === 'Partially Paid' ? 'bg-blue-100 text-blue-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {normalizeJobPaymentStatus(job.paymentStatus)}
                           </span>
                         </td>
                       </tr>
@@ -2690,7 +2836,7 @@ export default function FinanceReportPage() {
                 <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Include Sections</label>
                   <div className="space-y-2">
-                    {['Overview', 'Revenue', 'Profit & Loss', 'Quotations', 'Jobs', 'Clients', 'Employees', 'Services', 'Products'].map(section => (
+                    {['Overview', 'Revenue', 'Profit & Loss', 'Quotations', 'Deterox Report', 'Clients', 'Employees', 'Services', 'Products'].map(section => (
                       <label key={section} className="flex items-center gap-2">
                         <input type="checkbox" defaultChecked className="rounded border-slate-300 text-primary focus:ring-primary" />
                         <span className="text-sm font-medium">{section}</span>
@@ -2700,14 +2846,11 @@ export default function FinanceReportPage() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    alert(`Exporting as ${exportFormat.toUpperCase()}...`)
-                    setShowExportModal(false)
-                  }}
+                  onClick={handleExportReport}
                   className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
                   <DownloadCloud className="h-5 w-5" />
-                  Export Report
+                  Export Detailed Jobs & Payments
                 </button>
               </div>
             </div>
