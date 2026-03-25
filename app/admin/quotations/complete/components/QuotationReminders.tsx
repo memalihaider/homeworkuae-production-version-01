@@ -6,7 +6,6 @@ import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
-import { sendEmailWithAttachment } from '@/lib/gmailService'
 import { openWhatsAppWithQuotation, formatPhoneForWhatsApp } from '@/lib/whatsappService'
 
 interface Quotation {
@@ -84,6 +83,23 @@ const convertToQuotationData = (quotation: Quotation): any => {
     updatedAt: quotation.updatedAt || new Date(),
     createdBy: quotation.createdBy || 'admin'
   }
+}
+
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = reader.result as string
+      if (!result) {
+        reject(new Error('Failed to convert PDF to base64'))
+        return
+      }
+      const base64 = result.split(',')[1] || ''
+      resolve(base64)
+    }
+    reader.onerror = () => reject(new Error('Failed to convert PDF to base64'))
+    reader.readAsDataURL(blob)
+  })
 }
 
 export default function QuotationReminders() {
@@ -259,30 +275,44 @@ export default function QuotationReminders() {
 
       const quotationData = convertToQuotationData(quotation)
       const pdfBlob = getPDFAsBlob(quotationData)
-      
-      await sendEmailWithAttachment(
-        quotationData,
-        pdfBlob,
-        // Success callback
-        () => {
-          setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], email: 'sent' } }))
-          updateQuotationStatus(quotation.id, 'Sent')
-          
-          setTimeout(() => {
-            alert(`✅ Email sent successfully to ${quotation.email}!`)
-          }, 1000)
+      const pdfBase64 = await blobToBase64(pdfBlob)
+
+      const response = await fetch('/api/send-quotation-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        // Error callback
-        (error) => {
-          setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], email: 'error' } }))
-          alert(`❌ Email error: ${error}`)
-        }
-      )
+        body: JSON.stringify({
+          toEmail: quotation.email,
+          clientName: quotation.client,
+          quoteNumber: quotation.quoteNumber,
+          company: quotation.company,
+          total: quotation.total,
+          currency: quotation.currency,
+          validUntil: quotation.validUntil,
+          notes: quotation.notes,
+          pdfBase64,
+          pdfFileName: `Quotation_${quotation.quoteNumber.replace('#', '')}_${(quotation.client || 'Client').replace(/\s+/g, '_')}.pdf`
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'Failed to send quotation email')
+      }
+
+      setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], email: 'sent' } }))
+      updateQuotationStatus(quotation.id, 'Sent')
+
+      setTimeout(() => {
+        alert(`✅ Email sent successfully to customer: ${quotation.email}`)
+      }, 500)
 
     } catch (error) {
       console.error('Error sending email:', error)
       setStatus(prev => ({ ...prev, [quotation.id]: { ...prev[quotation.id], email: 'error' } }))
-      alert('❌ Error sending email')
+      alert(`❌ Error sending email: ${(error as Error).message || 'Unknown error'}`)
     } finally {
       setSendingEmail(null)
     }

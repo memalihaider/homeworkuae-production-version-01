@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Bell,
   MessageCircle,
   Send,
   Check,
@@ -129,6 +130,48 @@ export default function EmployeeChatPage() {
 
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>('unsupported');
+
+  const initializedIncomingNotificationsRef = useRef(false);
+  const seenIncomingMessageIdsRef = useRef<Set<string>>(new Set());
+
+  const showSystemNotification = (title: string, body: string) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+      new Notification(title, {
+        body,
+        icon: '/favicon.ico',
+        tag: `employee-chat-${Date.now()}`,
+      });
+    } catch (error) {
+      console.warn('Unable to show employee chat notification:', error);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setNotificationPermission('unsupported');
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+    } catch (error) {
+      console.warn('Employee notification permission request failed:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setNotificationPermission('unsupported');
+      return;
+    }
+
+    setNotificationPermission(Notification.permission);
+  }, []);
 
   // ✅ Get session on mount
   useEffect(() => {
@@ -270,6 +313,39 @@ export default function EmployeeChatPage() {
     };
   }, [selectedEmployee?.id]);
 
+  useEffect(() => {
+    if (!selectedEmployee?.id) return;
+
+    const unsubscribeIncomingReplies = onSnapshot(
+      query(collection(db, 'employeeReplies'), where('recipientId', '==', selectedEmployee.id)),
+      (snapshot) => {
+        if (!initializedIncomingNotificationsRef.current) {
+          snapshot.docs.forEach((item) => seenIncomingMessageIdsRef.current.add(item.id));
+          initializedIncomingNotificationsRef.current = true;
+          return;
+        }
+
+        snapshot.docChanges().forEach((change) => {
+          if (change.type !== 'added') return;
+          if (seenIncomingMessageIdsRef.current.has(change.doc.id)) return;
+
+          seenIncomingMessageIdsRef.current.add(change.doc.id);
+          const data = change.doc.data() as Record<string, any>;
+
+          showSystemNotification(
+            `New message from ${data.senderName || 'Admin'}`,
+            data.content || 'Sent you an attachment',
+          );
+        });
+      },
+      (error) => {
+        console.warn('Employee incoming notification listener error:', error);
+      },
+    );
+
+    return () => unsubscribeIncomingReplies();
+  }, [selectedEmployee?.id]);
+
   // ✅ Scroll to bottom on new messages - ONLY IF AT BOTTOM
   useEffect(() => {
     if (messagesScrollRef.current) {
@@ -382,6 +458,7 @@ export default function EmployeeChatPage() {
       }
 
       await addDoc(collection(db, 'employeeMessages'), messageData);
+      showSystemNotification('Message sent to admin', messageData.content || 'Attachment sent');
       clearReply();
       
     } catch (error) {
@@ -583,6 +660,21 @@ export default function EmployeeChatPage() {
             
             {/* User Info */}
             <div className="flex items-center gap-3 shrink-0">
+              <Button
+                type="button"
+                size="sm"
+                variant={notificationPermission === 'granted' ? 'default' : 'outline'}
+                onClick={requestNotificationPermission}
+                disabled={notificationPermission === 'unsupported' || notificationPermission === 'granted'}
+                className="hidden md:inline-flex"
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                {notificationPermission === 'granted' && 'Alerts On'}
+                {notificationPermission === 'default' && 'Enable Alerts'}
+                {notificationPermission === 'denied' && 'Alerts Blocked'}
+                {notificationPermission === 'unsupported' && 'Alerts Unsupported'}
+              </Button>
+
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-violet-900/30 border border-violet-700 rounded-lg">
                 <Mail className="w-4 h-4 text-violet-400" />
                 <span className="text-sm text-violet-300">{session?.user.email}</span>

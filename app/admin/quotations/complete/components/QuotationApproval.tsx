@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileCheck, AlertCircle, CheckCircle, XCircle, Info, ArrowRight, MessageCircle, Calendar, Phone, Mail, Building2, FileText, DollarSign, Percent, Hash } from 'lucide-react'
+import { FileCheck, AlertCircle, CheckCircle, XCircle, Info, MessageCircle, Calendar, Mail, Building2, FileText, DollarSign, Hash, Loader2, Download } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
 interface ServiceItem {
   id: string;
@@ -62,6 +63,8 @@ export default function QuotationApproval() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null)
   const [selectedQuotation, setSelectedQuotation] = useState<FirebaseQuotation | null>(null)
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null)
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
 
   // Fetch all quotations and filter for Draft status
   const fetchQuotations = async () => {
@@ -275,8 +278,42 @@ export default function QuotationApproval() {
 
   // Close details modal
   const closeDetailsModal = () => {
+    if (previewPdfUrl) {
+      URL.revokeObjectURL(previewPdfUrl)
+    }
+    setPreviewPdfUrl(null)
     setSelectedQuotation(null)
   }
+
+  useEffect(() => {
+    if (!selectedQuotation) return
+
+    setIsGeneratingPreview(true)
+    try {
+      const pdfBlob = getPDFAsBlob(selectedQuotation as any)
+      const blobUrl = URL.createObjectURL(pdfBlob)
+
+      setPreviewPdfUrl(prev => {
+        if (prev) {
+          URL.revokeObjectURL(prev)
+        }
+        return blobUrl
+      })
+    } catch (error) {
+      console.error('Error generating quotation preview PDF:', error)
+      setPreviewPdfUrl(null)
+    } finally {
+      setIsGeneratingPreview(false)
+    }
+  }, [selectedQuotation])
+
+  useEffect(() => {
+    return () => {
+      if (previewPdfUrl) {
+        URL.revokeObjectURL(previewPdfUrl)
+      }
+    }
+  }, [previewPdfUrl])
 
   return (
     <div className="space-y-4">
@@ -578,84 +615,51 @@ export default function QuotationApproval() {
       {/* Quotation Details Modal */}
       {selectedQuotation && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[92vh] overflow-hidden">
             <div className="p-6">
               {/* Modal Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-xl font-bold text-black">{selectedQuotation.quoteNumber}</h3>
-                  <p className="text-sm text-gray-500">Detailed View</p>
+                  <p className="text-sm text-gray-500">Full Quotation Preview (PDF Format)</p>
                 </div>
-                <button 
-                  onClick={closeDetailsModal}
-                  className="p-2 hover:bg-gray-100 rounded text-gray-400"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-2">
+                  {previewPdfUrl && (
+                    <a
+                      href={previewPdfUrl}
+                      download={`Quotation_${selectedQuotation.quoteNumber}.pdf`}
+                      className="px-3 py-2 border border-gray-300 rounded text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download PDF
+                    </a>
+                  )}
+                  <button 
+                    onClick={closeDetailsModal}
+                    className="p-2 hover:bg-gray-100 rounded text-gray-400"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
-              {/* Full Quotation Data */}
-              <div className="space-y-6">
-                {/* Client Information */}
-                <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                  <h4 className="text-sm font-bold text-black mb-3 flex items-center gap-2">
-                    <Building2 className="w-4 h-4" /> CLIENT INFORMATION
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs font-bold text-gray-500">Client Name</p>
-                      <p className="text-sm font-bold text-black">{selectedQuotation.client}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-500">Company</p>
-                      <p className="text-sm font-bold text-black">{selectedQuotation.company}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-500">Email</p>
-                      <p className="text-sm text-gray-700">{selectedQuotation.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-500">Phone</p>
-                      <p className="text-sm text-gray-700">{selectedQuotation.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-500">Location</p>
-                      <p className="text-sm text-gray-700">{selectedQuotation.location}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-500">Client ID</p>
-                      <p className="text-xs font-mono text-gray-500">{selectedQuotation.clientId}</p>
-                    </div>
+              <div className="border border-gray-200 rounded overflow-hidden bg-gray-50 h-[72vh]">
+                {isGeneratingPreview ? (
+                  <div className="h-full flex items-center justify-center text-gray-600">
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Generating quotation preview...
                   </div>
-                </div>
-
-                {/* Dates Information */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                    <p className="text-xs font-bold text-gray-500">Issue Date</p>
-                    <p className="text-sm font-bold text-black">{formatDate(selectedQuotation.date)}</p>
+                ) : previewPdfUrl ? (
+                  <iframe
+                    title={`Quotation preview ${selectedQuotation.quoteNumber}`}
+                    src={previewPdfUrl}
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-500">
+                    Unable to generate preview. Please try again.
                   </div>
-                  <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                    <p className="text-xs font-bold text-gray-500">Valid Until</p>
-                    <p className="text-sm font-bold text-black">{formatDate(selectedQuotation.validUntil)}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                    <p className="text-xs font-bold text-gray-500">Due Date</p>
-                    <p className="text-sm font-bold text-black">{formatDate(selectedQuotation.dueDate)}</p>
-                  </div>
-                </div>
-
-              
-              </div>
-
-              {/* Modal Footer */}
-              <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end">
-                <button
-                  onClick={closeDetailsModal}
-                  className="px-4 py-2 bg-black text-white text-sm font-bold rounded hover:bg-gray-800"
-                >
-                  Close
-                </button>
+                )}
               </div>
             </div>
           </div>
