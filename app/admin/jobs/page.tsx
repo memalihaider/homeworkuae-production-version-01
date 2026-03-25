@@ -220,6 +220,10 @@ export default function JobsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [creatorFilter, setCreatorFilter] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'custom' | 'all'>('today')
+  const [customDateFilter, setCustomDateFilter] = useState('')
+  const [timeFromFilter, setTimeFromFilter] = useState('')
+  const [timeToFilter, setTimeToFilter] = useState('')
   const [showNewJobModal, setShowNewJobModal] = useState(false)
   const [showExecutionModal, setShowExecutionModal] = useState(false)
   const [selectedJobForExecution, setSelectedJobForExecution] = useState<Job | null>(null)
@@ -1019,7 +1023,35 @@ export default function JobsPage() {
     return { base, tax, total }
   }, [newJobForm.budget])
 
+  const getLocalDateKey = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const getJobDateKey = (job: Job) => {
+    if (job.scheduledDate) return job.scheduledDate
+
+    if (job.createdAt) {
+      const parsed = new Date(job.createdAt)
+      if (!Number.isNaN(parsed.getTime())) {
+        return getLocalDateKey(parsed)
+      }
+    }
+
+    return ''
+  }
+
   const filteredJobs = useMemo(() => {
+    const now = new Date()
+    const todayKey = getLocalDateKey(now)
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayKey = getLocalDateKey(yesterday)
+    const timeFromMinutes = toMinutes(timeFromFilter)
+    const timeToMinutes = toMinutes(timeToFilter)
+
     return jobs.filter(job => {
       const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            job.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1029,9 +1061,36 @@ export default function JobsPage() {
       const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter
       const matchesCreator = creatorFilter === 'all' || job.jobCreatedBy === creatorFilter
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesCreator
+      const jobDateKey = getJobDateKey(job)
+      const matchesDate =
+        dateFilter === 'all'
+          ? true
+          : dateFilter === 'today'
+            ? jobDateKey === todayKey
+            : dateFilter === 'yesterday'
+              ? jobDateKey === yesterdayKey
+              : customDateFilter
+                ? jobDateKey === customDateFilter
+                : true
+
+      let matchesTime = true
+      if (timeFromMinutes != null || timeToMinutes != null) {
+        const jobStartMinutes = toMinutes(job.scheduledTime)
+        if (jobStartMinutes == null) {
+          matchesTime = false
+        } else {
+          if (timeFromMinutes != null && jobStartMinutes < timeFromMinutes) {
+            matchesTime = false
+          }
+          if (timeToMinutes != null && jobStartMinutes > timeToMinutes) {
+            matchesTime = false
+          }
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesCreator && matchesDate && matchesTime
     })
-  }, [jobs, searchTerm, statusFilter, priorityFilter, creatorFilter])
+  }, [jobs, searchTerm, statusFilter, priorityFilter, creatorFilter, dateFilter, customDateFilter, timeFromFilter, timeToFilter])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -1491,6 +1550,57 @@ export default function JobsPage() {
               })}
             </select>
 
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as 'today' | 'yesterday' | 'custom' | 'all')}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="today">Today Jobs</option>
+              <option value="yesterday">Previous Day</option>
+              <option value="custom">Custom Date</option>
+              <option value="all">All History</option>
+            </select>
+
+            {dateFilter === 'custom' && (
+              <input
+                type="date"
+                value={customDateFilter}
+                onChange={(e) => setCustomDateFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            )}
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500">Time</span>
+              <input
+                type="time"
+                value={timeFromFilter}
+                onChange={(e) => setTimeFromFilter(e.target.value)}
+                className="px-2 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                title="From time"
+              />
+              <span className="text-xs text-gray-400">to</span>
+              <input
+                type="time"
+                value={timeToFilter}
+                onChange={(e) => setTimeToFilter(e.target.value)}
+                className="px-2 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                title="To time"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setDateFilter('today')
+                setCustomDateFilter('')
+                setTimeFromFilter('')
+                setTimeToFilter('')
+              }}
+              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              Reset Day Filter
+            </button>
+
             <button
               onClick={handleAddJob}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -1506,6 +1616,10 @@ export default function JobsPage() {
               </button>
             </Link>
           </div>
+        </div>
+
+        <div className="text-xs text-gray-500">
+          Default view shows only today's jobs. Use Previous Day, Custom Date, or All History to view older jobs.
         </div>
       </div>
 

@@ -151,30 +151,6 @@ export default function QuotationsPage() {
         <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-96 w-96 rounded-full bg-indigo-50 blur-[100px]"></div>
       </div>
 
-      {/* Secondary Tab Navigation */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-2 flex gap-2 overflow-x-auto">
-        {tabs.map((tab) => {
-          const TabIcon = tab.icon
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id)
-                if (tab.id !== 'builder') setEditingQuotation(null)
-              }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap text-[11px] uppercase font-black tracking-widest ${
-                activeTab === tab.id
-                  ? 'bg-black text-white shadow-md'
-                  : 'text-gray-500 hover:bg-gray-100 border border-transparent'
-              }`}
-            >
-              <TabIcon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          )
-        })}
-      </div>
-
       {/* Content Area */}
       <div className="min-h-150 rounded-[28px] border border-gray-200 bg-white p-4 md:p-6 shadow-sm">
         {activeTab === 'dashboard' && <QuotationDashboard />}

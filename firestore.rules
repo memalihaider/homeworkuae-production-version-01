@@ -343,6 +343,11 @@ service cloud.firestore {
       allow read, write: if isAuth();
     }
 
+    // Messages exchanged between admin users
+    match /adminMessages/{docId} {
+      allow read, write: if isAuth();
+    }
+
     // ─── Marketing ────────────────────────────────────────────────────────
 
     // CRM communications timeline

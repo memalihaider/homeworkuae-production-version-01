@@ -73,6 +73,40 @@ const normalizeJobPaymentStatus = (value?: string): string => {
   return 'Pending'
 }
 
+const safeText = (value: unknown, fallback = 'N/A'): string => {
+  if (value === null || value === undefined) return fallback
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+
+  if (Array.isArray(value)) {
+    const flattened = value
+      .map(item => safeText(item, ''))
+      .filter(Boolean)
+      .join(', ')
+    return flattened || fallback
+  }
+
+  if (typeof value === 'object') {
+    if ('name' in value && typeof (value as { name?: unknown }).name === 'string') {
+      return (value as { name: string }).name
+    }
+    if ('title' in value && typeof (value as { title?: unknown }).title === 'string') {
+      return (value as { title: string }).title
+    }
+    if ('type' in value && typeof (value as { type?: unknown }).type === 'string') {
+      return (value as { type: string }).type
+    }
+
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return fallback
+    }
+  }
+
+  return fallback
+}
+
 // ============= INTERFACES =============
 
 interface Survey {
@@ -632,21 +666,21 @@ export default function FinanceReportPage() {
         const docData = doc.data()
         data.push({
           id: doc.id,
-          title: docData.title || 'Untitled Job',
-          description: docData.description || '',
-          client: docData.client || 'Unknown Client',
-          clientId: docData.clientId || '',
-          location: docData.location || '',
-          status: docData.status || 'Pending',
-          paymentStatus: docData.paymentStatus || 'Pending',
-          paymentMethod: docData.paymentMethod || 'N/A',
-          priority: docData.priority || 'Medium',
-          riskLevel: docData.riskLevel || 'Low',
-          scheduledDate: docData.scheduledDate || '',
-          scheduledTime: docData.scheduledTime || '',
+          title: safeText(docData.title, 'Untitled Job'),
+          description: safeText(docData.description, ''),
+          client: safeText(docData.client, 'Unknown Client'),
+          clientId: safeText(docData.clientId, ''),
+          location: safeText(docData.location, ''),
+          status: safeText(docData.status, 'Pending'),
+          paymentStatus: safeText(docData.paymentStatus, 'Pending'),
+          paymentMethod: safeText(docData.paymentMethod, 'N/A'),
+          priority: safeText(docData.priority, 'Medium'),
+          riskLevel: safeText(docData.riskLevel, 'Low'),
+          scheduledDate: safeText(docData.scheduledDate, ''),
+          scheduledTime: safeText(docData.scheduledTime, ''),
           completedAt: docData.completedAt,
-          estimatedDuration: docData.estimatedDuration || '0',
-          actualDuration: docData.actualDuration,
+          estimatedDuration: safeText(docData.estimatedDuration, '0'),
+          actualDuration: safeText(docData.actualDuration, ''),
           budget: docData.budget || 0,
           actualCost: docData.actualCost || 0,
           teamRequired: docData.teamRequired || 1,
@@ -658,8 +692,8 @@ export default function FinanceReportPage() {
           executionLogs: docData.executionLogs || [],
           permits: docData.permits || [],
           tags: docData.tags || [],
-          specialInstructions: docData.specialInstructions || '',
-          slaDeadline: docData.slaDeadline || '',
+          specialInstructions: safeText(docData.specialInstructions, ''),
+          slaDeadline: safeText(docData.slaDeadline, ''),
           recurring: docData.recurring || false,
           reminderEnabled: docData.reminderEnabled || false,
           overtimeRequired: docData.overtimeRequired || false,
@@ -2470,9 +2504,9 @@ export default function FinanceReportPage() {
                   <tbody>
                     {jobs.map(job => (
                       <tr key={job.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-3 px-4 font-black text-primary">{job.title}</td>
-                        <td className="py-3 px-4 font-medium">{job.client}</td>
-                        <td className="py-3 px-4 text-slate-600">{job.scheduledDate || 'N/A'}</td>
+                        <td className="py-3 px-4 font-black text-primary">{safeText(job.title, 'Untitled Job')}</td>
+                        <td className="py-3 px-4 font-medium">{safeText(job.client, 'Unknown Client')}</td>
+                        <td className="py-3 px-4 text-slate-600">{safeText(job.scheduledDate, 'N/A')}</td>
                         <td className="py-3 px-4 text-right font-black">{formatCurrency(job.budget)}</td>
                         <td className="py-3 px-4 text-right font-black text-red-600">{formatCurrency(job.actualCost)}</td>
                         <td className="py-3 px-4 text-right font-black text-green-600">{formatCurrency(job.budget - job.actualCost)}</td>
@@ -2483,7 +2517,7 @@ export default function FinanceReportPage() {
                             job.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                             'bg-red-100 text-red-700'
                           }`}>
-                            {job.status}
+                            {safeText(job.status, 'Pending')}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center">

@@ -150,6 +150,62 @@ const formatTime = (timestamp: any): string => {
   }
 };
 
+const parseDateLike = (value: any): Date | null => {
+  if (!value) return null;
+
+  try {
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+    if (typeof value?.toDate === "function") {
+      const date = value.toDate();
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    if (typeof value?.seconds === "number") {
+      const date = new Date(value.seconds * 1000);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    const parsed = new Date(String(value));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  } catch {
+    return null;
+  }
+};
+
+const getJobDeadlineDate = (job: Record<string, any>): Date | null => {
+  // Prefer explicit deadlines first.
+  const fromSla = parseDateLike(job?.slaDeadline);
+  if (fromSla) return fromSla;
+
+  const scheduled = parseDateLike(job?.scheduledDate);
+  if (!scheduled) return null;
+
+  const explicitTime =
+    typeof job?.endTime === "string" && job.endTime.trim()
+      ? job.endTime
+      : typeof job?.scheduledTime === "string" && job.scheduledTime.trim()
+        ? job.scheduledTime
+        : "";
+
+  if (!explicitTime) {
+    // If only a date exists, default to end-of-day for reminder logic.
+    const fallback = new Date(scheduled);
+    fallback.setHours(23, 59, 59, 0);
+    return fallback;
+  }
+
+  const [hoursRaw, minutesRaw] = explicitTime.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw || 0);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return scheduled;
+  }
+
+  const result = new Date(scheduled);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
+};
+
 // ✅ FIXED: Added 'Employee Chat' key with correct icon and href
 
 // ✅ FIXED: Added 'Report' with proper capitalization
@@ -539,7 +595,67 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     let unsubscribeBookings: (() => void) | undefined;
     let unsubscribeJobs: (() => void) | undefined;
     let unsubscribeAuth: (() => void) | undefined;
+    let deadlineReminderInterval: ReturnType<typeof setInterval> | undefined;
     let hasInitializedJobsSnapshot = false;
+
+    const checkUpcomingJobDeadlines = () => {
+      const now = Date.now();
+      const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+
+      knownJobsById.current.forEach((jobData, jobId) => {
+        const status = String(jobData?.status || "").toLowerCase();
+        if (status === "completed" || status === "cancelled") {
+          return;
+        }
+
+        const deadlineDate = getJobDeadlineDate(jobData);
+        if (!deadlineDate) return;
+
+        const timeUntilDeadline = deadlineDate.getTime() - now;
+        if (timeUntilDeadline <= 0 || timeUntilDeadline > twentyFourHoursMs) {
+          return;
+        }
+
+        const deadlineKey = deadlineDate.toISOString();
+        const reminderId = `job-${jobId}-deadline-24h-${deadlineKey}`;
+        if (processedJobEventIds.current.has(reminderId)) {
+          return;
+        }
+
+        processedJobEventIds.current.add(reminderId);
+        saveProcessedJobEventIds();
+
+        const jobTitle = jobData?.title || `Job ${jobId}`;
+        const hoursRemaining = Math.max(1, Math.ceil(timeUntilDeadline / (60 * 60 * 1000)));
+
+        const newNotification: Notification = {
+          id: reminderId,
+          type: "reminder",
+          title: "Job Ending In 24 Hours",
+          message: `${jobTitle} is expected to end in about ${hoursRemaining} hour${hoursRemaining === 1 ? "" : "s"}.`,
+          time: deadlineDate.toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          read: false,
+          link: `/admin/jobs/${jobId}`,
+          jobId,
+        };
+
+        playNotificationSound(newNotification.title, newNotification.message);
+
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === newNotification.id)) {
+            return prev;
+          }
+
+          const updatedNotifications = [newNotification, ...prev];
+          return updatedNotifications.slice(0, 20);
+        });
+      });
+    };
 
     const setupListener = async () => {
       try {
@@ -740,6 +856,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 Notification.requestPermission();
               }
             });
+
+            checkUpcomingJobDeadlines();
           },
           (error) => {
             if ((error as any)?.code === "permission-denied") {
@@ -753,6 +871,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         );
 
         setIsListening(true);
+
+        // Catch deadline reminders even when no Firestore job updates happen.
+        deadlineReminderInterval = setInterval(checkUpcomingJobDeadlines, 60 * 1000);
       } catch (error) {
         console.error("Error setting up Firebase listener:", error);
         setIsListening(false);
@@ -774,6 +895,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       }
       if (unsubscribeJobs) {
         unsubscribeJobs();
+      }
+      if (deadlineReminderInterval) {
+        clearInterval(deadlineReminderInterval);
       }
       setIsListening(false);
     };

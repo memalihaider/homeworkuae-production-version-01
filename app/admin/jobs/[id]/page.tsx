@@ -262,6 +262,70 @@ const [milestones, setMilestones] = useState<Array<{
     }
   }
 
+  const calculateHoursWorked = (startedAt?: string, endedAt?: string, running?: boolean) => {
+    if (!startedAt) return 0
+
+    const startDate = new Date(startedAt)
+    if (Number.isNaN(startDate.getTime())) return 0
+
+    const endDate = endedAt
+      ? new Date(endedAt)
+      : (running ? new Date() : null)
+
+    if (!endDate || Number.isNaN(endDate.getTime())) return 0
+
+    const totalMinutes = Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60)))
+    return Number((totalMinutes / 60).toFixed(2))
+  }
+
+  const buildEmployeeReportsFromJobData = (jobData: any) => {
+    const assignedEmployees = Array.isArray(jobData?.assignedEmployees) ? jobData.assignedEmployees : []
+    const assignedToNames = Array.isArray(jobData?.assignedTo) ? jobData.assignedTo : []
+    const teamMembers = assignedEmployees.length > 0
+      ? assignedEmployees
+      : assignedToNames.map((name: string, index: number) => ({
+          id: `assigned-${index}`,
+          name,
+          email: ''
+        }))
+
+    const tracking = jobData?.executionTracking || {}
+    const startedAtIso = tracking.startedAt ? convertTimestamp(tracking.startedAt) : ''
+    const endedAtIso = tracking.endedAt ? convertTimestamp(tracking.endedAt) : ''
+    const isRunning = Boolean(tracking.isRunning && startedAtIso && !endedAtIso)
+    const hoursWorked = calculateHoursWorked(startedAtIso, endedAtIso, isRunning)
+
+    const taskAssignments = Array.isArray(jobData?.taskAssignments) ? jobData.taskAssignments : []
+    const tasks = Array.isArray(jobData?.tasks) ? jobData.tasks : []
+
+    return teamMembers.map((member: any, index: number) => {
+      const memberName = member?.name || member?.email || `Employee ${index + 1}`
+      const memberAssignments = taskAssignments.filter((assignment: any) => assignment?.assignedTo === memberName)
+      const tasksCompletedFromAssignments = memberAssignments.filter((assignment: any) => {
+        const assignmentStatus = String(assignment?.status || '').toLowerCase()
+        if (assignmentStatus === 'completed') return true
+
+        const relatedTask = tasks.find((task: any) => task?.id === assignment?.taskId)
+        return Boolean(relatedTask?.completed)
+      }).length
+
+      return {
+        id: `report-${member?.id || index}`,
+        employee: memberName,
+        jobId,
+        date: endedAtIso || startedAtIso || convertTimestamp(jobData?.updatedAt || new Date().toISOString()),
+        hoursWorked,
+        tasksCompleted: tasksCompletedFromAssignments,
+        status: startedAtIso ? (isRunning ? 'in-progress' : 'completed') : 'pending',
+        notes: startedAtIso
+          ? (isRunning ? 'Execution in progress.' : 'Execution completed.')
+          : 'Execution has not started yet.',
+        startedAt: startedAtIso,
+        endedAt: endedAtIso
+      }
+    })
+  }
+
   // Fetch REAL job data from Firebase
   useEffect(() => {
     const fetchJobData = async () => {
@@ -453,11 +517,7 @@ const [milestones, setMilestones] = useState<Array<{
           }))
           setTeamMembers(realTeamMembers)
         } else {
-          // Default team members if none assigned
-          setTeamMembers([
-            { id: '1', name: 'Ahmed Hassan', role: 'Team Lead', status: 'Confirmed', initials: 'AH', hourlyRate: 150, estimatedHours: 8, totalCompensation: 1200 },
-            { id: '2', name: 'Fatima Al-Mazrouei', role: 'Floor Specialist', status: 'Confirmed', initials: 'FA', hourlyRate: 120, estimatedHours: 8, totalCompensation: 960 }
-          ])
+          setTeamMembers([])
         }
 
         // Set REAL activity log from executionLogs or create default
@@ -539,56 +599,7 @@ const [milestones, setMilestones] = useState<Array<{
           ])
         }
 
-        // Set default employee reports from job data
-        const reports = []
-        if (jobData.taskAssignments && jobData.taskAssignments.length > 0) {
-          jobData.taskAssignments.forEach((assignment: any, index: number) => {
-            const task = jobData.tasks?.find((t: any) => t.id === assignment.taskId)
-            reports.push({
-              id: `report-${index}`,
-              employee: assignment.assignedTo,
-              taskId: assignment.taskId,
-              taskName: assignment.taskName,
-              assignedAt: assignment.assignedAt ? convertTimestamp(assignment.assignedAt) : new Date().toISOString(),
-              status: assignment.status || 'pending',
-              reassignedAt: assignment.reassignedAt ? convertTimestamp(assignment.reassignedAt) : null,
-              taskDetails: task ? {
-                completed: task.completed,
-                progress: task.progress,
-                description: task.description,
-                duration: task.duration
-              } : null
-            })
-          })
-        }
-        
-        // Add default reports if no assignments
-        if (reports.length === 0) {
-          reports.push(
-            {
-              id: '1',
-              employee: 'Ahmed Hassan',
-              jobId: jobId,
-              date: new Date().toISOString(),
-              hoursWorked: 8,
-              tasksCompleted: 4,
-              status: 'submitted',
-              notes: 'All tasks completed successfully'
-            },
-            {
-              id: '2',
-              employee: 'Fatima Al-Mazrouei',
-              jobId: jobId,
-              date: new Date().toISOString(),
-              hoursWorked: 7.5,
-              tasksCompleted: 3,
-              status: 'submitted',
-              notes: 'Minor delay due to client requests'
-            }
-          )
-        }
-        
-        setEmployeeReports(reports)
+        setEmployeeReports(buildEmployeeReportsFromJobData(jobData))
 
         // No fallback employee feedback. Show only real Firebase data.
         if (!jobData.employeeFeedback || jobData.employeeFeedback.length === 0) {
@@ -656,6 +667,8 @@ const [milestones, setMilestones] = useState<Array<{
         )
       )
 
+      setEmployeeReports(buildEmployeeReportsFromJobData(data))
+
       if (Array.isArray(data.permitDocuments)) {
         setPermitDocuments(normalizeUploadedDocuments(data.permitDocuments))
       } else {
@@ -689,6 +702,21 @@ const [milestones, setMilestones] = useState<Array<{
           true,
           new Date().toISOString()
         )
+      })
+
+      setEmployeeReports((prev) => {
+        const nowIso = new Date().toISOString()
+
+        return prev.map((report) => {
+          if (!report?.startedAt || report?.endedAt) return report
+
+          return {
+            ...report,
+            date: nowIso,
+            status: 'in-progress',
+            hoursWorked: calculateHoursWorked(report.startedAt, '', true)
+          }
+        })
       })
     }, 30000)
 
@@ -1552,21 +1580,47 @@ const handleDeleteMilestone = async (milestoneId: string) => {
   // ========== JOB STATUS UPDATE FUNCTION ==========
   const handleUpdateJobStatus = async (newStatus: string) => {
     try {
+      const now = new Date()
       // Update in Firebase
       const jobRef = doc(db, 'jobs', jobId)
       const updateData: any = {
         status: newStatus,
-        updatedAt: Timestamp.fromDate(new Date())
+        updatedAt: Timestamp.fromDate(now)
       }
       
       // Add completedAt timestamp if completing job
       if (newStatus === 'Completed') {
-        updateData.completedAt = Timestamp.fromDate(new Date())
+        updateData.completedAt = Timestamp.fromDate(now)
+
+        if (executionTime.startedAt) {
+          const startedAtDate = new Date(executionTime.startedAt)
+          const elapsedMinutes = Math.max(0, Math.floor((now.getTime() - startedAtDate.getTime()) / (1000 * 60)))
+
+          updateData.executionTracking = {
+            startedAt: Timestamp.fromDate(startedAtDate),
+            endedAt: Timestamp.fromDate(now),
+            isRunning: false,
+            elapsedMinutes,
+            lastUpdated: Timestamp.fromDate(now)
+          }
+        }
       }
       
       // Add startedAt timestamp if starting job
       if (newStatus === 'In Progress') {
-        updateData.startedAt = Timestamp.fromDate(new Date())
+        updateData.startedAt = Timestamp.fromDate(now)
+        updateData.executionTracking = {
+          startedAt: Timestamp.fromDate(now),
+          endedAt: null,
+          isRunning: true,
+          elapsedMinutes: 0,
+          lastUpdated: Timestamp.fromDate(now)
+        }
+        updateData.executionLogs = arrayUnion({
+          type: 'EXECUTION_START',
+          timestamp: Timestamp.fromDate(now),
+          notes: 'Execution timer started by status change'
+        })
       }
       
       await updateDoc(jobRef, updateData)
@@ -1575,9 +1629,9 @@ const handleDeleteMilestone = async (milestoneId: string) => {
       setJob((prev: any) => ({
         ...prev,
         status: newStatus,
-        updatedAt: new Date().toISOString(),
-        ...(newStatus === 'Completed' && { completedAt: new Date().toISOString() }),
-        ...(newStatus === 'In Progress' && { startedAt: new Date().toISOString() })
+        updatedAt: now.toISOString(),
+        ...(newStatus === 'Completed' && { completedAt: now.toISOString() }),
+        ...(newStatus === 'In Progress' && { startedAt: now.toISOString() })
       }))
 
       // Add to activity log
@@ -4623,13 +4677,13 @@ const downloadJobPDF = () => {
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-4 mb-4">
-                        {report.hoursWorked && (
+                        {report.hoursWorked !== undefined && (
                           <div className="bg-white p-3 rounded-lg border border-gray-300">
                             <div className="text-xs text-gray-500">Hours Worked</div>
                             <div className="text-lg font-bold text-gray-900">{report.hoursWorked}</div>
                           </div>
                         )}
-                        {report.tasksCompleted && (
+                        {report.tasksCompleted !== undefined && (
                           <div className="bg-white p-3 rounded-lg border border-gray-300">
                             <div className="text-xs text-gray-500">Tasks Completed</div>
                             <div className="text-lg font-bold text-gray-900">{report.tasksCompleted}</div>

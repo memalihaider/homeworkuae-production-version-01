@@ -112,6 +112,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
   const [leads, setLeads] = useState<Lead[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [memberSearchTerm, setMemberSearchTerm] = useState('')
+  const [contactSearchTerm, setContactSearchTerm] = useState('')
   const [showCustomClient, setShowCustomClient] = useState(false)
   const [customClient, setCustomClient] = useState({
     name: '',
@@ -340,6 +342,39 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       status: lead.status
     }))
   ]
+
+  const filteredEmployees = useMemo(() => {
+    const query = memberSearchTerm.trim().toLowerCase()
+    if (!query) return employees
+
+    return employees.filter((employee) =>
+      [employee.name, employee.email, employee.position, employee.department]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(query)),
+    )
+  }, [employees, memberSearchTerm])
+
+  const filteredClients = useMemo(() => {
+    const query = contactSearchTerm.trim().toLowerCase()
+    if (!query) return clients
+
+    return clients.filter((client) =>
+      [client.name, client.company, client.email, client.phone, client.location]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(query)),
+    )
+  }, [clients, contactSearchTerm])
+
+  const filteredLeads = useMemo(() => {
+    const query = contactSearchTerm.trim().toLowerCase()
+    if (!query) return leads
+
+    return leads.filter((lead) =>
+      [lead.name, lead.company, lead.email, lead.phone, lead.address, lead.status]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(query)),
+    )
+  }, [leads, contactSearchTerm])
 
   // Fix the calculation error
   const calculations = useMemo(() => {
@@ -721,6 +756,13 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 mb-1 block">
                 Select Member *
               </label>
+              <input
+                type="text"
+                value={memberSearchTerm}
+                onChange={(e) => setMemberSearchTerm(e.target.value)}
+                placeholder="Advanced search member by name, email, role, department..."
+                className="w-full px-3 py-2 mb-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+              />
               <select
                 value={formData.createdBy}
                 onChange={(e) => handleEmployeeSelect(e.target.value)}
@@ -728,18 +770,18 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                 required
               >
                 <option value="">-- Select a member --</option>
-                {employees.length > 0 ? (
-                  employees.map(employee => (
+                {filteredEmployees.length > 0 ? (
+                  filteredEmployees.map(employee => (
                     <option key={employee.id} value={employee.id}>
                       {employee.name} - {employee.position} ({employee.department})
                     </option>
                   ))
                 ) : (
-                  <option disabled>No employees found</option>
+                  <option disabled>No members found for current search</option>
                 )}
               </select>
               <p className="text-[10px] text-gray-400 mt-1">
-                Select the person who created this quotation
+                {filteredEmployees.length} of {employees.length} members shown
               </p>
             </div>
 
@@ -866,6 +908,13 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
             {/* Client Selection Dropdown (only show when custom client form is hidden) */}
             {!showCustomClient && (
               <>
+                <input
+                  type="text"
+                  value={contactSearchTerm}
+                  onChange={(e) => setContactSearchTerm(e.target.value)}
+                  placeholder="Advanced search client/lead by name, company, email, phone, location..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+                />
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <select
@@ -877,7 +926,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                     
                     {/* Clients Section */}
                     <optgroup label="━━━━ Clients ━━━━" className="font-bold text-gray-700">
-                      {clients.map(client => (
+                      {filteredClients.map(client => (
                         <option key={`client_${client.id}`} value={`client_${client.id}`}>
                           {client.name} - {client.company} (Client)
                         </option>
@@ -886,7 +935,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                     
                     {/* Qualified & Won Leads Section */}
                     <optgroup label="━━━━ Qualified/Won Leads ━━━━" className="font-bold text-gray-700">
-                      {leads.map(lead => (
+                      {filteredLeads.map(lead => (
                         <option key={`lead_${lead.id}`} value={`lead_${lead.id}`}>
                           {lead.name} - {lead.company} ({lead.status} Lead)
                         </option>
@@ -895,7 +944,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                   </select>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  {clientsCount} clients & {qualifiedLeadsCount} qualified/won leads 
+                  {filteredClients.length} of {clientsCount} clients & {filteredLeads.length} of {qualifiedLeadsCount} qualified/won leads shown
                 </p>
               </>
             )}
