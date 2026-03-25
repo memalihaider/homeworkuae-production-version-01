@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, deleteDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, getDocs, getDoc, deleteDoc, doc, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
 interface FirestoreTimestampLike {
@@ -92,6 +92,7 @@ interface FirebaseQuotation {
   updatedAt: string | Date | FirestoreTimestampLike;
   createdBy: string;
   createdById?: string; // Optional field for employee ID
+  createdByPhone?: string;
 }
 
 interface Props {
@@ -111,6 +112,43 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  const resolveCreatorPhone = useCallback(async (quotation: FirebaseQuotation): Promise<string> => {
+    if (quotation.createdByPhone) {
+      return quotation.createdByPhone
+    }
+
+    if (quotation.createdById) {
+      try {
+        const employeeDoc = await getDoc(doc(db, 'employees', quotation.createdById))
+        if (employeeDoc.exists()) {
+          const employeeData = employeeDoc.data() as { phone?: string }
+          if (employeeData.phone) return employeeData.phone
+        }
+      } catch (error) {
+        console.warn('Could not fetch creator phone by employee ID:', error)
+      }
+    }
+
+    if (quotation.createdBy) {
+      try {
+        const employeeByNameQuery = query(
+          collection(db, 'employees'),
+          where('name', '==', quotation.createdBy),
+        )
+        const employeeByNameSnapshot = await getDocs(employeeByNameQuery)
+        const employeeMatch = employeeByNameSnapshot.docs[0]
+        if (employeeMatch) {
+          const employeeData = employeeMatch.data() as { phone?: string }
+          if (employeeData.phone) return employeeData.phone
+        }
+      } catch (error) {
+        console.warn('Could not fetch creator phone by employee name:', error)
+      }
+    }
+
+    return ''
+  }, [])
 
   const normalizeQuotations = (snapshot: { docs: Array<{ id: string; data: () => QuotationDocPayload }> }) => {
     return snapshot.docs.map((docSnapshot) => {
@@ -254,6 +292,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
   const handleDownloadPDF = async (quotation: FirebaseQuotation) => {
     try {
       setDownloadingId(quotation.id)
+      const creatorPhone = await resolveCreatorPhone(quotation)
       
       // Prepare quotation data for PDF generator
       const quotationData = {
@@ -261,7 +300,8 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
         // Add any missing properties with default values
         createdAt: toDateValue(quotation.createdAt) || new Date(),
         updatedAt: toDateValue(quotation.updatedAt) || new Date(),
-        createdBy: quotation.createdBy || 'admin'
+        createdBy: quotation.createdBy || 'admin',
+        createdByPhone: creatorPhone
       }
       
       // Generate PDF blob

@@ -52,6 +52,7 @@ interface QuotationData {
   createdAt: string | Date;
   updatedAt: string | Date;
   createdBy: string;
+  createdByPhone?: string;
 }
 
 export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fileName: string, blobUrl: string } => {
@@ -155,9 +156,13 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
 
   const fromToBaseY = yPos - 1;
   let fromToContentHeight = 24;
+  const hasCreatorDetails = Boolean(quotation.createdBy || quotation.createdByPhone);
   
   if (quotation.company) {
     fromToContentHeight += 3;
+  }
+  if (hasCreatorDetails) {
+    fromToContentHeight += 7;
   }
   
   const fromToBoxHeight = fromToContentHeight;
@@ -196,6 +201,17 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   doc.text('+971 800 4663', margin + 4, fromY);
   fromY += 3;
   doc.text('services@homeworkuae.com', margin + 4, fromY);
+
+  if (hasCreatorDetails) {
+    fromY += 4;
+    const creatorName = quotation.createdBy || 'N/A';
+    const creatorPhone = quotation.createdByPhone || 'N/A';
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Prepared By: ${creatorName}`, margin + 4, fromY);
+    fromY += 3;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Phone: ${creatorPhone}`, margin + 4, fromY);
+  }
 
   doc.setDrawColor(220, 220, 220);
   doc.line(pageWidth / 2, fromToBaseY, pageWidth / 2, fromToBaseY + fromToBoxHeight);

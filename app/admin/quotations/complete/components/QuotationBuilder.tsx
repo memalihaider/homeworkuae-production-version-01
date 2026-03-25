@@ -43,6 +43,7 @@ interface Employee {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   department: string;
   position: string;
   status: string;
@@ -98,6 +99,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       terms: saved.terms ?? '',
       createdBy: '', // Store employee ID for dropdown selection
       createdByName: '', // Store employee name for Firebase
+      createdByPhone: '',
       confirmationLetter: saved.confirmationLetter ?? '',
       bankDetails: {
         ...DEFAULT_BANK_DETAILS,
@@ -132,14 +134,21 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       // Find the employee name if createdBy is ID
       let createdByName = initialData.createdBy || '';
       let createdById = '';
+      let createdByPhone = initialData.createdByPhone || '';
       
       if (initialData.createdById) {
         createdById = initialData.createdById;
+        const employeeById = employees.find(e => e.id === initialData.createdById);
+        if (employeeById) {
+          createdByName = employeeById.name || createdByName;
+          createdByPhone = employeeById.phone || createdByPhone;
+        }
       } else {
         // Try to find employee by name
         const employee = employees.find(e => e.name === initialData.createdBy);
         if (employee) {
           createdById = employee.id;
+          createdByPhone = employee.phone || createdByPhone;
         }
       }
 
@@ -166,6 +175,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         terms: initialData.terms || '',
         createdBy: createdById, // Store ID for dropdown
         createdByName: createdByName, // Store name for display
+        createdByPhone: createdByPhone,
         confirmationLetter: initialData.confirmationLetter || '',
         bankDetails: {
           ...DEFAULT_BANK_DETAILS,
@@ -470,6 +480,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         terms: quotationData.terms,
         createdBy: quotationData.createdByName || '', // Save employee name
         createdById: quotationData.createdBy || '', // Save employee ID for future edits
+        createdByPhone: quotationData.createdByPhone || '',
         confirmationLetter: quotationData.confirmationLetter || '',
         bankDetails: {
           ...DEFAULT_BANK_DETAILS,
@@ -712,7 +723,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       setFormData({
         ...formData,
         createdBy: employeeId,        // Store ID for dropdown selection
-        createdByName: selectedEmployee.name // Store NAME for Firebase
+        createdByName: selectedEmployee.name, // Store NAME for Firebase
+        createdByPhone: selectedEmployee.phone || ''
       })
     }
   }
