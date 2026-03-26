@@ -220,7 +220,7 @@ export default function JobsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [creatorFilter, setCreatorFilter] = useState<string>('all')
-  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'custom' | 'all'>('today')
+  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'nextDay' | 'custom' | 'all'>('today')
   const [customDateFilter, setCustomDateFilter] = useState('')
   const [timeFromFilter, setTimeFromFilter] = useState('')
   const [timeToFilter, setTimeToFilter] = useState('')
@@ -1049,6 +1049,9 @@ export default function JobsPage() {
     const yesterday = new Date(now)
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayKey = getLocalDateKey(yesterday)
+    const nextDay = new Date(now)
+    nextDay.setDate(nextDay.getDate() + 1)
+    const nextDayKey = getLocalDateKey(nextDay)
     const timeFromMinutes = toMinutes(timeFromFilter)
     const timeToMinutes = toMinutes(timeToFilter)
 
@@ -1057,7 +1060,12 @@ export default function JobsPage() {
                            job.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            job.location.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesStatus = statusFilter === 'all' || job.status === statusFilter
+      const matchesStatus =
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'queued'
+            ? job.status === 'Pending' || job.status === 'Scheduled'
+            : job.status === statusFilter
       const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter
       const matchesCreator = creatorFilter === 'all' || job.jobCreatedBy === creatorFilter
 
@@ -1069,6 +1077,8 @@ export default function JobsPage() {
             ? jobDateKey === todayKey
             : dateFilter === 'yesterday'
               ? jobDateKey === yesterdayKey
+              : dateFilter === 'nextDay'
+                ? jobDateKey === nextDayKey
               : customDateFilter
                 ? jobDateKey === customDateFilter
                 : true
@@ -1516,6 +1526,7 @@ export default function JobsPage() {
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="all">All Status</option>
+              <option value="queued">Queued</option>
               <option value="Pending">Pending</option>
               <option value="Scheduled">Scheduled</option>
               <option value="In Progress">In Progress</option>
@@ -1552,11 +1563,12 @@ export default function JobsPage() {
 
             <select
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as 'today' | 'yesterday' | 'custom' | 'all')}
+              onChange={(e) => setDateFilter(e.target.value as 'today' | 'yesterday' | 'nextDay' | 'custom' | 'all')}
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="today">Today Jobs</option>
               <option value="yesterday">Previous Day</option>
+              <option value="nextDay">Next Day</option>
               <option value="custom">Custom Date</option>
               <option value="all">All History</option>
             </select>
@@ -1619,7 +1631,7 @@ export default function JobsPage() {
         </div>
 
         <div className="text-xs text-gray-500">
-          Default view shows only today's jobs. Use Previous Day, Custom Date, or All History to view older jobs.
+          Default view shows only today's jobs. Use Queued, Previous Day, Next Day, Custom Date, or All History to quickly find scheduled jobs.
         </div>
       </div>
 

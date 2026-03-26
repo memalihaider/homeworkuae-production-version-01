@@ -20,6 +20,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const hasShownWelcomePopup = useRef(false)
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
+  const welcomePopupStorageKey = 'homeworkuae_welcome_popup_shown'
   const [profileData, setProfileData] = useState({
     phone: '80046639675',
     email: 'services@homeworkuae.com',
@@ -71,15 +72,26 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       return
     }
 
+    const alreadyShown = typeof window !== 'undefined'
+      ? window.localStorage.getItem(welcomePopupStorageKey)
+      : null
+
+    if (alreadyShown === 'true') {
+      hasShownWelcomePopup.current = true
+      setShowWelcomePopup(false)
+      return
+    }
+
     const timer = setTimeout(() => {
       setShowWelcomePopup(true)
       hasShownWelcomePopup.current = true
+      window.localStorage.setItem(welcomePopupStorageKey, 'true')
     }, 700)
 
     return () => {
       clearTimeout(timer)
     }
-  }, [pathname])
+  }, [pathname, welcomePopupStorageKey])
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
