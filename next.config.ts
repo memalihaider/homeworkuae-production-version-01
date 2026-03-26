@@ -45,6 +45,121 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/feed',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/:path*/feed',
+        destination: '/:path*',
+        permanent: true,
+      },
+      {
+        source: '/sitemap_index.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/author-sitemap.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/category-sitemap.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/booking-form',
+        destination: '/booking',
+        permanent: true,
+      },
+      {
+        source: '/faq',
+        destination: '/faqs',
+        permanent: true,
+      },
+      {
+        source: '/faqs/:slug',
+        destination: '/faqs',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services/:slug*',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/:slug*',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/deep-cleaning/:slug*',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/techanical-cleaning/:slug*',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/services/deep-cleaning',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services/deep-cleaning',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/services/move-in-move-out-cleaning',
+        destination: '/services/move-in-out-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/techanical-cleaning/ac-duct-cleaning-2',
+        destination: '/services/ac-duct-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/techanical-cleaning/grease-trap-cleaning-2',
+        destination: '/services/grease-trap-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/regular-office-cleaning',
+        destination: '/services/office-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/regular-residential-cleaning',
+        destination: '/services/residential-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/sofa-deep-cleaning-2',
+        destination: '/services/sofa-deep-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/mattress-deep-cleaning-2',
+        destination: '/services/mattress-deep-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/carpets-deep-cleaning-2',
+        destination: '/services/carpets-deep-cleaning',
+        permanent: true,
+      },
+      {
+        source: '/cleaning-services2/window-cleaning-2',
+        destination: '/services/window-cleaning',
+        permanent: true,
+      },
+      {
         source: '/404',
         destination: '/',
         permanent: true,
