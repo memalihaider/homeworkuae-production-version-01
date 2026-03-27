@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useMemo, useEffect } from "react";
 import {
   Clock,
   CheckCircle2,
@@ -1836,7 +1836,7 @@ export default function AttendancePage() {
                         (e) => e.id === record.employeeId,
                       );
                       return (
-                        <>
+                        <Fragment key={record.id}>
                         <tr
                           className="hover:bg-gray-50 transition-colors"
                         >
@@ -1995,7 +1995,7 @@ export default function AttendancePage() {
                             </td>
                           </tr>
                         )}
-                        </>
+                        </Fragment>
                       );
                     })
                   ) : (
