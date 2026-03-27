@@ -218,6 +218,7 @@ export default function JobsPage() {
   const [permits, setPermits] = useState<PermitLicense[]>([])
   const [services, setServices] = useState<ServiceItem[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [showSearchBar, setShowSearchBar] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [creatorFilter, setCreatorFilter] = useState<string>('all')
@@ -1576,19 +1577,34 @@ export default function JobsPage() {
 
       {/* Search & Filters */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by job title, client, or location..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between lg:hidden">
+            <button
+              type="button"
+              onClick={() => setShowSearchBar((prev) => !prev)}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              aria-expanded={showSearchBar}
+              aria-controls="jobs-search"
+            >
+              <Search className="h-4 w-4" />
+              {showSearchBar ? 'Hide Search' : 'Search'}
+            </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className={`${showSearchBar ? 'block' : 'hidden'} lg:block`}>
+            <div className="relative" id="jobs-search">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by job title, client, or location..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 overflow-x-auto flex-nowrap pb-1">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
