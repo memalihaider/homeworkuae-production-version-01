@@ -4923,7 +4923,7 @@ const downloadJobPDF = () => {
             <div className="space-y-2">
               <p className="text-lg font-bold text-gray-900">CleanCorp Services LLC</p>
               <p className="text-sm text-gray-600">P.O. Box 12345, Dubai, UAE</p>
-              <p className="text-sm text-gray-600">+971 4 123 4567</p>
+              <p className="text-sm text-gray-600">+971 50 717 7059</p>
               <p className="text-sm text-gray-600">info@cleancorp.ae</p>
               <p className="text-sm text-gray-600">TRN: 100123456700003</p>
             </div>

@@ -129,7 +129,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   description:
                     "Premium cleaning company in Dubai offering maid services, deep cleaning services, villa cleaning, office cleaning, kitchen cleaning, AC duct cleaning, and post-construction cleaning since 2004.",
                   url: "https://www.homeworkuae.com",
-                  telephone: "+97180046639675",
+                  telephone: "+971507177059",
                   email: "services@homeworkuae.com",
                   foundingDate: "2004",
                   priceRange: "$$",

@@ -24,7 +24,7 @@ const staticFAQs = [
   },
   {
     question: "2. How can I book a cleaning service with Homework Cleaning Services?",
-    answer: "You can book directly through our website by clicking the 'BOOK ONLINE' button, or call our customer service hotline at 800-HOMEWORK (800 46639675). Our team is available to assist you with scheduling and selecting the right service for your needs."
+    answer: "You can book directly through our website by clicking the 'BOOK ONLINE' button, or call our customer service hotline at +971 50 717 7059. Our team is available to assist you with scheduling and selecting the right service for your needs."
   },
   {
     question: "3. What areas do you serve in the UAE?",

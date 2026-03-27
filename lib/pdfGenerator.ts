@@ -198,7 +198,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   doc.text('Dubai, UAE', margin + 4, fromY);
   fromY += 4;
   doc.setTextColor(0, 0, 0);
-  doc.text('+971 800 4663', margin + 4, fromY);
+  doc.text('+971 50 717 7059', margin + 4, fromY);
   fromY += 3;
   doc.text('services@homeworkuae.com', margin + 4, fromY);
 

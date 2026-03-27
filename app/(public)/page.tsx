@@ -839,7 +839,7 @@ export default function HomePage() {
                     <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center font-bold text-lg">800</div>
                     <div>
                       <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-0.5">Toll Free Support</div>
-                      <div className="text-2xl font-black tracking-tight">800 4663 9675</div>
+                      <div className="text-2xl font-black tracking-tight">+971 50 717 7059</div>
                     </div>
                   </div>
                   <div className="h-px bg-white/10" />
@@ -857,7 +857,7 @@ export default function HomePage() {
                     ))}
                   </div>
                   <a
-                    href="https://wa.me/80046639675"
+                    href="https://wa.me/971507177059"
                     className="block w-full h-12 bg-white text-slate-900 rounded-xl text-center leading-12 font-bold text-sm hover:bg-slate-100 transition-colors"
                   >
                     Chat via WhatsApp

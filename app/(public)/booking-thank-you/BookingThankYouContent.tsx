@@ -117,13 +117,13 @@ export function BookingThankYouContent() {
               </div>
             </a>
             <a
-              href="tel:+97145678910"
+              href="tel:+971507177059"
               className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <Phone className="h-6 w-6 text-gray-600" />
               <div>
                 <p className="text-sm text-gray-500">Call Us</p>
-                <p className="text-sm font-semibold text-gray-900">+971 4 567 8910</p>
+                <p className="text-sm font-semibold text-gray-900">+971 50 717 7059</p>
               </div>
             </a>
           </motion.div>

@@ -1495,7 +1495,7 @@
 // new code
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   Search,
   Filter,
@@ -1539,8 +1539,8 @@ import {
 } from 'lucide-react'
 
 import { db } from '@/lib/firebase'
-import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc, where, Timestamp, onSnapshot, addDoc } from 'firebase/firestore'
-import { format, addDays, startOfDay, addMinutes, isSameDay, parseISO } from 'date-fns'
+import { collection, getDocs, query, deleteDoc, doc, updateDoc, where, Timestamp, onSnapshot, addDoc } from 'firebase/firestore'
+import { format, addDays, startOfDay, addMinutes, isSameDay } from 'date-fns'
 
 interface Booking {
   id: string;
@@ -1634,6 +1634,7 @@ const calendarStatusColors = {
 export default function AdminBookings() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const servicesRef = useRef<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
@@ -1658,6 +1659,10 @@ export default function AdminBookings() {
   const [hiddenHours, setHiddenHours] = useState<number[]>([])
   const [showSettings, setShowSettings] = useState(false)
 
+  useEffect(() => {
+    servicesRef.current = services
+  }, [services])
+
   // Fetch data from Firebase
   useEffect(() => {
     fetchServices()
@@ -1665,34 +1670,39 @@ export default function AdminBookings() {
     
     // Set up real-time listener for bookings
     const bookingsRef = collection(db, 'bookings')
-    const q = query(bookingsRef, orderBy('createdAt', 'desc'))
+    const q = query(bookingsRef)
     
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const bookingsData: Booking[] = []
+      const bookingsData: Array<{ booking: Booking; sortKey: number }> = []
       
       querySnapshot.forEach((doc) => {
         const data = doc.data()
         
-        // Extract service name and calculate price
-        const serviceName = data.service || 'N/A'
-        const serviceInfo = getServiceInfo(serviceName)
+        const serviceDisplayName = data.serviceName || data.service || data.serviceId || 'N/A'
+        const serviceInfo = getServiceInfo(serviceDisplayName, data.serviceId)
         
         const booking: Booking = {
           id: doc.id,
           bookingId: data.bookingId || `BK${Date.now()}`,
-          clientName: data.name || 'N/A',
-          clientEmail: data.email || 'N/A',
-          clientPhone: data.phone || 'N/A',
-          clientAddress: data.area || 'N/A',
+          clientName: data.name || data.clientName || 'N/A',
+          clientEmail: data.email || data.clientEmail || 'N/A',
+          clientPhone: data.phone || data.clientPhone || 'N/A',
+          clientAddress: data.area || data.location || data.clientAddress || 'N/A',
           serviceName: serviceInfo.name,
-          serviceId: serviceInfo.id,
-          bookingDate: data.date || new Date().toISOString().split('T')[0],
-          bookingTime: data.time || '00:00',
+          serviceId: serviceInfo.id || data.serviceId || '',
+          bookingDate:
+            (typeof data.date === 'string' && data.date) ||
+            (typeof data.bookingDate === 'string' && data.bookingDate) ||
+            formatFirebaseTimestamp(data.date || data.bookingDate),
+          bookingTime:
+            (typeof data.time === 'string' && data.time) ||
+            (typeof data.bookingTime === 'string' && data.bookingTime) ||
+            '00:00',
           bookingNumber: data.bookingId || `BK${Date.now()}`,
           duration: serviceInfo.duration,
           estimatedPrice: serviceInfo.price,
           status: (data.status || 'pending') as Booking['status'],
-          notes: data.message || '',
+          notes: data.message || data.notes || '',
           propertyType: data.propertyType || '',
           frequency: data.frequency || 'once',
           createdAt: formatFirebaseTimestamp(data.createdAt),
@@ -1702,11 +1712,21 @@ export default function AdminBookings() {
           lastStatusChangeAt: data.lastStatusChangeAt ? formatFirebaseTimestamp(data.lastStatusChangeAt) : '',
           lastStatusChange: data.lastStatusChange || null
         }
-        
-        bookingsData.push(booking)
+
+        const createdAtSortKey =
+          data.createdAt?.toDate?.()?.getTime?.() ||
+          (data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0)
+
+        const fallbackDateTime = Date.parse(`${booking.bookingDate}T${booking.bookingTime || '00:00'}:00`)
+        const sortKey = Number.isFinite(createdAtSortKey) && createdAtSortKey > 0
+          ? createdAtSortKey
+          : (Number.isFinite(fallbackDateTime) ? fallbackDateTime : 0)
+
+        bookingsData.push({ booking, sortKey })
       })
-      
-      setBookings(bookingsData)
+
+      bookingsData.sort((a, b) => b.sortKey - a.sortKey)
+      setBookings(bookingsData.map((entry) => entry.booking))
     }, (error) => {
       console.error('Error fetching bookings:', error)
     })
@@ -1771,21 +1791,29 @@ export default function AdminBookings() {
     }
   }
 
-  const getServiceInfo = (serviceName: string): { id: string; name: string; price: number; duration: number } => {
-    // Try exact match first
-    let service = services.find(s => s.name.toLowerCase() === serviceName.toLowerCase())
-    
-    // If not found, try includes match
-    if (!service) {
-      service = services.find(s => serviceName.toLowerCase().includes(s.name.toLowerCase()) || 
-                                       s.name.toLowerCase().includes(serviceName.toLowerCase()))
+  const getServiceInfo = (
+    serviceValue: string,
+    serviceId?: string
+  ): { id: string; name: string; price: number; duration: number } => {
+    const currentServices = servicesRef.current
+    const normalizedValue = (serviceValue || '').toLowerCase().trim()
+    const normalizedServiceId = (serviceId || '').toLowerCase().trim()
+
+    let service =
+      currentServices.find(s => s.id.toLowerCase() === normalizedServiceId) ||
+      currentServices.find(s => s.id.toLowerCase() === normalizedValue) ||
+      currentServices.find(s => s.name.toLowerCase() === normalizedValue)
+
+    if (!service && normalizedValue) {
+      service = currentServices.find(
+        s => normalizedValue.includes(s.name.toLowerCase()) || s.name.toLowerCase().includes(normalizedValue)
+      )
     }
-    
-    // If still not found, return default
+
     if (!service) {
       return {
-        id: '',
-        name: serviceName,
+        id: serviceId || '',
+        name: serviceValue || 'N/A',
         price: 200,
         duration: 2
       }
@@ -1803,7 +1831,40 @@ export default function AdminBookings() {
     if (!timestamp) return new Date().toISOString().split('T')[0]
     if (timestamp.toDate) return timestamp.toDate().toISOString().split('T')[0]
     if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toISOString().split('T')[0]
-    return timestamp
+    if (timestamp instanceof Date) return timestamp.toISOString().split('T')[0]
+    if (typeof timestamp === 'number') return new Date(timestamp).toISOString().split('T')[0]
+    if (typeof timestamp === 'string') return timestamp
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const toSafeDate = (value: unknown, fallback = new Date()): Date => {
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? fallback : value
+    }
+
+    if (value && typeof value === 'object') {
+      const maybe = value as { toDate?: () => Date; seconds?: number }
+      if (typeof maybe.toDate === 'function') {
+        const fromToDate = maybe.toDate()
+        return Number.isNaN(fromToDate.getTime()) ? fallback : fromToDate
+      }
+      if (typeof maybe.seconds === 'number') {
+        const fromSeconds = new Date(maybe.seconds * 1000)
+        return Number.isNaN(fromSeconds.getTime()) ? fallback : fromSeconds
+      }
+    }
+
+    if (typeof value === 'number') {
+      const fromNumber = new Date(value)
+      return Number.isNaN(fromNumber.getTime()) ? fallback : fromNumber
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const fromString = new Date(value)
+      return Number.isNaN(fromString.getTime()) ? fallback : fromString
+    }
+
+    return fallback
   }
 
   // Calendar Functions
@@ -1831,7 +1892,7 @@ export default function AdminBookings() {
 
   const filteredAppointments = useMemo(() => 
     bookings.filter(apt => {
-      const aptDate = parseISO(apt.bookingDate)
+      const aptDate = toSafeDate(apt.bookingDate, selectedDate)
       const matchesDate = isSameDay(aptDate, selectedDate)
       const matchesService = selectedService === 'all' || apt.serviceId === selectedService || apt.serviceName === selectedService
       return matchesDate && matchesService
@@ -1839,7 +1900,8 @@ export default function AdminBookings() {
     [bookings, selectedDate, selectedService]
   )
 
-  const convertTo24Hour = (time12h: string): string => {
+  const convertTo24Hour = (timeValue: unknown): string => {
+    const time12h = String(timeValue ?? '').trim()
     if (!time12h) return "00:00"
     if (time12h.includes(':') && !time12h.includes(' ')) return time12h
     if (!time12h.includes(' ')) return time12h
@@ -1942,12 +2004,20 @@ export default function AdminBookings() {
   const resetHiddenHours = () => setHiddenHours([])
 
   const filteredAndSortedBookings = useMemo(() => {
+    const normalizedSearch = searchTerm.toLowerCase().trim()
+    const safeLower = (value: unknown) => String(value ?? '').toLowerCase()
+    const safeDateMs = (value: unknown) => toSafeDate(value, new Date(0)).getTime()
+    const safeNumber = (value: unknown) => {
+      const num = Number(value)
+      return Number.isFinite(num) ? num : 0
+    }
+
     let filtered = bookings.filter(booking => {
       const matchesSearch = 
-        booking.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.bookingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.clientEmail.toLowerCase().includes(searchTerm.toLowerCase())
+        safeLower(booking.clientName).includes(normalizedSearch) ||
+        safeLower(booking.serviceName).includes(normalizedSearch) ||
+        safeLower(booking.bookingNumber).includes(normalizedSearch) ||
+        safeLower(booking.clientEmail).includes(normalizedSearch)
       
       const matchesStatus = selectedStatus === 'all' || booking.status === selectedStatus
       
@@ -1956,12 +2026,12 @@ export default function AdminBookings() {
 
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'date-desc': return new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
-        case 'date-asc': return new Date(a.bookingDate).getTime() - new Date(b.bookingDate).getTime()
-        case 'price-desc': return b.estimatedPrice - a.estimatedPrice
-        case 'price-asc': return a.estimatedPrice - b.estimatedPrice
-        case 'name-asc': return a.clientName.localeCompare(b.clientName)
-        case 'name-desc': return b.clientName.localeCompare(a.clientName)
+        case 'date-desc': return safeDateMs(b.bookingDate) - safeDateMs(a.bookingDate)
+        case 'date-asc': return safeDateMs(a.bookingDate) - safeDateMs(b.bookingDate)
+        case 'price-desc': return safeNumber(b.estimatedPrice) - safeNumber(a.estimatedPrice)
+        case 'price-asc': return safeNumber(a.estimatedPrice) - safeNumber(b.estimatedPrice)
+        case 'name-asc': return safeLower(a.clientName).localeCompare(safeLower(b.clientName))
+        case 'name-desc': return safeLower(b.clientName).localeCompare(safeLower(a.clientName))
         default: return 0
       }
     })
@@ -2718,7 +2788,8 @@ export default function AdminBookings() {
           <div className="space-y-4">
             {filteredAndSortedBookings.length > 0 ? (
               filteredAndSortedBookings.map((booking) => {
-                const StatusIcon = statusIcons[booking.status]
+                const StatusIcon = statusIcons[booking.status] || AlertCircle
+                const safePrice = Number(booking.estimatedPrice)
                 return (
                   <div
                     key={booking.id}
@@ -2767,7 +2838,7 @@ export default function AdminBookings() {
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                               <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <p className="text-foreground font-bold">AED {booking.estimatedPrice.toLocaleString()}</p>
+                              <p className="text-foreground font-bold">AED {(Number.isFinite(safePrice) ? safePrice : 0).toLocaleString()}</p>
                             </div>
                             <div className="relative">
                               <select
@@ -3076,7 +3147,7 @@ export default function AdminBookings() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-muted/50 rounded-xl p-3">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Estimated Price</p>
-                    <p className="text-xl font-black">AED {editFormData.estimatedPrice.toLocaleString()}</p>
+                    <p className="text-xl font-black">AED {(Number.isFinite(Number(editFormData.estimatedPrice)) ? Number(editFormData.estimatedPrice) : 0).toLocaleString()}</p>
                   </div>
                   <div className="bg-muted/50 rounded-xl p-3">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Status</p>

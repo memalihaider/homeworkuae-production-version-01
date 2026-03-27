@@ -22,7 +22,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const welcomePopupStorageKey = 'homeworkuae_welcome_popup_shown'
   const [profileData, setProfileData] = useState({
-    phone: '80046639675',
+    phone: '+971507177059',
     email: 'services@homeworkuae.com',
     company: 'homeware',
     address: 'Office: 201, 2nd Floor, Al Saaha Offices - B, Downtown Dubai - UAE' // Default address
@@ -48,7 +48,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           const data = docSnap.data()
           if (data.profile) {
             setProfileData({
-              phone: data.profile.phone || '80046639675',
+              phone: data.profile.phone || '+971507177059',
               email: data.profile.email || 'services@homeworkuae.com',
               company: data.profile.company || 'homeware',
               address: data.profile.address || 'Office: 201, 2nd Floor, Al Saaha Offices - B, Downtown Dubai - UAE' // Fetch address from Firebase

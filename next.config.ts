@@ -47,6 +47,17 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.homeworkuae.com',
+          },
+        ],
+        destination: 'https://www.homeworkuae.com/:path*',
+        permanent: true,
+      },
+      {
         source: '/feed',
         destination: '/',
         permanent: true,

@@ -168,7 +168,7 @@ export const generateEmailTemplate = (quotation: QuotationData): { html: string,
         <div class="footer">
             <p style="margin: 0; font-size: 11px; color: #888;">
                
-                If you have any questions, please contact us at info@yourcompany.com or call +971 4 123 4567
+                If you have any questions, please contact us at info@yourcompany.com or call +971 50 717 7059
             </p>
             <p style="margin: 10px 0 0 0; font-size: 10px; color: #aaa;">
                 © ${new Date().getFullYear()} Your Company. All rights reserved.

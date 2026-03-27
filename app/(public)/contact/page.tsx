@@ -41,7 +41,7 @@ export default function Contact() {
   const [activeTab, setActiveTab] = useState('form')
   const [profileData, setProfileData] = useState({
     email: 'services@homeworkuae.com',
-    phone: '80046639675',
+    phone: '+971507177059',
     whatsapp: '+971 50 717 7059'
   })
   const [services, setServices] = useState<FirebaseService[]>([])
@@ -74,7 +74,7 @@ export default function Contact() {
           if (data.profile) {
             setProfileData({
               email: data.profile.email || 'services@homeworkuae.com',
-              phone: data.profile.phone || '80046639675',
+              phone: data.profile.phone || '+971507177059',
               whatsapp: data.profile.whatsapp || '+971 50 717 7059'
             })
           }

@@ -196,16 +196,16 @@ export const defaultAboutPage: CMSAboutPage = {
     { title: "Excellence and Quality", description: "Setting the gold standard in every hygiene session." }
   ],
   contactAddress: "Al Quoz - Dubai - United Arab Emirates",
-  contactPhone: "800 4663 9675",
+  contactPhone: "+971 50 717 7059",
   contactEmail: "services@homeworkuae.com"
 }
 
 export const defaultContactPage: CMSContactPage = {
   heroTitle: "HAVE QUESTIONS?",
   heroSubtitle: "We'd love to hear from you. Reach out and our team will get back to you promptly.",
-  phone: "80046639675",
+  phone: "+971507177059",
   email: "services@homeworkuae.com",
-  whatsapp: "971501234567",
+  whatsapp: "971507177059",
   address: "Al Quoz Industrial Area 3, Dubai, UAE",
   mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3610.178509394994!2d55.2362!3d25.1885!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjXCsDExJzE4LjYiTiA1NcKwMTQnMTAuMyJF!5e0!3m2!1sen!2sae!4v1234567890",
   socialLinks: [
@@ -306,7 +306,7 @@ export const defaultLayoutSettings: CMSLayoutSettings = {
     newsletterTitle: "Stay Updated",
     newsletterSubtitle: "Subscribe to our newsletter for cleaning tips and offers."
   },
-  topBarPhone: "80046639675",
+  topBarPhone: "+971507177059",
   topBarEmail: "services@homeworkuae.com"
 }
 
