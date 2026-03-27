@@ -152,6 +152,11 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
         throw new Error(result.error || 'Failed to save booking to database')
       }
 
+      const bookingId = result.bookingId
+      if (!bookingId) {
+        throw new Error('Booking ID was not returned after saving')
+      }
+
       // Send email notification (non-blocking)
       try {
         await fetch('/api/send-booking-email', {
@@ -163,7 +168,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
             clientPhone: formData.phone,
             serviceName: selectedService?.name || 'Service',
             message: formData.message,
-            bookingId: result.bookingId,
+            bookingId,
             source: 'service-page-booking',
           }),
         })
@@ -172,7 +177,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
         // Continue with success even if email fails - booking is already saved
       }
       
-      // Only redirect after booking is confirmed saved
+      // Redirect to clean thank-you URL
       router.push('/thank-you')
       
     } catch (error) {

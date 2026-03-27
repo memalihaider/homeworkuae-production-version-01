@@ -1,22 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { CheckCircle2, Home, Phone, Briefcase, MapPin, Hash, ArrowRight } from 'lucide-react'
+import { CheckCircle2, Home, Phone, Hash, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export function ThankYouContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-
-  const bookingDetails = useMemo(() => {
-    return {
-      bookingId: searchParams.get('booking-id') || 'Not available',
-      bookingRef: searchParams.get('booking-ref') || 'Not available',
-      service: searchParams.get('service') || 'Not available',
-      location: searchParams.get('location') || 'Not available',
-    }
-  }, [searchParams])
+  const bookingId = searchParams.get('booking-id')
 
   return (
     <motion.div
@@ -35,32 +26,14 @@ export function ThankYouContent() {
         </div>
 
         <div className="space-y-8 px-6 py-8 md:px-10 md:py-10">
-          <div className="grid gap-4 sm:grid-cols-2">
+          {bookingId && (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
               <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <Hash className="h-4 w-4" /> Booking ID
               </p>
-              <p className="break-all text-base font-bold text-slate-900">{bookingDetails.bookingId}</p>
+              <p className="break-all text-base font-bold text-slate-900">{bookingId}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <Hash className="h-4 w-4" /> Reference
-              </p>
-              <p className="break-all text-base font-bold text-slate-900">{bookingDetails.bookingRef}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <Briefcase className="h-4 w-4" /> Service
-              </p>
-              <p className="text-base font-bold text-slate-900">{bookingDetails.service}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <MapPin className="h-4 w-4" /> Location
-              </p>
-              <p className="text-base font-bold text-slate-900">{bookingDetails.location}</p>
-            </div>
-          </div>
+          )}
 
           <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
             <h2 className="text-lg font-bold text-slate-900">What happens next</h2>

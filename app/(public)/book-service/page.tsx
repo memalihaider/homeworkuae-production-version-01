@@ -102,14 +102,7 @@ export default function BookService() {
         console.error("Booking email failed:", emailError);
       }
 
-      const query = new URLSearchParams({
-        "booking-id": docRef.id,
-        "booking-ref": bookingRef,
-        service: serviceName,
-        location: formData.location,
-      });
-
-      router.push(`/thank-you?${query.toString()}`);
+      router.push('/thank-you');
     } catch (error) {
       console.error("Booking submission error:", error);
       alert("Failed to submit booking. Please try again.");
