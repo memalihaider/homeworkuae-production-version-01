@@ -207,6 +207,10 @@ interface NewJobForm {
   allowValidationOverride: boolean
 }
 
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+
+type UserWeeklyAvailability = Record<DayKey, Array<{ start: string; end: string }>>
+
 const JOB_TAX_RATE = 0.05
 
 export default function JobsPage() {
@@ -217,6 +221,7 @@ export default function JobsPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [permits, setPermits] = useState<PermitLicense[]>([])
   const [services, setServices] = useState<ServiceItem[]>([])
+  const [userAvailability, setUserAvailability] = useState<Record<string, UserWeeklyAvailability>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [showSearchBar, setShowSearchBar] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -295,8 +300,8 @@ export default function JobsPage() {
             status: data.status || 'Pending',
             priority: data.priority || 'Medium',
             scheduledDate: data.scheduledDate || null,
-            scheduledTime: data.scheduledTime || '',
-            endTime: data.endTime || '',
+            scheduledTime: normalizeTime24(data.scheduledTime) || '',
+            endTime: normalizeTime24(data.endTime) || '',
             location: data.location || '',
             teamRequired: data.teamRequired || 1,
             budget: data.budget || 0,
@@ -374,6 +379,20 @@ export default function JobsPage() {
         })
         
         setEmployees(employeesData)
+
+        // Fetch user availability used by Universal Calendar (employee:<id>)
+        const availabilitySnapshot = await getDocs(collection(db, 'user-availability'))
+        const availabilityMap: Record<string, UserWeeklyAvailability> = {}
+        availabilitySnapshot.docs.forEach((availabilityDoc) => {
+          const data = availabilityDoc.data() as {
+            userId?: string
+            userType?: string
+            weeklyAvailability?: UserWeeklyAvailability
+          }
+          if (!data.userId || !data.userType || !data.weeklyAvailability) return
+          availabilityMap[`${data.userType}:${data.userId}`] = data.weeklyAvailability
+        })
+        setUserAvailability(availabilityMap)
 
         // Fetch ALL clients
         const clientsList: ClientLead[] = []
@@ -524,8 +543,8 @@ export default function JobsPage() {
           clientId: jobData.clientId || null,
           priority: jobData.priority || 'Medium',
           scheduledDate: jobData.scheduledDate || '',
-          scheduledTime: jobData.scheduledTime || '',
-          endTime: jobData.endTime || '',
+          scheduledTime: normalizeTime24(jobData.scheduledTime) || '',
+          endTime: normalizeTime24(jobData.endTime) || '',
           location: jobData.location || '',
           teamRequired: jobData.teamRequired || 1,
           budget: jobData.budget || 0,
@@ -596,6 +615,37 @@ export default function JobsPage() {
     return (hours * 60) + minutes
   }
 
+  const normalizeTime24 = (value?: string) => {
+    if (!value) return ''
+    const trimmed = value.trim()
+
+    const hhmmMatch = /^(\d{1,2}):(\d{2})$/.exec(trimmed)
+    if (hhmmMatch) {
+      const hours = Number(hhmmMatch[1])
+      const minutes = Number(hhmmMatch[2])
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+      }
+    }
+
+    const ampmMatch = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(trimmed)
+    if (ampmMatch) {
+      let hours = Number(ampmMatch[1])
+      const minutes = Number(ampmMatch[2])
+      const meridiem = ampmMatch[3].toUpperCase()
+      if (hours >= 1 && hours <= 12 && minutes >= 0 && minutes <= 59) {
+        if (meridiem === 'AM') {
+          hours = hours === 12 ? 0 : hours
+        } else {
+          hours = hours === 12 ? 12 : hours + 12
+        }
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+      }
+    }
+
+    return ''
+  }
+
   const toTimeLabel = (minutes: number) => {
     const safe = Math.max(0, Math.min(minutes, 23 * 60 + 59))
     const hrs = Math.floor(safe / 60)
@@ -605,6 +655,20 @@ export default function JobsPage() {
 
   const doesOverlap = (startA: number, endA: number, startB: number, endB: number) => {
     return startA < endB && startB < endA
+  }
+
+  const getDayKeyFromDate = (dateValue: string): DayKey | null => {
+    if (!dateValue) return null
+    const parsed = new Date(`${dateValue}T00:00:00`)
+    if (Number.isNaN(parsed.getTime())) return null
+    const day = parsed.getDay()
+    if (day === 1) return 'monday'
+    if (day === 2) return 'tuesday'
+    if (day === 3) return 'wednesday'
+    if (day === 4) return 'thursday'
+    if (day === 5) return 'friday'
+    if (day === 6) return 'saturday'
+    return 'sunday'
   }
 
   const schedulingInsights = useMemo(() => {
@@ -733,6 +797,131 @@ export default function JobsPage() {
     editingJobId
   ])
 
+  const employeeScheduleInsights = useMemo(() => {
+    const selectedEmployeeIds = newJobForm.selectedEmployees
+    const dayKey = getDayKeyFromDate(newJobForm.scheduledDate)
+    const start = toMinutes(newJobForm.scheduledTime)
+    const end = toMinutes(newJobForm.endTime)
+    const fallbackEnd = start != null ? start + 120 : null
+    const slotStart = start
+    const slotEnd = end ?? fallbackEnd
+
+    if (!dayKey || slotStart == null || slotEnd == null || selectedEmployeeIds.length === 0) {
+      return {
+        hasTeamScheduleCheck: false,
+        isTeamSlotValid: true,
+        unavailableEmployees: [] as string[],
+        suggestedStartTimes: [] as string[]
+      }
+    }
+
+    const activeJobs = jobs.filter((job) => {
+      if (editingJobId && job.id === editingJobId) return false
+      if (job.scheduledDate !== newJobForm.scheduledDate) return false
+      if (!job.scheduledTime || !job.endTime) return false
+      return ['Pending', 'Scheduled', 'In Progress'].includes(job.status)
+    })
+
+    const isEmployeeAvailableAtRange = (employeeId: string, startMinutes: number, endMinutes: number) => {
+      const weeklyAvailability = userAvailability[`employee:${employeeId}`]
+      const dayRanges = weeklyAvailability?.[dayKey] || []
+      const inAvailability = dayRanges.some((range) => {
+        const rangeStart = toMinutes(range.start)
+        const rangeEnd = toMinutes(range.end)
+        if (rangeStart == null || rangeEnd == null) return false
+        return rangeStart <= startMinutes && rangeEnd >= endMinutes
+      })
+
+      if (!inAvailability) {
+        return false
+      }
+
+      const hasJobConflict = activeJobs.some((job) => {
+        const isAssigned = Array.isArray(job.assignedEmployees)
+          ? job.assignedEmployees.some((emp: { id?: string }) => emp?.id === employeeId)
+          : false
+        if (!isAssigned) return false
+        const jobStart = toMinutes(job.scheduledTime)
+        const jobEnd = toMinutes(job.endTime)
+        if (jobStart == null || jobEnd == null) return false
+        return doesOverlap(startMinutes, endMinutes, jobStart, jobEnd)
+      })
+
+      return !hasJobConflict
+    }
+
+    const unavailableEmployees = selectedEmployeeIds
+      .map((employeeId) => {
+        const employee = employees.find((item) => item.id === employeeId)
+        const label = employee?.name || employeeId
+        const weeklyAvailability = userAvailability[`employee:${employeeId}`]
+        const dayRanges = weeklyAvailability?.[dayKey] || []
+
+        if (dayRanges.length === 0) {
+          return `${label} (no shift/availability set)`
+        }
+
+        const inAvailability = dayRanges.some((range) => {
+          const rangeStart = toMinutes(range.start)
+          const rangeEnd = toMinutes(range.end)
+          if (rangeStart == null || rangeEnd == null) return false
+          return rangeStart <= slotStart && rangeEnd >= slotEnd
+        })
+
+        if (!inAvailability) {
+          return `${label} (outside shift slots)`
+        }
+
+        const hasJobConflict = activeJobs.some((job) => {
+          const isAssigned = Array.isArray(job.assignedEmployees)
+            ? job.assignedEmployees.some((emp: { id?: string }) => emp?.id === employeeId)
+            : false
+          if (!isAssigned) return false
+          const jobStart = toMinutes(job.scheduledTime)
+          const jobEnd = toMinutes(job.endTime)
+          if (jobStart == null || jobEnd == null) return false
+          return doesOverlap(slotStart, slotEnd, jobStart, jobEnd)
+        })
+
+        if (hasJobConflict) {
+          return `${label} (already booked)`
+        }
+
+        return null
+      })
+      .filter((value): value is string => Boolean(value))
+
+    const duration = slotEnd - slotStart
+    const suggestedStartTimes: string[] = []
+    const searchStart = toMinutes('06:00') ?? 360
+    const searchEnd = toMinutes('22:00') ?? 1320
+
+    for (let candidateStart = searchStart; candidateStart <= searchEnd - duration; candidateStart += 60) {
+      const candidateEnd = candidateStart + duration
+      const canFitAll = selectedEmployeeIds.every((employeeId) => isEmployeeAvailableAtRange(employeeId, candidateStart, candidateEnd))
+      if (canFitAll) {
+        suggestedStartTimes.push(toTimeLabel(candidateStart))
+      }
+      if (suggestedStartTimes.length >= 3) break
+    }
+
+    return {
+      hasTeamScheduleCheck: true,
+      isTeamSlotValid: unavailableEmployees.length === 0,
+      unavailableEmployees,
+      suggestedStartTimes
+    }
+  }, [
+    newJobForm.selectedEmployees,
+    newJobForm.scheduledDate,
+    newJobForm.scheduledTime,
+    newJobForm.endTime,
+    jobs,
+    userAvailability,
+    employees,
+    editingJobId
+  ])
+
   // Helper function to get creator name
   const getCreatorName = useCallback((creatorId: string) => {
     const creator = employees.find(e => e.id === creatorId)
@@ -831,6 +1020,14 @@ export default function JobsPage() {
         alert(`Insufficient manpower for this slot. ${nextSlotText} You can enable override to proceed anyway.`)
         return
       }
+
+      if (!employeeScheduleInsights.isTeamSlotValid && !newJobForm.allowValidationOverride) {
+        const suggestionText = employeeScheduleInsights.suggestedStartTimes.length > 0
+          ? ` Suggested aligned slots: ${employeeScheduleInsights.suggestedStartTimes.join(', ')}.`
+          : ''
+        alert(`Selected team members are not fully available for this job slot: ${employeeScheduleInsights.unavailableEmployees.join(' | ')}.${suggestionText}`)
+        return
+      }
     }
 
     try {
@@ -862,8 +1059,8 @@ export default function JobsPage() {
         clientId: newJobForm.clientId || '',
         priority: newJobForm.priority,
         scheduledDate: newJobForm.scheduledDate || null,
-        scheduledTime: newJobForm.scheduledTime,
-        endTime: newJobForm.endTime,
+        scheduledTime: normalizeTime24(newJobForm.scheduledTime),
+        endTime: normalizeTime24(newJobForm.endTime),
         location: newJobForm.location,
         teamRequired: newJobForm.teamRequired,
         budget: editingJobId ? enteredBudget : budgetWithTax,
@@ -1002,6 +1199,7 @@ export default function JobsPage() {
     equipment,
     permits,
     schedulingInsights,
+    employeeScheduleInsights,
     createJobAuditLog,
     createOperationsNotification,
     createAssignmentNotifications
@@ -2394,8 +2592,10 @@ export default function JobsPage() {
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Start Time</label>
                     <input
                       type="time"
+                      step={3600}
+                      lang="en-GB"
                       value={newJobForm.scheduledTime}
-                      onChange={(e) => setNewJobForm({...newJobForm, scheduledTime: e.target.value})}
+                      onChange={(e) => setNewJobForm({...newJobForm, scheduledTime: normalizeTime24(e.target.value)})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
@@ -2403,8 +2603,10 @@ export default function JobsPage() {
                     <label className="block text-sm font-semibold text-gray-900 mb-2">End Time</label>
                     <input
                       type="time"
+                      step={3600}
+                      lang="en-GB"
                       value={newJobForm.endTime}
-                      onChange={(e) => setNewJobForm({...newJobForm, endTime: e.target.value})}
+                      onChange={(e) => setNewJobForm({...newJobForm, endTime: normalizeTime24(e.target.value)})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
@@ -2445,6 +2647,22 @@ export default function JobsPage() {
                         )}
                         {schedulingInsights.blockingJobs.length > 0 && (
                           <p className="mt-1">Conflicts: {schedulingInsights.blockingJobs.slice(0, 2).join(' | ')}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {newJobForm.scheduledDate && newJobForm.scheduledTime && newJobForm.selectedEmployees.length > 0 && (
+                  <div className={`rounded-lg border p-3 text-sm ${employeeScheduleInsights.isTeamSlotValid ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    <p className="font-semibold">
+                      Team slot alignment with Universal Calendar: {employeeScheduleInsights.isTeamSlotValid ? 'Aligned' : 'Not aligned'}
+                    </p>
+                    {!employeeScheduleInsights.isTeamSlotValid && (
+                      <>
+                        <p className="mt-1">Issues: {employeeScheduleInsights.unavailableEmployees.join(' | ')}</p>
+                        {employeeScheduleInsights.suggestedStartTimes.length > 0 && (
+                          <p className="mt-1 font-semibold">Suggested aligned starts: {employeeScheduleInsights.suggestedStartTimes.join(', ')}</p>
                         )}
                       </>
                     )}

@@ -40,6 +40,7 @@ const ALL_PAGES = [
   'Quotation List',
   'Inventory & Services',
   'Jobs',
+  'Universal Calendar',
   'Equipment & Permits',
   'Job Profitability',
   'Bookings',
@@ -100,7 +101,7 @@ const normalizePortalPages = (portal: 'admin' | 'employee', pages: string[]) => 
   }
 
   // Keep permissions page-based while ensuring critical admin navigation pages exist.
-  const criticalPages = ['Dashboard', 'Quotations', 'Quotation List', 'Process Inquiry']
+  const criticalPages = ['Dashboard', 'Quotations', 'Quotation List', 'Process Inquiry', 'Universal Calendar']
 
   criticalPages.forEach(page => {
     if (!normalizedPages.includes(page)) {

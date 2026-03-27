@@ -220,6 +220,7 @@ const ALL_PAGES_CONFIG = {
   "Quotation List": { icon: FileText, href: "/admin/quotations/list" },
   "Inventory & Services": { icon: Wrench, href: "/admin/products" },
   Jobs: { icon: Briefcase, href: "/admin/jobs" },
+  "Universal Calendar": { icon: Calendar, href: "/admin/universal-calendar" },
   "Equipment & Permits": { icon: Wrench, href: "/admin/equipment-permits" },
   "Job Profitability": { icon: TrendingUp, href: "/admin/job-profitability" },
   Bookings: { icon: Calendar, href: "/admin/bookings" },
@@ -325,6 +326,11 @@ const MENU_STRUCTURE = [
     type: "single",
     label: "Jobs",
     key: "Jobs",
+  },
+  {
+    type: "single",
+    label: "Universal Calendar",
+    key: "Universal Calendar",
   },
   {
     type: "single",
@@ -452,7 +458,7 @@ const getNormalizedAllowedPages = (
   );
 
   if (portal === "admin") {
-    ["Dashboard", "Quotations", "Quotation List", "Process Inquiry"].forEach((page) => {
+    ["Dashboard", "Quotations", "Quotation List", "Process Inquiry", "Universal Calendar"].forEach((page) => {
       if (!normalized.includes(page)) {
         normalized.push(page);
       }

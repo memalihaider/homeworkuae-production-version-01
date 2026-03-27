@@ -139,6 +139,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // User availability (scheduling)
+    // Using authenticated access to avoid role-doc mismatch permission errors.
+    match /user-availability/{docId} {
+      allow read, write: if isAuth();
+    }
+
     // HR records
     match /hr-records/{docId} {
       allow read, write: if isAdmin();

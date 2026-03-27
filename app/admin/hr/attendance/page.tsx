@@ -107,6 +107,11 @@ export default function AttendancePage() {
     notes: "",
     status: "Present",
   });
+  const [editingTimeRecordId, setEditingTimeRecordId] = useState<string | null>(null);
+  const [manualTimeForm, setManualTimeForm] = useState({
+    clockIn: "",
+    clockOut: "",
+  });
 
   // ==================== EXPORT SECTION - PROPER EXCEL FORMAT ====================
   const [exportStartDate, setExportStartDate] = useState<string>(
@@ -1232,6 +1237,76 @@ export default function AttendancePage() {
     }
   };
 
+  const handleOpenTimeEditor = (record: Attendance) => {
+    setEditingTimeRecordId(record.id);
+    setManualTimeForm({
+      clockIn: record.clockIn || "",
+      clockOut: record.clockOut || "",
+    });
+  };
+
+  const handleCancelTimeEditor = () => {
+    setEditingTimeRecordId(null);
+    setManualTimeForm({ clockIn: "", clockOut: "" });
+  };
+
+  const handleSaveManualTime = async (record: Attendance) => {
+    try {
+      const clockIn = manualTimeForm.clockIn.trim();
+      const clockOut = manualTimeForm.clockOut.trim();
+
+      let workingHours = 0;
+      if (clockIn && clockOut) {
+        const clockInTime = new Date(`2024-01-01 ${clockIn}`);
+        const clockOutTime = new Date(`2024-01-01 ${clockOut}`);
+
+        if (Number.isNaN(clockInTime.getTime()) || Number.isNaN(clockOutTime.getTime())) {
+          alert("Please enter valid time values.");
+          return;
+        }
+
+        if (clockOutTime <= clockInTime) {
+          alert("Clock Out must be later than Clock In.");
+          return;
+        }
+
+        workingHours =
+          (clockOutTime.getTime() - clockInTime.getTime()) / (1000 * 60 * 60);
+      }
+
+      const updatePayload = cleanFirebaseData({
+        clockIn: clockIn,
+        clockOut: clockOut || null,
+        workingHours: Math.round(workingHours * 100) / 100,
+        attendanceType: "Manual",
+        updatedAt: new Date().toISOString(),
+      });
+
+      await updateDoc(doc(db, "attendance", record.id), updatePayload);
+
+      setAttendance((prev) =>
+        prev.map((item) =>
+          item.id === record.id
+            ? {
+                ...item,
+                clockIn: clockIn,
+                clockOut: clockOut || null,
+                workingHours: Math.round(workingHours * 100) / 100,
+                attendanceType: "Manual",
+                updatedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      );
+
+      handleCancelTimeEditor();
+      alert("Manual time updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating manual time:", error);
+      alert(`Error updating manual time: ${error.message}`);
+    }
+  };
+
   // Bulk mark attendance for all employees
   const handleBulkMark = async (
     status: "Present" | "Absent" | "Half Day" | "Full Leave" | "Sick Leave",
@@ -1761,8 +1836,8 @@ export default function AttendancePage() {
                         (e) => e.id === record.employeeId,
                       );
                       return (
+                        <>
                         <tr
-                          key={record.id}
                           className="hover:bg-gray-50 transition-colors"
                         >
                           <td className="px-4 py-3 text-gray-500">
@@ -1860,9 +1935,67 @@ export default function AttendancePage() {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
+                              <button
+                                onClick={() => handleOpenTimeEditor(record)}
+                                className="p-1.5 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"
+                                title="Edit Clock In/Out Manually"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
                             </div>
                           </td>
                         </tr>
+                        {editingTimeRecordId === record.id && (
+                          <tr className="bg-blue-50/40">
+                            <td colSpan={9} className="px-4 py-3 border-t border-blue-100">
+                              <div className="flex flex-wrap items-end gap-3">
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-700 mb-1">Manual Clock In</label>
+                                  <input
+                                    type="time"
+                                    step={60}
+                                    value={manualTimeForm.clockIn}
+                                    onChange={(e) =>
+                                      setManualTimeForm((prev) => ({
+                                        ...prev,
+                                        clockIn: e.target.value,
+                                      }))
+                                    }
+                                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-700 mb-1">Manual Clock Out</label>
+                                  <input
+                                    type="time"
+                                    step={60}
+                                    value={manualTimeForm.clockOut}
+                                    onChange={(e) =>
+                                      setManualTimeForm((prev) => ({
+                                        ...prev,
+                                        clockOut: e.target.value,
+                                      }))
+                                    }
+                                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => handleSaveManualTime(record)}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
+                                >
+                                  Save Time
+                                </button>
+                                <button
+                                  onClick={handleCancelTimeEditor}
+                                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-semibold"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        </>
                       );
                     })
                   ) : (
