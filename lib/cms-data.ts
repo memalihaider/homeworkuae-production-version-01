@@ -370,9 +370,16 @@ function clearCachedCMSData(pageId: string) {
   }
 }
 
-export async function getCMSData<T>(pageId: string, defaultData: T): Promise<T> {
-  const cached = getCachedCMSData<T>(pageId)
-  if (cached) return cached
+export async function getCMSData<T>(
+  pageId: string,
+  defaultData: T,
+  options?: { bypassCache?: boolean }
+): Promise<T> {
+  const shouldBypassCache = options?.bypassCache ?? false
+  if (!shouldBypassCache) {
+    const cached = getCachedCMSData<T>(pageId)
+    if (cached) return cached
+  }
 
   try {
     const docRef = doc(db, CMS_COLLECTION, pageId)
@@ -409,7 +416,8 @@ export async function uploadCMSImage(file: File, path: string): Promise<string> 
 }
 
 // Convenience getters
-export const getHomePage = () => getCMSData<CMSHomePage>('home', defaultHomePage)
+export const getHomePage = (options?: { bypassCache?: boolean }) =>
+  getCMSData<CMSHomePage>('home', defaultHomePage, options)
 export const getAboutPage = () => getCMSData<CMSAboutPage>('about', defaultAboutPage)
 export const getContactPage = () => getCMSData<CMSContactPage>('contact', defaultContactPage)
 export const getPricingPage = () => getCMSData<CMSPricingPage>('pricing', defaultPricingPage)

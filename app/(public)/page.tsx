@@ -46,8 +46,21 @@ const CTAButton = ({ text, href, variant = "primary", icon: Icon = null, classNa
 const resolveHexColor = (value: string | undefined, fallback: string) => {
   if (!value) return fallback
   const trimmed = value.trim()
-  const isHex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed)
-  return isHex ? trimmed : fallback
+
+  // Accept hex values with or without leading #, plus valid CSS color values.
+  if (/^[0-9a-fA-F]{3}$/.test(trimmed) || /^[0-9a-fA-F]{6}$/.test(trimmed)) {
+    return `#${trimmed}`
+  }
+
+  if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmed)) {
+    return trimmed
+  }
+
+  if (typeof window !== 'undefined' && typeof window.CSS !== 'undefined' && window.CSS.supports('color', trimmed)) {
+    return trimmed
+  }
+
+  return fallback
 }
 
 export default function HomePage() {
@@ -143,8 +156,8 @@ export default function HomePage() {
     const HERO_CACHE_KEY = 'home:hero-service-images'
     const HERO_CACHE_TTL_MS = 10 * 60 * 1000
 
-    // Fetch CMS data
-    getHomePage().then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
+    // Always fetch fresh home CMS data so design updates (like trust banner colors) appear immediately.
+    getHomePage({ bypassCache: true }).then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
 
     // Fetch service page images managed from admin portal
     const fetchServiceHeroImages = async () => {
