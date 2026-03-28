@@ -1642,7 +1642,9 @@ export default function AdminBookings() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [isEditingDetails, setIsEditingDetails] = useState(false)
   const [editFormData, setEditFormData] = useState<Booking | null>(null)
-  const [sortBy, setSortBy] = useState<string>('date-desc')
+  const [sortBy, setSortBy] = useState<string>('created-desc')
+  const [timeFrom, setTimeFrom] = useState('')
+  const [timeTo, setTimeTo] = useState('')
   
   // Team member selection states
   const [showTeamDropdown, setShowTeamDropdown] = useState<boolean>(false)
@@ -2011,6 +2013,15 @@ export default function AdminBookings() {
       const num = Number(value)
       return Number.isFinite(num) ? num : 0
     }
+    const toMinutes = (value: string) => {
+      if (!value) return null
+      const [hours, minutes] = value.split(':').map(Number)
+      if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null
+      return hours * 60 + minutes
+    }
+
+    const filterFrom = toMinutes(timeFrom)
+    const filterTo = toMinutes(timeTo)
 
     let filtered = bookings.filter(booking => {
       const matchesSearch = 
@@ -2020,12 +2031,20 @@ export default function AdminBookings() {
         safeLower(booking.clientEmail).includes(normalizedSearch)
       
       const matchesStatus = selectedStatus === 'all' || booking.status === selectedStatus
+
+      const bookingTime24 = convertTo24Hour(booking.bookingTime)
+      const bookingMinutes = toMinutes(bookingTime24) ?? 0
+      const matchesTime =
+        (filterFrom === null || bookingMinutes >= filterFrom) &&
+        (filterTo === null || bookingMinutes <= filterTo)
       
-      return matchesSearch && matchesStatus
+      return matchesSearch && matchesStatus && matchesTime
     })
 
     filtered.sort((a, b) => {
       switch (sortBy) {
+        case 'created-desc': return safeDateMs(b.createdAt) - safeDateMs(a.createdAt)
+        case 'created-asc': return safeDateMs(a.createdAt) - safeDateMs(b.createdAt)
         case 'date-desc': return safeDateMs(b.bookingDate) - safeDateMs(a.bookingDate)
         case 'date-asc': return safeDateMs(a.bookingDate) - safeDateMs(b.bookingDate)
         case 'price-desc': return safeNumber(b.estimatedPrice) - safeNumber(a.estimatedPrice)
@@ -2037,7 +2056,7 @@ export default function AdminBookings() {
     })
 
     return filtered
-  }, [bookings, searchTerm, selectedStatus, sortBy])
+  }, [bookings, searchTerm, selectedStatus, sortBy, timeFrom, timeTo])
 
   const stats = {
     total: bookings.length,
@@ -2756,6 +2775,23 @@ export default function AdminBookings() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <input
+                type="time"
+                value={timeFrom}
+                onChange={(e) => setTimeFrom(e.target.value)}
+                className="px-3 py-2.5 bg-muted/50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              />
+              <span className="text-xs text-muted-foreground">to</span>
+              <input
+                type="time"
+                value={timeTo}
+                onChange={(e) => setTimeTo(e.target.value)}
+                className="px-3 py-2.5 bg-muted/50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <select
                 value={selectedStatus}
@@ -2775,8 +2811,10 @@ export default function AdminBookings() {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2.5 bg-muted/50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             >
-              <option value="date-desc">Latest First</option>
-              <option value="date-asc">Oldest First</option>
+              <option value="created-desc">Latest First</option>
+              <option value="created-asc">Oldest First</option>
+              <option value="date-desc">Booking Date: Newest</option>
+              <option value="date-asc">Booking Date: Oldest</option>
               <option value="price-desc">Price: High to Low</option>
               <option value="price-asc">Price: Low to High</option>
               <option value="name-asc">Name A-Z</option>
