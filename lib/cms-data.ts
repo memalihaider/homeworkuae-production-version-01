@@ -17,6 +17,8 @@ export interface CMSHeroSection {
 
 export interface CMSTrustBanner {
   stats: { label: string; value: string }[]
+  gradientFrom?: string
+  gradientTo?: string
 }
 
 export interface CMSCertification {
@@ -147,6 +149,8 @@ export const defaultHomePage: CMSHomePage = {
     ]
   },
   trustBanner: {
+    gradientFrom: "#0F1A2B",
+    gradientTo: "#111827",
     stats: [
       { label: "Satisfied Clients", value: "20,000+" },
       { label: "Service Rating", value: "4.9/5.0" },

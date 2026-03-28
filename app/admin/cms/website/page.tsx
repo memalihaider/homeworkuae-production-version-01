@@ -281,6 +281,23 @@ function HomePageEditor({ data, onChange, onUpload }: {
       </SectionCard>
 
       <SectionCard title="Trust Banner" description="Statistics bar below the hero">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <TextInput
+            label="Gradient Start Color"
+            value={data.trustBanner.gradientFrom ?? '#0F1A2B'}
+            onChange={(v) => update('trustBanner.gradientFrom', v)}
+            placeholder="#0F1A2B"
+            hint="Hex color"
+          />
+          <TextInput
+            label="Gradient End Color"
+            value={data.trustBanner.gradientTo ?? '#111827'}
+            onChange={(v) => update('trustBanner.gradientTo', v)}
+            placeholder="#111827"
+            hint="Hex color"
+          />
+        </div>
+
         {data.trustBanner.stats.map((stat, i) => (
           <div key={i} className="flex gap-2 items-center">
             <input
