@@ -43,26 +43,6 @@ const CTAButton = ({ text, href, variant = "primary", icon: Icon = null, classNa
   )
 }
 
-const resolveHexColor = (value: string | undefined, fallback: string) => {
-  if (!value) return fallback
-  const trimmed = value.trim()
-
-  // Accept hex values with or without leading #, plus valid CSS color values.
-  if (/^[0-9a-fA-F]{3}$/.test(trimmed) || /^[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return `#${trimmed}`
-  }
-
-  if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmed)) {
-    return trimmed
-  }
-
-  if (typeof window !== 'undefined' && typeof window.CSS !== 'undefined' && window.CSS.supports('color', trimmed)) {
-    return trimmed
-  }
-
-  return fallback
-}
-
 export default function HomePage() {
   const fallbackHeroImages = [
     'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1800&q=80',
@@ -95,8 +75,14 @@ export default function HomePage() {
   const heroTexts = cmsData.hero.headings
   const activeHeroText = heroTexts[0] ?? 'PREMIUM\nCLEANING'
   const activeHeroImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80'
-  const trustBannerFrom = resolveHexColor(cmsData.trustBanner.gradientFrom, '#0F1A2B')
-  const trustBannerTo = resolveHexColor(cmsData.trustBanner.gradientTo, '#111827')
+  const trustBannerGradient = 'linear-gradient(135deg, #039ED9 0%, var(--primary) 100%)'
+  const trustBannerStats: Array<{ label: string; value: string; icon: React.ComponentType<{ className?: string }> }> = [
+    { label: 'Satisfied Clients', value: '20,000+', icon: Users },
+    { label: 'Service Rating', value: '4.9/5.0', icon: Star },
+    { label: 'Expert Cleaners', value: '250+', icon: Award },
+    { label: 'City Coverage', value: '100%', icon: Building2 },
+    { label: 'Google Reviews', value: '500+', icon: Users },
+  ]
 
   // Services data with Icons
   // Services data with Icons - merge CMS data with local icon mapping
@@ -156,7 +142,7 @@ export default function HomePage() {
     const HERO_CACHE_KEY = 'home:hero-service-images'
     const HERO_CACHE_TTL_MS = 10 * 60 * 1000
 
-    // Always fetch fresh home CMS data so design updates (like trust banner colors) appear immediately.
+    // Fetch home CMS content.
     getHomePage({ bypassCache: true }).then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
 
     // Fetch service page images managed from admin portal
@@ -531,20 +517,19 @@ export default function HomePage() {
           whileInView="visible"
           viewport={{ once: true, margin: '-60px' }}
           variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-          className="max-w-6xl mx-auto rounded-2xl p-6 sm:p-8 md:p-10 shadow-[0_24px_50px_-24px_rgba(15,26,43,0.85)] text-white"
-          style={{ backgroundImage: `linear-gradient(135deg, ${trustBannerFrom}, ${trustBannerTo})` }}
+          className="max-w-6xl mx-auto rounded-2xl p-6 sm:p-8 md:p-10 shadow-[0_24px_50px_-24px_rgba(3,158,217,0.45)] text-white"
+          style={{ backgroundImage: trustBannerGradient }}
         >
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-6 md:gap-8">
-            {cmsData.trustBanner.stats.map((stat, i) => {
-              const icons = [Users, Star, Award, Building2]
-              const StatIcon = icons[i % icons.length]
+            {trustBannerStats.map((stat, i) => {
+              const StatIcon = stat.icon
               return (
                 <motion.div key={i} variants={fadeUp} custom={i} className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2.5">
-                    <StatIcon className="h-4 w-4 text-[#039ED9]" />
+                    <StatIcon className="h-4 w-4 text-white/90" />
                     <span className="text-xl md:text-2xl font-black tracking-tight">{stat.value}</span>
                   </div>
-                  <div className="text-[10px] font-medium text-slate-300 uppercase tracking-wider">{stat.label}</div>
+                  <div className="text-[10px] font-medium text-white/80 uppercase tracking-wider">{stat.label}</div>
                 </motion.div>
               )
             })}

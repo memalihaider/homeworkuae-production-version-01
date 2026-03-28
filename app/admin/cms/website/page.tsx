@@ -280,58 +280,6 @@ function HomePageEditor({ data, onChange, onUpload }: {
         </div>
       </SectionCard>
 
-      <SectionCard title="Trust Banner" description="Statistics bar below the hero">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <TextInput
-            label="Gradient Start Color"
-            value={data.trustBanner.gradientFrom ?? '#0F1A2B'}
-            onChange={(v) => update('trustBanner.gradientFrom', v)}
-            placeholder="#0F1A2B"
-            hint="Hex color"
-          />
-          <TextInput
-            label="Gradient End Color"
-            value={data.trustBanner.gradientTo ?? '#111827'}
-            onChange={(v) => update('trustBanner.gradientTo', v)}
-            placeholder="#111827"
-            hint="Hex color"
-          />
-        </div>
-
-        {data.trustBanner.stats.map((stat, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input
-              type="text"
-              value={stat.value}
-              onChange={(e) => {
-                const stats = [...data.trustBanner.stats]
-                stats[i] = { ...stats[i], value: e.target.value }
-                update('trustBanner.stats', stats)
-              }}
-              placeholder="Value"
-              className="w-32 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-            />
-            <input
-              type="text"
-              value={stat.label}
-              onChange={(e) => {
-                const stats = [...data.trustBanner.stats]
-                stats[i] = { ...stats[i], label: e.target.value }
-                update('trustBanner.stats', stats)
-              }}
-              placeholder="Label"
-              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-            />
-            <button onClick={() => update('trustBanner.stats', data.trustBanner.stats.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 p-1">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))}
-        <button onClick={() => update('trustBanner.stats', [...data.trustBanner.stats, { label: "", value: "" }])} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
-          <Plus className="h-3 w-3" /> Add Stat
-        </button>
-      </SectionCard>
-
       <SectionCard title="Certifications & Awards" description="Recognition badges section">
         {data.certifications.map((cert, i) => (
           <div key={i} className="flex gap-2 items-center p-3 bg-slate-50 rounded-lg">
