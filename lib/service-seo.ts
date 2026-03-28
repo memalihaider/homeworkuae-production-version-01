@@ -29,14 +29,20 @@ function buildKeywords(serviceName: string): string[] {
 
   return Array.from(
     new Set([
+      'homework uae',
       'premium cleaning company in Dubai',
+      'Dubai cleaning company',
+      'Dubai Municipality approved cleaning',
       'maid services Dubai',
       'deep cleaning services in Dubai',
       `${serviceName} Dubai`,
       `${serviceName} UAE`,
       `${lower} service`,
       `${lower} services`,
+      `${lower} specialists Dubai`,
       `${lower} company Dubai`,
+      `${lower} cost Dubai`,
+      `${lower} price Dubai`,
       `professional ${lower} in Dubai`,
       `best ${lower} in Dubai`,
       `${lower} near me Dubai`,
@@ -50,19 +56,27 @@ function buildKeywords(serviceName: string): string[] {
   )
 }
 
+function buildServiceDescription(serviceName: string): string {
+  return `Get professional ${serviceName.toLowerCase()} in Dubai with Homework UAE. Certified technicians, same-day booking options, transparent pricing, and reliable residential and commercial service across Dubai.`
+}
+
 export function buildServiceMetadata(slug: string): Metadata {
   const safeSlug = normalizeSlug(slug)
   const serviceName = slugToServiceName(safeSlug)
   const canonicalPath = `/services/${safeSlug}`
   const canonicalUrl = `${SITE_URL}${canonicalPath}`
 
-  const title = `${serviceName} in Dubai | Homework UAE`
-  const description = `Book premium ${serviceName.toLowerCase()} in Dubai with Homework UAE. Trusted for maid services, deep cleaning services, and high-quality residential and commercial cleaning.`
+  const title = `${serviceName} Dubai | Professional ${serviceName} Services | Homework UAE`
+  const description = buildServiceDescription(serviceName)
 
   return {
     title,
     description,
     keywords: buildKeywords(serviceName),
+    robots: {
+      index: true,
+      follow: true,
+    },
     alternates: {
       canonical: canonicalUrl,
     },
@@ -72,6 +86,7 @@ export function buildServiceMetadata(slug: string): Metadata {
       url: canonicalUrl,
       siteName: 'Homework UAE',
       type: 'website',
+      locale: 'en_AE',
     },
     twitter: {
       card: 'summary_large_image',

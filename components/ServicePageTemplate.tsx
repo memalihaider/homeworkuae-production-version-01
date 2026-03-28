@@ -2,10 +2,38 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, ArrowRight } from 'lucide-react'
+import {
+  CheckCircle2,
+  ArrowRight,
+  PhoneCall,
+  Users,
+  Star,
+  UserCheck,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  BadgeCheck,
+  Wind,
+  Wrench,
+  Activity,
+  Timer,
+  CircleCheck,
+} from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import Image from 'next/image'
+
+export type ServiceTrustStat = { label: string; value: string }
+export type ServiceOfferCard = { title: string }
+export type ServiceProcessStep = { title: string; detail: string }
+export type ServiceFAQItem = { q: string; a: string }
+export type ServiceReviewItem = {
+  name: string
+  text: string
+  area: string
+  avatar: string
+  date: string
+}
 
 export type ServicePageContent = {
   name: string
@@ -22,6 +50,13 @@ export type ServicePageContent = {
   features: string[]
   ctaTitle: string
   ctaSubtitle: string
+  trustStats?: ServiceTrustStat[]
+  offerCards?: ServiceOfferCard[]
+  processSteps?: ServiceProcessStep[]
+  serviceAreas?: string[]
+  whyChoosePoints?: string[]
+  faqs?: ServiceFAQItem[]
+  reviews?: ServiceReviewItem[]
 }
 
 export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
@@ -533,112 +568,660 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
     fetchOverrides()
   }, [slug])
 
-  return (
-    <div className="flex flex-col overflow-hidden">
-      {/* Hero Section */}
-      <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950" />
+  const fallbackImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80'
+  const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'
+  const heroImage = content.heroImage || content.sectionImage || fallbackImage
+  const detailsImage = content.sectionImage || content.heroImage || fallbackImage
+  const serviceName = content.name || 'Professional Cleaning Service'
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
+  const trustStatIcons = [Users, Star, UserCheck, MapPin]
+  const trustStatItems = content.trustStats?.length
+    ? content.trustStats
+    : [
+        { label: 'Satisfied Clients', value: '20,000+' },
+        { label: 'Service Rating', value: '4.9/5.0' },
+        { label: 'Expert Cleaners', value: '250+' },
+        { label: 'City Coverage', value: '100%' },
+      ]
+  const trustStats = trustStatItems.map((stat, i) => ({
+    ...stat,
+    icon: trustStatIcons[i % trustStatIcons.length],
+  }))
+
+  const offerCardIcons = [Sparkles, Wind, ShieldCheck, Activity]
+  const offerCards = (content.offerCards?.length
+    ? content.offerCards
+    : content.features.slice(0, 4).map((item) => ({
+        title: item.length > 42 ? `${item.slice(0, 39)}...` : item,
+      }))
+  ).map((card, i) => ({ ...card, icon: offerCardIcons[i % offerCardIcons.length] }))
+
+  const processStepIcons = [BadgeCheck, Wind, ShieldCheck, Wrench]
+  const processSteps = (content.processSteps?.length
+    ? content.processSteps
+    : [
+        {
+          title: 'Inspection',
+          detail: `We assess your ${serviceName.toLowerCase()} requirements and identify critical treatment areas before work begins.`,
+        },
+        {
+          title: 'Preparation',
+          detail: 'Our team secures the workspace, protects surfaces, and prepares tools for an efficient, low-disruption process.',
+        },
+        {
+          title: 'Execution',
+          detail: `We perform a detailed ${serviceName.toLowerCase()} process using professional equipment and approved techniques.`,
+        },
+        {
+          title: 'Final Verification',
+          detail: 'We complete quality checks, ensure finishing standards, and share post-service care recommendations.',
+        },
+      ]
+  ).map((step, i) => ({ ...step, icon: processStepIcons[i % processStepIcons.length] }))
+
+  const serviceAreas = content.serviceAreas?.length
+    ? content.serviceAreas
+    : ['Downtown Dubai', 'Dubai Marina', 'Business Bay', 'Jumeirah', 'Al Barsha', 'JVC', 'Deira', 'Mirdif']
+
+  const whyChoosePoints = content.whyChoosePoints?.length
+    ? content.whyChoosePoints
+    : [
+        `Certified specialists for ${serviceName.toLowerCase()} with Dubai-ready standards.`,
+        'Transparent workflow with clear communication from booking to completion.',
+        'Advanced tools and safe products for reliable, long-lasting results.',
+        'Flexible scheduling, fast response, and minimal disruption during service.',
+        'Quality-first delivery backed by consistent support after completion.',
+      ]
+
+  const faqs = content.faqs?.length
+    ? content.faqs
+    : [
+        {
+          q: `How often should I book ${serviceName.toLowerCase()}?`,
+          a: `For most Dubai homes and offices, scheduling ${serviceName.toLowerCase()} every 6 to 12 months helps maintain hygiene, performance, and long-term asset condition.`,
+        },
+        {
+          q: `How long does ${serviceName.toLowerCase()} take?`,
+          a: 'Typical appointments take 2 to 6 hours depending on property size, condition, and scope of work required.',
+        },
+        {
+          q: 'Is the service safe for children and pets?',
+          a: 'Yes. We use controlled methods and approved products suitable for occupied residential and commercial environments.',
+        },
+        {
+          q: 'Do you provide service across all Dubai areas?',
+          a: 'Yes, we provide city-wide coverage with flexible appointments for apartments, villas, and commercial spaces.',
+        },
+      ]
+
+  const reviews = content.reviews?.length
+    ? content.reviews
+    : [
+        {
+          name: 'Sarah Jenkins',
+          text: `Excellent ${serviceName.toLowerCase()} experience. The team was punctual, professional, and delivered visible results with great attention to detail.`,
+          area: 'Palm Jumeirah',
+          avatar: fallbackAvatar,
+          date: '2 weeks ago',
+        },
+        {
+          name: 'Mohamed Al-Fayed',
+          text: 'Very organized service from start to finish. The crew explained each step clearly and completed the work to a high standard.',
+          area: 'Downtown Dubai',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+          date: '1 month ago',
+        },
+        {
+          name: 'Emma Robertson',
+          text: 'Impressive quality and smooth communication. I would definitely book again and recommend this service for families in Dubai.',
+          area: 'Dubai Marina',
+          avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop',
+          date: '5 days ago',
+        },
+      ]
+
+  const googleBusinessIcon = (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+      <path fill="#EA4335" d="M12 11V8h10a10 10 0 0 1 .2 2c0 6-4 10-10.2 10A10 10 0 1 1 12 2c2.7 0 5 .9 6.8 2.5l-2.8 2.8A5.9 5.9 0 0 0 12 5a6 6 0 0 0 0 12c3 0 5-1.7 5.6-4H12Z" />
+      <path fill="#4285F4" d="M3.7 7.1A10 10 0 0 1 12 2c2.7 0 5 .9 6.8 2.5l-2.8 2.8A5.9 5.9 0 0 0 12 5a6 6 0 0 0-5.4 3.3Z" />
+      <path fill="#FBBC05" d="M2 12c0-1.7.4-3.3 1.2-4.9l3.4 1.2A6.2 6.2 0 0 0 6 12c0 1.3.4 2.5 1 3.5l-3.4 1.3A10 10 0 0 1 2 12Z" />
+      <path fill="#34A853" d="M12 22a10 10 0 0 1-8.4-4.6L7 15.5A6 6 0 0 0 12 17c3 0 5-1.7 5.6-4H12v-2h10a10 10 0 0 1 .2 2c0 6-4 10-10.2 10Z" />
+    </svg>
+  )
+
+  return (
+    <main className="flex flex-col overflow-hidden bg-white selection:bg-primary selection:text-white">
+      {/* Hero Section */}
+      <section className="relative isolate flex min-h-[74vh] items-center overflow-hidden bg-[#08172b] text-white md:min-h-[82vh]">
+        <div className="absolute inset-0 z-0">
+          <div className="relative h-full w-full">
+            <SkeletonImg
+              src={heroImage}
+              alt={content.name}
+              imgClassName="h-full w-full object-cover opacity-35"
+              skeletonClassName="bg-slate-900"
+            />
+          </div>
+          <div className="absolute inset-0 bg-linear-to-r from-[#08172b] via-[#0a2037]/88 to-[#0a2037]/30" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-[#08172b]" />
+          <div className="absolute -left-24 top-10 h-64 w-64 rounded-full bg-[#039ED9]/20 blur-3xl" />
+          <div className="absolute -right-20 bottom-8 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+        </div>
+
+        <div className="container relative z-10 mx-auto px-4 py-14 sm:px-6 sm:py-16 md:py-20 lg:py-24">
+          <div className="max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+            >
+              <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/12 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur-sm sm:text-[11px]">
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                {content.badge}
+              </span>
+
+              <h1 className="mb-5 text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-5xl md:text-6xl xl:text-7xl">
+                {content.heroTitleLine1}
+                <br />
+                <span className="bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">
+                  {content.heroTitleLine2}
+                </span>
+              </h1>
+
+              <p className="mb-8 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg lg:text-xl">
+                {content.heroSubtitle}
+              </p>
+
+              <div className="flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-4">
+                <a
+                  href="/book-service"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-linear-to-r from-[#039ED9] to-primary px-7 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_35px_rgba(236,72,153,0.32)] sm:text-sm"
+                >
+                  Book Premium Service
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </a>
+                <a
+                  href="tel:+971507177059"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/8 px-7 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/14 sm:text-sm"
+                >
+                  <PhoneCall className="h-4 w-4 text-primary" />
+                  +971 50 717 7059
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Badge */}
+      <section className="relative z-20 -mt-8 px-4 pb-8 md:-mt-10 md:pb-10">
+        <div className="container mx-auto sm:px-2">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-3xl border border-white/20 px-4 py-5 shadow-[0_25px_60px_rgba(3,158,217,0.4)] backdrop-blur-[2px] sm:px-6 sm:py-6 md:px-10"
+            style={{ backgroundImage: 'linear-gradient(135deg, #039ED9 0%, var(--primary) 100%)' }}
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-6">
-              {content.badge}
-            </span>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
-              {content.heroTitleLine1} <br />
-              <span className="text-primary italic">{content.heroTitleLine2}</span>
-            </h1>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
-              {content.heroSubtitle}
-            </p>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3 text-center text-white/90 sm:gap-4">
+              {trustStats.map((stat) => {
+                const Icon = stat.icon
+                return (
+                  <div key={stat.label} className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-3 py-3 sm:gap-3">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <div className="text-left">
+                      <p className="text-xl font-black text-white sm:text-2xl">{stat.value}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary/85 sm:text-[11px]">{stat.label}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* Details Section */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+      <section className="relative overflow-hidden bg-linear-to-b from-[#f7fbff] to-[#eef5ff] py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_20%_25%,rgba(3,158,217,0.18)_0%,transparent_42%)]" />
+        <div className="container relative z-10 mx-auto px-4 sm:px-6">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative order-2 lg:order-1 rounded-[3rem] overflow-hidden shadow-3xl group aspect-4/3"
-            >
-              <SkeletonImg
-                src={content.sectionImage}
-                alt={content.name}
-                imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                skeletonClassName="bg-slate-200"
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="space-y-8 order-1 lg:order-2"
+              className="order-2 space-y-6 lg:order-1"
             >
-              <div className="inline-flex items-center gap-3 text-primary">
-                <span className="text-sm font-black uppercase tracking-widest">{content.specialistLabel}</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
-                {content.aboutHeading1} <br />
-                <span className="text-primary italic">{content.aboutHeading2}</span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
+                {content.specialistLabel}
+              </span>
+
+              <h2 className="text-3xl font-black leading-[1.05] tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+                {content.aboutHeading1}
+                <br />
+                <span className="text-primary">{content.aboutHeading2}</span>
               </h2>
-              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+
+              <p className="max-w-2xl text-base leading-relaxed text-slate-700 sm:text-lg">
                 {content.description}
               </p>
 
-              <div className="grid gap-4">
-                {content.features.map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 group">
-                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {content.features.slice(0, 6).map((item, i) => (
+                  <div key={`${item}-${i}`} className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-sm">
+                    <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <CheckCircle2 className="h-4 w-4" />
-                    </div>
-                    <span className="text-slate-700 font-bold">{item}</span>
+                    </span>
+                    <span className="text-sm font-bold leading-relaxed text-slate-800">{item}</span>
                   </div>
                 ))}
               </div>
+            </motion.div>
 
-              <motion.a
-                href="/book-service"
-                className="inline-flex items-center gap-4 bg-primary px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-white shadow-2xl shadow-primary/30 hover:bg-pink-600 transition-colors"
-                whileTap={{ scale: 0.95 }}
-              >
-                Book Now <ArrowRight className="h-5 w-5" />
-              </motion.a>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-1 lg:order-2"
+            >
+              <div className="relative overflow-hidden rounded-3xl border border-sky-100 bg-white p-2 shadow-2xl sm:rounded-[2.5rem]">
+                <div className="relative aspect-4/3 overflow-hidden rounded-4xl sm:rounded-[2rem]">
+                  <SkeletonImg
+                    src={detailsImage}
+                    alt={content.name}
+                    imgClassName="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                    skeletonClassName="bg-slate-200"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-tr from-primary/20 via-transparent to-transparent" />
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
+      {/* Included Services */}
+      <section className="relative overflow-hidden bg-white py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">
+              What Is Included
+            </span>
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+              Service Deliverables
+            </h3>
+            <div className="mx-auto mt-6 h-1 w-20 rounded-full bg-linear-to-r from-[#039ED9] to-primary" />
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            {content.features.map((feature, idx) => (
+              <article
+                key={`${feature}-${idx}`}
+                className="group rounded-3xl border border-slate-200 bg-slate-50/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-white hover:shadow-[0_20px_40px_-25px_rgba(236,72,153,0.4)]"
+              >
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-linear-to-br group-hover:from-[#039ED9] group-hover:to-primary group-hover:text-white">
+                  <span className="text-xs font-black">{`${idx + 1}`.padStart(2, '0')}</span>
+                </div>
+                <p className="text-sm font-bold leading-relaxed text-slate-800">{feature}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Offer Cards */}
+      <section className="relative overflow-hidden bg-white py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-12 flex flex-col items-center text-center sm:mb-16">
+            <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">
+              What We Offer
+            </span>
+            <h3 className="max-w-2xl text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+              Premium Service Coverage
+            </h3>
+            <div className="mt-6 h-1 w-20 rounded-full bg-linear-to-r from-[#039ED9] to-primary" />
+          </div>
+
+          <div className="mx-auto grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {offerCards.map((card) => {
+              const Icon = card.icon
+              return (
+                <article
+                  key={card.title}
+                  className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 p-6 shadow-xs transition-all duration-500 hover:-translate-y-2 hover:border-primary/30 hover:shadow-[0_20px_45px_-22px_rgba(236,72,153,0.35)]"
+                >
+                  <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-blue-50/50 transition-all duration-500 group-hover:scale-150 group-hover:bg-primary/10" />
+                  <div className="relative z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-[#039ED9] to-primary text-white shadow-lg shadow-primary/25">
+                    <Icon className="h-7 w-7" />
+                  </div>
+                  <h4 className="relative z-10 text-lg font-black text-slate-900">{card.title}</h4>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Quality Showcase */}
+      <section className="relative overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-[#1a2440] py-14 text-white sm:py-16 md:py-20 xl:py-24">
+        <div className="pointer-events-none absolute inset-0 opacity-25 [background:radial-gradient(circle_at_78%_20%,rgba(236,72,153,0.28)_0%,transparent_40%)]" />
+        <div className="container relative z-10 mx-auto px-4 sm:px-6">
+          <div className="mb-12 flex flex-col items-center text-center sm:mb-16">
+            <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary/90 sm:text-[11px]">Quality You Can See</span>
+            <h3 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">Real <span className="italic text-primary">Results</span></h3>
+            <p className="mt-4 max-w-xl text-slate-300">
+              Explore service quality from real projects with consistent standards and detail-focused execution.
+            </p>
+          </div>
+
+          <div className="mx-auto max-w-6xl">
+            <article className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-primary/35 hover:bg-white/8 sm:rounded-[3rem]">
+              <div className="relative aspect-video bg-slate-950/40">
+                <SkeletonImg
+                  src={detailsImage}
+                  alt={`${content.name} quality results`}
+                  imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  skeletonClassName="bg-slate-800"
+                />
+              </div>
+              <div className="p-6 sm:p-8">
+                <p className="text-sm font-medium leading-relaxed text-slate-300">
+                  Real service outcomes captured from professional {serviceName.toLowerCase()} projects.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* Coverage Section */}
+      <section className="relative overflow-hidden bg-linear-to-b from-white to-slate-50 py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-16 flex flex-col items-center text-center md:flex-row md:justify-between md:text-left">
+            <div>
+              <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">Local Presence</span>
+              <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+                Dubai Area <span className="text-primary">Coverage</span>
+              </h3>
+            </div>
+            <div className="mt-8 md:mt-0">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-100 bg-white text-primary shadow-xl shadow-primary/10 ring-8 ring-sky-50/50">
+                <MapPin className="h-6 w-6" />
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:rounded-[3rem]">
+            <div className="grid lg:grid-cols-2">
+              <div className="relative min-h-65 sm:min-h-90 lg:min-h-105">
+                <iframe
+                  title="Dubai service coverage map"
+                  src="https://www.google.com/maps?q=Dubai,UAE&z=11&output=embed"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="absolute h-full w-full grayscale transition-all duration-700 hover:grayscale-0"
+                />
+              </div>
+              <div className="p-6 sm:p-7 lg:p-10 xl:p-12">
+                <h4 className="mb-8 text-xl font-black text-slate-900 sm:text-2xl">Marked Service Hubs</h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {serviceAreas.map((area) => (
+                    <div key={area} className="group flex items-center gap-4 transition-all duration-300">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-sky-50 bg-sky-50/50 text-[#039ED9] transition-all duration-300 group-hover:bg-primary group-hover:text-white">
+                        <MapPin className="h-4 w-4 shrink-0" />
+                      </div>
+                      <span className="font-bold text-slate-700 transition-colors duration-300 group-hover:text-primary">{area}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-10 rounded-[2rem] bg-linear-to-r from-[#039ED9] to-primary p-6 text-white shadow-2xl shadow-primary/30 sm:mt-12 sm:p-7 lg:p-8">
+                  <p className="text-sm font-bold uppercase tracking-widest opacity-75">Support Hotline</p>
+                  <p className="mt-1 text-xl font-black sm:text-2xl">Fast Dispatch Dubai Wide</p>
+                  <a href="/book-service" className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-xs font-black uppercase tracking-widest text-primary transition-all duration-300 hover:scale-105">
+                    Check Availability
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose */}
+      <section className="relative overflow-hidden bg-linear-to-r from-[#0a3a70] via-[#0c5a9b] to-primary py-14 text-white sm:py-16 md:py-20 xl:py-24">
+        <div className="absolute inset-0 opacity-15 [background:radial-gradient(circle_at_20%_15%,#1e88e5_0%,transparent_35%)]" />
+        <div className="container relative z-10 mx-auto grid items-center gap-10 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="relative mx-auto w-full max-w-sm sm:max-w-xl">
+            <div className="relative overflow-hidden rounded-3xl border-2 border-white/20 shadow-2xl">
+              <div className="relative aspect-4/3">
+                <SkeletonImg
+                  src={heroImage}
+                  alt={`Why choose ${content.name}`}
+                  imgClassName="h-full w-full object-cover"
+                  skeletonClassName="bg-slate-700"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="inline-flex items-center gap-3 rounded-full bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#1b3f71] sm:px-5 sm:text-[11px]">
+              Why Dubai Residents Choose Homework UAE
+            </div>
+
+            <h3 className="mt-4 max-w-3xl text-3xl font-black leading-[1.1] tracking-tight sm:text-4xl md:text-5xl xl:text-6xl">
+              Why Dubai Residents Choose Homework UAE
+            </h3>
+
+            <ul className="mt-7 space-y-3 text-base leading-relaxed text-white/95 sm:text-lg">
+              {whyChoosePoints.map((point, i) => (
+                <li key={`${point}-${i}`} className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white">
+                    <CircleCheck className="h-4 w-4" />
+                  </span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-4">
+              <a href="tel:+971507177059" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-xs font-black uppercase tracking-[0.12em] text-[#1a3c6b] transition hover:bg-slate-100 sm:text-sm">
+                Call +971 50 717 7059
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <a href="/book-service" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-xs font-black uppercase tracking-[0.12em] text-[#1a3c6b] transition hover:bg-slate-100 sm:text-sm">
+                Book Online
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Process Section */}
+      <section className="relative overflow-hidden bg-linear-to-b from-white to-slate-50/70 py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">The Blueprint</span>
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">Our Workflow <span className="text-primary">Protocol</span></h3>
+            <div className="mt-6 h-1 w-20 rounded-full bg-linear-to-r from-[#039ED9] to-primary" />
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:mt-14 sm:gap-6 md:grid-cols-2 lg:mt-16 lg:grid-cols-4">
+            {processSteps.map((step, idx) => {
+              const Icon = step.icon
+              return (
+                <article key={`${step.title}-${idx}`} className="group relative rounded-3xl border border-slate-200 bg-slate-50/80 p-6 transition-all duration-500 hover:border-primary/25 hover:bg-white hover:shadow-[0_20px_40px_-24px_rgba(236,72,153,0.45)]">
+                  <div className="mb-8 flex items-center justify-between">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary shadow-xl shadow-primary/15 ring-1 ring-primary/10 transition-colors duration-500 group-hover:bg-linear-to-br group-hover:from-[#039ED9] group-hover:to-primary group-hover:text-white">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-4xl font-black italic text-slate-200 transition-colors duration-500 group-hover:text-primary/20">0{idx + 1}</span>
+                  </div>
+                  <h4 className="text-xl font-black text-slate-900">{step.title}</h4>
+                  <p className="mt-4 text-[15px] font-medium leading-relaxed text-slate-600">{step.detail}</p>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Experts Section */}
+      <section className="relative overflow-hidden bg-linear-to-b from-slate-50 via-white to-slate-100 py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 sm:gap-12 lg:gap-14 lg:flex-row">
+            <div className="lg:w-1/2">
+              <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">The Experts</span>
+              <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">Elite Service <span className="text-primary">Technicians</span></h3>
+              <p className="mt-6 text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
+                Our technicians are certified specialists, trained to deliver consistent results across residential and commercial environments.
+              </p>
+
+              <div className="mt-10 space-y-4">
+                {[
+                  { icon: Timer, label: 'Fast Dispatch', detail: 'Transparent service timelines for your schedule.' },
+                  { icon: Activity, label: 'Performance Audit', detail: 'Pre and post quality checks for reliable outcomes.' },
+                  { icon: ShieldCheck, label: 'Clinical Safety', detail: 'Safe methods aligned with approved hygiene protocols.' },
+                ].map((item, i) => {
+                  const Icon = item.icon
+                  return (
+                    <div key={i} className="flex items-center gap-4 rounded-3xl border border-slate-200/50 bg-white p-4 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-900">{item.label}</p>
+                        <p className="text-xs font-medium text-slate-500">{item.detail}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="relative lg:w-1/2">
+              <div className="relative aspect-square overflow-hidden rounded-3xl border border-blue-100 shadow-2xl sm:rounded-[4rem]">
+                <SkeletonImg
+                  src={detailsImage}
+                  alt={`${content.name} team`}
+                  imgClassName="h-full w-full object-cover"
+                  skeletonClassName="bg-slate-200"
+                />
+                <div className="absolute inset-0 bg-linear-to-tr from-primary/30 via-transparent to-transparent" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="relative overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-[#1e2340] py-14 text-white sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-12 flex flex-col items-center text-center sm:mb-20">
+            <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary/90 sm:text-[11px]">Clear Answers</span>
+            <h3 className="text-3xl font-black italic tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">Technical FAQ</h3>
+            <div className="mt-6 h-1.5 w-24 rounded-full bg-linear-to-r from-[#039ED9] to-primary" />
+          </div>
+
+          <div className="mx-auto max-w-4xl space-y-6">
+            {faqs.map((item, idx) => (
+              <details key={`${item.q}-${idx}`} className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-all duration-500 open:border-primary/35 open:bg-white/10">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-base font-black tracking-tight sm:p-6 sm:text-lg md:text-xl lg:p-8">
+                  {item.q}
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary transition-transform duration-500 group-open:rotate-180">
+                    <ArrowRight className="h-5 w-5 rotate-90" />
+                  </div>
+                </summary>
+                <div className="px-5 pb-5 text-slate-300 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8">
+                  <div className="mb-6 h-px w-full bg-white/5" />
+                  <p className="text-base font-medium leading-relaxed sm:text-[17px]">{item.a}</p>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews Section */}
+      <section className="relative overflow-hidden bg-linear-to-b from-white to-slate-50/80 py-14 sm:py-16 md:py-20 xl:py-24">
+        <div className="container mx-auto px-4 text-center sm:px-6">
+          <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">Google Reviews</span>
+          <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">What Our <span className="text-primary">Customers</span> Say</h3>
+
+          <div className="mt-10 grid gap-5 sm:mt-14 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {reviews.map((review, idx) => (
+              <article key={`${review.name}-${idx}`} className="flex w-full flex-col rounded-3xl border border-slate-200/70 bg-white p-6 text-left shadow-xs transition-all duration-500 hover:-translate-y-2 hover:border-primary/25 hover:shadow-[0_20px_45px_-24px_rgba(236,72,153,0.35)] sm:p-7 md:p-8">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-2 sm:mb-6">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <svg key={s} viewBox="0 0 24 24" className="h-5 w-5 fill-[#fbbc05] text-[#fbbc05]">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{review.date}</span>
+                </div>
+                <p className="mb-8 text-[15px] font-medium leading-relaxed text-slate-600 sm:mb-10">"{review.text}"</p>
+                <div className="mt-auto flex items-center gap-3 border-t border-slate-200 pt-6 sm:gap-4 sm:pt-8">
+                  <div className="relative h-12 w-12 overflow-hidden rounded-full ring-2 ring-blue-50 ring-offset-2 sm:h-14 sm:w-14">
+                    <SkeletonImg
+                      src={review.avatar || fallbackAvatar}
+                      alt={review.name}
+                      imgClassName="h-full w-full object-cover"
+                      skeletonClassName="bg-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900">{review.name}</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-primary">{review.area}</p>
+                  </div>
+                  <div className="ml-auto">
+                    {googleBusinessIcon}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-24 bg-slate-950 text-white relative">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-20 p-12 bg-slate-950 rounded-[3.5rem] text-center relative overflow-hidden group container mx-auto px-4 max-w-3xl"
-        >
-          <div className="relative z-10">
-            <h4 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tighter">
+      <section className="relative overflow-hidden bg-linear-to-r from-[#0a3a70] via-[#0c5a9b] to-primary py-14 text-white sm:py-16 md:py-20 xl:py-24">
+        <div className="absolute inset-0 opacity-15 [background:radial-gradient(circle_at_20%_15%,#1e88e5_0%,transparent_35%)]" />
+        <div className="container relative z-10 mx-auto px-4 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mx-auto max-w-4xl rounded-[2.2rem] border border-white/15 bg-white/8 px-6 py-10 text-center backdrop-blur-sm sm:px-10"
+          >
+            <h4 className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl">
               {content.ctaTitle}
             </h4>
-            <p className="text-slate-400 text-lg mb-10 font-bold">{content.ctaSubtitle}</p>
-            <a
-              href="/book-service"
-              className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all inline-flex items-center gap-3"
-            >
-              Book Now <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-        </motion.div>
+            <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-white/80 sm:text-lg">
+              {content.ctaSubtitle}
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+              <a
+                href="/book-service"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-xs font-black uppercase tracking-[0.12em] text-[#1a3c6b] transition hover:bg-slate-100 sm:text-sm"
+              >
+                Book Online
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="tel:+971507177059"
+                className="inline-flex items-center gap-2 rounded-full border border-white/35 bg-transparent px-7 py-3.5 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-white/10 sm:text-sm"
+              >
+                Call +971 50 717 7059
+                <PhoneCall className="h-4 w-4" />
+              </a>
+            </div>
+          </motion.div>
+        </div>
       </section>
-    </div>
+    </main>
   )
 }

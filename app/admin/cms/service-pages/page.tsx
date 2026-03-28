@@ -77,33 +77,147 @@ const EMPTY_FORM: ServicePageContent = {
   features: [],
   ctaTitle: '',
   ctaSubtitle: '',
+  trustStats: [],
+  offerCards: [],
+  processSteps: [],
+  serviceAreas: [],
+  whyChoosePoints: [],
+  faqs: [],
+  reviews: [],
+}
+
+const splitLines = (value: string) =>
+  value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+const splitPipeLine = (line: string) => line.split('|').map((part) => part.trim())
+
+const DEFAULT_TRUST_STATS = [
+  { label: 'Satisfied Clients', value: '20,000+' },
+  { label: 'Service Rating', value: '4.9/5.0' },
+  { label: 'Expert Cleaners', value: '250+' },
+  { label: 'City Coverage', value: '100%' },
+]
+
+const DEFAULT_SERVICE_AREAS = ['Downtown Dubai', 'Dubai Marina', 'Business Bay', 'Jumeirah', 'Al Barsha', 'JVC', 'Deira', 'Mirdif']
+
+function withExtendedDefaults(base: ServicePageContent): ServicePageContent {
+  const serviceName = base.name || 'Professional Cleaning Service'
+
+  return {
+    ...base,
+    trustStats: base.trustStats?.length ? base.trustStats : DEFAULT_TRUST_STATS,
+    offerCards: base.offerCards?.length
+      ? base.offerCards
+      : base.features.slice(0, 4).map((title) => ({ title: title.length > 42 ? `${title.slice(0, 39)}...` : title })),
+    processSteps: base.processSteps?.length
+      ? base.processSteps
+      : [
+          { title: 'Inspection', detail: `We inspect and scope ${serviceName.toLowerCase()} requirements before work begins.` },
+          { title: 'Preparation', detail: 'We prepare the workspace and tools for efficient execution with minimal disruption.' },
+          { title: 'Execution', detail: `Our team delivers detailed ${serviceName.toLowerCase()} using professional techniques and equipment.` },
+          { title: 'Final Verification', detail: 'We finalize quality checks and share recommendations for long-lasting results.' },
+        ],
+    serviceAreas: base.serviceAreas?.length ? base.serviceAreas : DEFAULT_SERVICE_AREAS,
+    whyChoosePoints: base.whyChoosePoints?.length
+      ? base.whyChoosePoints
+      : [
+          `Certified specialists for ${serviceName.toLowerCase()} with Dubai-ready standards.`,
+          'Transparent workflow with clear communication from booking to completion.',
+          'Advanced tools and safe products for reliable, long-lasting outcomes.',
+          'Flexible scheduling and fast response across all major Dubai locations.',
+          'Quality-first delivery backed by responsive support after completion.',
+        ],
+    faqs: base.faqs?.length
+      ? base.faqs
+      : [
+          {
+            q: `How often should I book ${serviceName.toLowerCase()}?`,
+            a: `Most homes and offices in Dubai benefit from ${serviceName.toLowerCase()} every 6 to 12 months.`,
+          },
+          {
+            q: `How long does ${serviceName.toLowerCase()} take?`,
+            a: 'Typical appointments take 2 to 6 hours depending on property size and service scope.',
+          },
+          {
+            q: 'Is the service safe for children and pets?',
+            a: 'Yes. We use approved methods and products suitable for occupied residential and commercial spaces.',
+          },
+          {
+            q: 'Do you provide service across all Dubai areas?',
+            a: 'Yes, we provide city-wide coverage with flexible appointment slots.',
+          },
+        ],
+    reviews: base.reviews?.length
+      ? base.reviews
+      : [
+          {
+            name: 'Sarah Jenkins',
+            text: `Excellent ${serviceName.toLowerCase()} service with visible results and professional execution.`,
+            area: 'Palm Jumeirah',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
+            date: '2 weeks ago',
+          },
+          {
+            name: 'Mohamed Al-Fayed',
+            text: 'Very organized team, clear communication, and strong quality standards from start to finish.',
+            area: 'Downtown Dubai',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+            date: '1 month ago',
+          },
+          {
+            name: 'Emma Robertson',
+            text: 'Highly reliable and detail-focused service. I would confidently recommend this team in Dubai.',
+            area: 'Dubai Marina',
+            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop',
+            date: '5 days ago',
+          },
+        ],
+  }
 }
 
 export default function ServicePagesCMS() {
   const [editingSlug, setEditingSlug] = useState<string | null>(null)
   const [form, setForm] = useState<ServicePageContent>(EMPTY_FORM)
   const [featuresText, setFeaturesText] = useState('')
+  const [trustStatsText, setTrustStatsText] = useState('')
+  const [offerCardsText, setOfferCardsText] = useState('')
+  const [processStepsText, setProcessStepsText] = useState('')
+  const [serviceAreasText, setServiceAreasText] = useState('')
+  const [whyChooseText, setWhyChooseText] = useState('')
+  const [faqsText, setFaqsText] = useState('')
+  const [reviewsJson, setReviewsJson] = useState('[]')
   const [saving, setSaving] = useState(false)
+  const [syncingAll, setSyncingAll] = useState(false)
   const [savedSlugs, setSavedSlugs] = useState<Set<string>>(new Set())
   const [loadingSlug, setLoadingSlug] = useState<string | null>(null)
 
   const openEdit = async (slug: string) => {
     setLoadingSlug(slug)
-    const defaults = SERVICE_DEFAULTS[slug] ?? EMPTY_FORM
+    const defaults = withExtendedDefaults(SERVICE_DEFAULTS[slug] ?? EMPTY_FORM)
     let merged = { ...defaults }
     try {
       const snap = await getDoc(doc(db, 'service-pages', slug))
       if (snap.exists()) {
         const data = snap.data() as Partial<ServicePageContent>
-        merged = {
+        merged = withExtendedDefaults({
           ...defaults,
           ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null && v !== '')),
           ...(Array.isArray(data.features) && data.features.length > 0 ? { features: data.features } : {}),
-        } as ServicePageContent
+        } as ServicePageContent)
       }
     } catch { /* use defaults */ }
     setForm(merged)
     setFeaturesText((merged.features ?? []).join('\n'))
+    setTrustStatsText((merged.trustStats ?? []).map((item) => `${item.label} | ${item.value}`).join('\n'))
+    setOfferCardsText((merged.offerCards ?? []).map((item) => item.title).join('\n'))
+    setProcessStepsText((merged.processSteps ?? []).map((item) => `${item.title} | ${item.detail}`).join('\n'))
+    setServiceAreasText((merged.serviceAreas ?? []).join('\n'))
+    setWhyChooseText((merged.whyChoosePoints ?? []).join('\n'))
+    setFaqsText((merged.faqs ?? []).map((item) => `${item.q} | ${item.a}`).join('\n'))
+    setReviewsJson(JSON.stringify(merged.reviews ?? [], null, 2))
     setEditingSlug(slug)
     setLoadingSlug(null)
   }
@@ -112,17 +226,70 @@ export default function ServicePagesCMS() {
     setEditingSlug(null)
     setForm(EMPTY_FORM)
     setFeaturesText('')
+    setTrustStatsText('')
+    setOfferCardsText('')
+    setProcessStepsText('')
+    setServiceAreasText('')
+    setWhyChooseText('')
+    setFaqsText('')
+    setReviewsJson('[]')
   }
 
   const handleSave = async () => {
     if (!editingSlug) return
     setSaving(true)
     try {
-      const features = featuresText
-        .split('\n')
-        .map(s => s.trim())
-        .filter(Boolean)
-      const payload: ServicePageContent = { ...form, features }
+      const features = splitLines(featuresText)
+      const trustStats = splitLines(trustStatsText)
+        .map(splitPipeLine)
+        .filter((parts) => parts.length >= 2)
+        .map(([label, value]) => ({ label, value }))
+
+      const offerCards = splitLines(offerCardsText).map((title) => ({ title }))
+
+      const processSteps = splitLines(processStepsText)
+        .map(splitPipeLine)
+        .filter((parts) => parts.length >= 2)
+        .map(([title, ...detailParts]) => ({ title, detail: detailParts.join(' | ') }))
+
+      const serviceAreas = splitLines(serviceAreasText)
+      const whyChoosePoints = splitLines(whyChooseText)
+
+      const faqs = splitLines(faqsText)
+        .map(splitPipeLine)
+        .filter((parts) => parts.length >= 2)
+        .map(([q, ...aParts]) => ({ q, a: aParts.join(' | ') }))
+
+      let reviews: ServicePageContent['reviews'] = []
+      try {
+        const parsed = JSON.parse(reviewsJson)
+        reviews = Array.isArray(parsed)
+          ? parsed.filter(
+              (item): item is NonNullable<ServicePageContent['reviews']>[number] =>
+                typeof item?.name === 'string' &&
+                typeof item?.text === 'string' &&
+                typeof item?.area === 'string' &&
+                typeof item?.avatar === 'string' &&
+                typeof item?.date === 'string'
+            )
+          : []
+      } catch {
+        alert('❌ Reviews JSON is invalid. Please fix it before saving.')
+        setSaving(false)
+        return
+      }
+
+      const payload: ServicePageContent = {
+        ...form,
+        features,
+        trustStats,
+        offerCards,
+        processSteps,
+        serviceAreas,
+        whyChoosePoints,
+        faqs,
+        reviews,
+      }
       await setDoc(doc(db, 'service-pages', editingSlug), payload)
       setSavedSlugs(prev => new Set([...prev, editingSlug]))
       alert('✅ Service page saved successfully!')
@@ -137,8 +304,44 @@ export default function ServicePagesCMS() {
 
   const categories = ['Normal Cleaning', 'Deep Cleaning', 'Technical Cleaning']
 
+  const handleSyncAllToFirebase = async () => {
+    if (!confirm('Sync all service defaults (including extended section fields) to Firebase? This updates all service-pages docs.')) {
+      return
+    }
+
+    setSyncingAll(true)
+    try {
+      await Promise.all(
+        SERVICE_LIST.map(async ({ slug }) => {
+          const defaults = SERVICE_DEFAULTS[slug] ?? EMPTY_FORM
+          const payload = withExtendedDefaults(defaults)
+          await setDoc(doc(db, 'service-pages', slug), payload, { merge: true })
+        })
+      )
+
+      setSavedSlugs(new Set(SERVICE_LIST.map((item) => item.slug)))
+      alert('✅ All service pages synced to Firebase with full extended section fields.')
+    } catch (error) {
+      console.error(error)
+      alert('❌ Failed to sync all service pages to Firebase.')
+    } finally {
+      setSyncingAll(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-end">
+        <button
+          onClick={handleSyncAllToFirebase}
+          disabled={syncingAll}
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition hover:bg-pink-600 disabled:opacity-60"
+        >
+          {syncingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          {syncingAll ? 'Syncing All...' : 'Sync All To Firebase'}
+        </button>
+      </div>
+
       {categories.map(cat => (
         <div key={cat}>
           <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3">{cat}</h3>
@@ -298,6 +501,91 @@ export default function ServicePagesCMS() {
                     <label className="block text-xs font-semibold mb-1.5">CTA Subtitle</label>
                     <input value={form.ctaSubtitle} onChange={e => setForm(f => ({ ...f, ctaSubtitle: e.target.value }))}
                       className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Extended AC Layout Fields */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground border-b pb-2">Extended Sections (AC Layout)</h3>
+                <p className="text-[11px] text-muted-foreground">
+                  Use <strong>|</strong> between fields where mentioned. One item per line.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1.5">Trust Stats <span className="font-normal text-muted-foreground">(Label | Value)</span></label>
+                    <textarea
+                      value={trustStatsText}
+                      onChange={e => setTrustStatsText(e.target.value)}
+                      rows={4}
+                      placeholder="Satisfied Clients | 20,000+"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1.5">Offer Cards <span className="font-normal text-muted-foreground">(Title)</span></label>
+                    <textarea
+                      value={offerCardsText}
+                      onChange={e => setOfferCardsText(e.target.value)}
+                      rows={4}
+                      placeholder="Air Vent Cleaning"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1.5">Process Steps <span className="font-normal text-muted-foreground">(Title | Detail)</span></label>
+                    <textarea
+                      value={processStepsText}
+                      onChange={e => setProcessStepsText(e.target.value)}
+                      rows={6}
+                      placeholder="Inspection | We inspect and map service scope"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5">Service Areas <span className="font-normal text-muted-foreground">(one per line)</span></label>
+                    <textarea
+                      value={serviceAreasText}
+                      onChange={e => setServiceAreasText(e.target.value)}
+                      rows={6}
+                      placeholder="Dubai Marina"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5">Why Choose Points <span className="font-normal text-muted-foreground">(one per line)</span></label>
+                    <textarea
+                      value={whyChooseText}
+                      onChange={e => setWhyChooseText(e.target.value)}
+                      rows={6}
+                      placeholder="Certified specialists with proven methods"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1.5">FAQs <span className="font-normal text-muted-foreground">(Question | Answer)</span></label>
+                    <textarea
+                      value={faqsText}
+                      onChange={e => setFaqsText(e.target.value)}
+                      rows={6}
+                      placeholder="How often should I book this service? | Most homes should schedule every 6-12 months"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1.5">Reviews JSON <span className="font-normal text-muted-foreground">(array of {`{name,text,area,avatar,date}`})</span></label>
+                    <textarea
+                      value={reviewsJson}
+                      onChange={e => setReviewsJson(e.target.value)}
+                      rows={10}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono"
+                    />
                   </div>
                 </div>
               </div>
