@@ -176,7 +176,7 @@ export default function ACDuctCleaning() {
           <div className="container relative z-10 mx-auto px-4 py-14 sm:px-6 sm:py-16 md:py-20 lg:py-24">
             <div className="max-w-3xl">
               <h1 className="mb-4 text-3xl font-black leading-[1.1] tracking-tight text-white sm:mb-6 sm:text-5xl md:text-6xl xl:text-7xl">
-                Professional <span className="bg-linear-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">AC Duct Cleaning</span> Services in Dubai
+                Professional <span className="text-primary">AC Duct Cleaning</span> Services in Dubai
               </h1>
               <p className="mb-8 max-w-2xl text-base leading-relaxed text-blue-100/80 sm:mb-10 sm:text-lg md:text-lg lg:text-xl">
                 As a top-rated air duct cleaning company in Dubai, we specialize in removing contaminants, allergens, dust, and hidden debris from your AC duct system. Our professional services are designed for homes, villas, and commercial spaces, helping improve indoor air quality and cooling performance.
@@ -202,34 +202,37 @@ export default function ACDuctCleaning() {
 
         <section className="relative -mt-6 pb-8 md:-mt-10 md:pb-6">
           <div className="container mx-auto px-4 sm:px-6">
-            <div className="rounded-3xl bg-[#0c1526] px-4 py-5 shadow-[0_25px_60px_rgba(5,10,20,0.45)] sm:px-6 sm:py-6 md:px-10">
+            <div
+              className="rounded-3xl px-4 py-5 shadow-[0_25px_60px_rgba(3,158,217,0.4)] sm:px-6 sm:py-6 md:px-10"
+              style={{ backgroundImage: 'linear-gradient(135deg, #039ED9 0%, var(--primary) 100%)' }}
+            >
               <div className="grid gap-4 text-center text-white/80 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
                 <div className="flex items-center justify-center gap-2 sm:gap-3">
-                  <Users className="h-5 w-5 text-cyan-300" />
+                  <Users className="h-5 w-5 text-primary" />
                   <div className="text-left">
                     <p className="text-xl font-black text-white sm:text-2xl">20,000+</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:text-[11px]">Satisfied Clients</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/85 sm:text-[11px]">Satisfied Clients</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-2 sm:gap-3">
-                  <Star className="h-5 w-5 text-cyan-300" />
+                  <Star className="h-5 w-5 text-primary" />
                   <div className="text-left">
                     <p className="text-xl font-black text-white sm:text-2xl">4.9/5.0</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:text-[11px]">Service Rating</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/85 sm:text-[11px]">Service Rating</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-2 sm:gap-3">
-                  <UserCheck className="h-5 w-5 text-cyan-300" />
+                  <UserCheck className="h-5 w-5 text-primary" />
                   <div className="text-left">
                     <p className="text-xl font-black text-white sm:text-2xl">250+</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:text-[11px]">Expert Cleaners</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/85 sm:text-[11px]">Expert Cleaners</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-2 sm:gap-3">
-                  <MapPin className="h-5 w-5 text-cyan-300" />
+                  <MapPin className="h-5 w-5 text-primary" />
                   <div className="text-left">
                     <p className="text-xl font-black text-white sm:text-2xl">100%</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:text-[11px]">City Coverage</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/85 sm:text-[11px]">City Coverage</p>
                   </div>
                 </div>
               </div>
