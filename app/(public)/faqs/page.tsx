@@ -2,19 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { Plus, Minus } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { db } from '@/lib/firebase'
-import { collection, getDocs } from 'firebase/firestore'
-import { getFAQPage, defaultFAQPage, type CMSFAQPage } from '@/lib/cms-data'
-
-// Firebase FAQ Type
-type FirebaseFAQ = {
-  id: string;
-  question: string;
-  answer: string;
-  category?: string;
-  order?: number;
-}
+import { useState } from 'react'
+import { defaultFAQPage } from '@/lib/cms-data'
 
 // Static FAQs (unchanged)
 const staticFAQs = [
@@ -78,69 +67,8 @@ const staticFAQs = [
 
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
-  const [firebaseFAQs, setFirebaseFAQs] = useState<FirebaseFAQ[]>([])
-  const [cms, setCms] = useState<CMSFAQPage>(defaultFAQPage)
-
-  // Fetch CMS data
-  useEffect(() => {
-    let m = true
-    getFAQPage().then(d => { if (m) setCms(d) }).catch(() => {})
-    return () => { m = false }
-  }, [])
-  // Fetch FAQs from Firebase
-  useEffect(() => {
-    const fetchFAQs = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'faq'))
-        const faqsData: FirebaseFAQ[] = []
-        
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          faqsData.push({
-            id: doc.id,
-            question: data.question || '',
-            answer: data.answer || '',
-            category: data.category || 'General',
-            order: data.order || 0
-          })
-        })
-        
-        // Sort by order then by question
-        const sortedFAQs = faqsData.sort((a, b) => {
-          if (a.order !== b.order) return (a.order || 0) - (b.order || 0)
-          return a.question.localeCompare(b.question)
-        })
-        
-        setFirebaseFAQs(sortedFAQs)
-      } catch (error) {
-        console.error('Error fetching FAQs:', error)
-        // Error handle silently, UI will still show static FAQs
-      }
-    }
-
-    fetchFAQs()
-  }, [])
-
-  // Process Firebase FAQs to match static FAQ format
-  const processedFirebaseFAQs = firebaseFAQs.map((faq, index) => ({
-    question: `${staticFAQs.length + index + 1}. ${formatQuestion(faq.question)}`,
-    answer: faq.answer
-  }))
-
-  // Helper function to format question
-  function formatQuestion(question: string): string {
-    // Add question mark if missing
-    if (!question.trim().endsWith('?')) {
-      return question.trim() + '?'
-    }
-    return question.trim()
-  }
-
-  // Combine static and Firebase FAQs
-  const allFAQs = [
-    ...staticFAQs,
-    ...processedFirebaseFAQs
-  ]
+  const cms = defaultFAQPage
+  const allFAQs = staticFAQs
 
   return (
     <div className="flex flex-col overflow-hidden pt-20">

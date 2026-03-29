@@ -17,11 +17,12 @@ import {
   Music2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { db } from '@/lib/firebase'
-import { doc, getDoc, collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore'
-import { getContactPage, defaultContactPage, type CMSContactPage } from '@/lib/cms-data'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { defaultContactPage } from '@/lib/cms-data'
+import { PUBLIC_SERVICES } from '@/lib/public-services'
 
 interface FirebaseService {
   id: string
@@ -38,13 +39,16 @@ interface FormData {
 }
 
 export default function Contact() {
-  const [activeTab, setActiveTab] = useState('form')
-  const [profileData, setProfileData] = useState({
+  const profileData = {
     email: 'services@homeworkuae.com',
     phone: '+971507177059',
     whatsapp: '+971 50 717 7059'
-  })
-  const [services, setServices] = useState<FirebaseService[]>([])
+  }
+  const services: FirebaseService[] = PUBLIC_SERVICES.map((service) => ({
+    id: service.id,
+    name: service.name,
+    categoryName: service.categoryName,
+  }))
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -53,66 +57,7 @@ export default function Contact() {
     message: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [cms, setCms] = useState<CMSContactPage>(defaultContactPage)
-
-  // Fetch CMS data
-  useEffect(() => {
-    let m = true
-    getContactPage().then(d => { if (m) setCms(d) }).catch(() => {})
-    return () => { m = false }
-  }, [])
-
-  // Fetch profile data from Firebase
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const docRef = doc(db, 'profile-setting', 'admin-settings')
-        const docSnap = await getDoc(docRef)
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          if (data.profile) {
-            setProfileData({
-              email: data.profile.email || 'services@homeworkuae.com',
-              phone: data.profile.phone || '+971507177059',
-              whatsapp: data.profile.whatsapp || '+971 50 717 7059'
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error)
-      }
-    }
-
-    fetchProfileData()
-  }, [])
-
-  // Fetch active services from Firebase
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const servicesRef = collection(db, 'services')
-        const q = query(servicesRef, where('status', '==', 'ACTIVE'))
-        const querySnapshot = await getDocs(q)
-        
-        const servicesData: FirebaseService[] = []
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          servicesData.push({
-            id: doc.id,
-            name: data.name || 'Service',
-            categoryName: data.categoryName || 'General'
-          })
-        })
-        
-        setServices(servicesData)
-      } catch (error) {
-        console.error('Error fetching services:', error)
-      }
-    }
-
-    fetchServices()
-  }, [])
+  const cms = defaultContactPage
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target

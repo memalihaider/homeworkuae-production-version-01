@@ -42,6 +42,10 @@ export default function BookService() {
 
     try {
       const serviceName = formData.service.trim();
+      const serviceId = serviceName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "custom-service";
 
       const now = new Date();
       const bookingRef = `BK${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -59,7 +63,7 @@ export default function BookService() {
         clientPhone: formData.phone,
         service: serviceName,
         serviceName,
-        serviceId: "",
+        serviceId,
         area: formData.location,
         location: formData.location,
         clientAddress: formData.location,
@@ -77,7 +81,7 @@ export default function BookService() {
         updatedAt: serverTimestamp(),
       };
 
-      const docRef = await addDoc(collection(db, "bookings"), bookingPayload);
+      await addDoc(collection(db, "bookings"), bookingPayload);
 
       // Keep existing notification flow.
       try {
@@ -124,7 +128,7 @@ export default function BookService() {
               Book Service
             </h1>
             <p className="text-lg text-slate-500">
-              Fill out the form below and we'll get back to you shortly.
+              Fill out the form below and we&apos;ll get back to you shortly.
             </p>
           </div>
 

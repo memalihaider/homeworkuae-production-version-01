@@ -98,8 +98,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="no-js" suppressHydrationWarning>
       <head>
+        <Script
+          id="js-detection"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');",
+          }}
+        />
         {/* Google Tag Manager */}
         <Script
           id="gtm-script"

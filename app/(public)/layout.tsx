@@ -9,62 +9,24 @@ import {
   Fan, Pipette, Utensils, Waves, Dumbbell, PanelTop, ThermometerSnowflake,
   Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, User, X
 } from 'lucide-react'
-import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { getLayoutSettings, defaultLayoutSettings, type CMSLayoutSettings } from '@/lib/cms-data'
+import { defaultLayoutSettings } from '@/lib/cms-data'
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const hasShownWelcomePopup = useRef(false)
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const welcomePopupStorageKey = 'homeworkuae_welcome_popup_shown'
-  const [profileData, setProfileData] = useState({
+  const profileData = {
     phone: '+971507177059',
     email: 'services@homeworkuae.com',
     company: 'homeware',
     address: 'Office: 201, 2nd Floor, Al Saaha Offices - B, Downtown Dubai - UAE' // Default address
-  })
-  const [isLoading, setIsLoading] = useState(true)
-  const [cms, setCms] = useState<CMSLayoutSettings>(defaultLayoutSettings)
-
-  // Fetch CMS layout settings
-  useEffect(() => {
-    let m = true
-    getLayoutSettings().then(d => { if (m) setCms(d) }).catch(() => {})
-    return () => { m = false }
-  }, [])
-
-  // Fetch profile data from Firebase
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const docRef = doc(db, 'profile-setting', 'admin-settings')
-        const docSnap = await getDoc(docRef)
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          if (data.profile) {
-            setProfileData({
-              phone: data.profile.phone || '+971507177059',
-              email: data.profile.email || 'services@homeworkuae.com',
-              company: data.profile.company || 'homeware',
-              address: data.profile.address || 'Office: 201, 2nd Floor, Al Saaha Offices - B, Downtown Dubai - UAE' // Fetch address from Firebase
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error)
-        // Keep default values if Firebase fails
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchProfileData()
-  }, [])
+  }
+  const isLoading = false
+  const cms = defaultLayoutSettings
 
   useEffect(() => {
     if (pathname !== '/' || hasShownWelcomePopup.current) {

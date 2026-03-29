@@ -1,42 +1,14 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
 import { MessageCircle, Phone, Mail, ArrowRight, Sparkles } from 'lucide-react'
-import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
 
 export default function Quote() {
-  const [profileData, setProfileData] = useState({
+  const profileData = {
     email: 'services@homeworkuae.com',
     phone: '+971507177059',
     whatsapp: '+971 50 717 7059' // Default WhatsApp number
-  })
-
-  // Fetch profile data from Firebase
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const docRef = doc(db, 'profile-setting', 'admin-settings')
-        const docSnap = await getDoc(docRef)
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          if (data.profile) {
-            setProfileData({
-              email: data.profile.email || 'services@homeworkuae.com',
-              phone: data.profile.phone || '+971507177059',
-              whatsapp: data.profile.whatsapp || '+971 50 717 7059' // Fetch WhatsApp from Firebase
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error)
-      }
-    }
-
-    fetchProfileData()
-  }, [])
+  }
 
   return (
     <div className="flex flex-col overflow-hidden min-h-screen">
@@ -83,7 +55,7 @@ export default function Quote() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0 }}
-              className="group p-10 bg-gradient-to-br from-slate-50 to-white rounded-[3rem] border-2 border-slate-100 hover:border-primary hover:shadow-2xl transition-all duration-300 text-center"
+              className="group p-10 bg-linear-to-br from-slate-50 to-white rounded-[3rem] border-2 border-slate-100 hover:border-primary hover:shadow-2xl transition-all duration-300 text-center"
             >
               <div className="h-20 w-20 rounded-3xl bg-[#25D366] text-white flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform shadow-lg">
                 <svg className="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
@@ -104,7 +76,7 @@ export default function Quote() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="group p-10 bg-gradient-to-br from-slate-50 to-white rounded-[3rem] border-2 border-slate-100 hover:border-primary hover:shadow-2xl transition-all duration-300 text-center"
+              className="group p-10 bg-linear-to-br from-slate-50 to-white rounded-[3rem] border-2 border-slate-100 hover:border-primary hover:shadow-2xl transition-all duration-300 text-center"
             >
               <div className="h-20 w-20 rounded-3xl bg-slate-900 text-white flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform shadow-lg group-hover:bg-primary">
                 <Phone className="h-10 w-10" />
@@ -123,7 +95,7 @@ export default function Quote() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="group p-10 bg-gradient-to-br from-slate-50 to-white rounded-[3rem] border-2 border-slate-100 hover:border-primary hover:shadow-2xl transition-all duration-300 text-center"
+              className="group p-10 bg-linear-to-br from-slate-50 to-white rounded-[3rem] border-2 border-slate-100 hover:border-primary hover:shadow-2xl transition-all duration-300 text-center"
             >
               <div className="h-20 w-20 rounded-3xl bg-primary text-white flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform shadow-lg">
                 <Mail className="h-10 w-10" />

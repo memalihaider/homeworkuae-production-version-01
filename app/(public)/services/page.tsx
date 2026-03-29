@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { 
   Search, 
   ArrowRight, 
@@ -29,30 +29,8 @@ import {
   ThermometerSnowflake,
   Zap
 } from 'lucide-react'
-import { db } from '@/lib/firebase'
-import { collection, getDocs } from 'firebase/firestore'
 import Link from 'next/link'
-import { getServicesPage, defaultServicesPage, type CMSServicesPage } from '@/lib/cms-data'
-
-// Firebase service type
-type FirebaseService = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  categoryName: string;
-  status: string;
-  type: string;
-  createdAt: string;
-  updatedAt: string;
-  cost: number;
-  minStock: number;
-  stock: number;
-  unit: string;
-  sku: string;
-  categoryId: string;
-}
+import { defaultServicesPage } from '@/lib/cms-data'
 
 // Original dummy services (EXACTLY AS BEFORE) - UPDATED href
 const DUMMY_SERVICE_CATEGORIES = [
@@ -109,240 +87,11 @@ const DUMMY_SERVICE_CATEGORIES = [
   }
 ]
 
-// Category mapping for icons
-const getIconForService = (serviceName: string) => {
-  const iconMap: { [key: string]: any } = {
-    'regular': Home,
-    'residential': Home,
-    'office': Briefcase,
-    'window': Maximize,
-    'balcony': Sun,
-    'sofa': Sofa,
-    'carpet': Layers,
-    'mattress': Bed,
-    'grout': Grid3X3,
-    'garage': Warehouse,
-    'kitchen': CookingPot,
-    'construction': HardHat,
-    'apartment': Building,
-    'move': Truck,
-    'villa': Home,
-    'floor': Brush,
-    'duct': Wind,
-    'coil': ThermometerSnowflake,
-    'hood': Fan,
-    'grease': Pipette,
-    'restaurant': Utensils,
-    'water': Waves,
-    'pool': Waves,
-    'gym': Dumbbell,
-    'facade': PanelTop,
-    'ac': Wind
-  }
-
-  for (const [keyword, icon] of Object.entries(iconMap)) {
-    if (serviceName.toLowerCase().includes(keyword)) {
-      return icon
-    }
-  }
-  
-  return Home // Default icon
-}
-
 export default function ServicesPage() {
   const [activeCategory, setActiveCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [firebaseServices, setFirebaseServices] = useState<FirebaseService[]>([])
-  const [serviceCategories, setServiceCategories] = useState(DUMMY_SERVICE_CATEGORIES)
-  const [cms, setCms] = useState<CMSServicesPage>(defaultServicesPage)
-
-  // Fetch CMS data
-  useEffect(() => {
-    let m = true
-    getServicesPage().then(d => { if (m) setCms(d) }).catch(() => {})
-    return () => { m = false }
-  }, [])
-
-  // Fetch services from Firebase
-  useEffect(() => {
-    const fetchFirebaseServices = async () => {
-      const cacheKey = 'public:services:list:v1'
-      const cacheTtlMs = 10 * 60 * 1000
-
-      try {
-        const cached = window.sessionStorage.getItem(cacheKey)
-        if (cached) {
-          const parsed = JSON.parse(cached) as { timestamp: number; services: FirebaseService[] }
-          if (Date.now() - parsed.timestamp < cacheTtlMs && parsed.services.length > 0) {
-            setFirebaseServices(parsed.services)
-
-            const cachedFormattedServices = parsed.services.map(service => {
-              let categoryId = 'normal'
-              if (service.categoryName?.toLowerCase().includes('deep') || service.name?.toLowerCase().includes('deep')) {
-                categoryId = 'deep'
-              } else if (
-                service.categoryName?.toLowerCase().includes('technical') ||
-                service.name?.toLowerCase().includes('ac') ||
-                service.name?.toLowerCase().includes('duct') ||
-                service.name?.toLowerCase().includes('coil') ||
-                service.name?.toLowerCase().includes('hood') ||
-                service.name?.toLowerCase().includes('grease') ||
-                service.name?.toLowerCase().includes('restaurant') ||
-                service.name?.toLowerCase().includes('water') ||
-                service.name?.toLowerCase().includes('pool') ||
-                service.name?.toLowerCase().includes('gym') ||
-                service.name?.toLowerCase().includes('facade')
-              ) {
-                categoryId = 'technical'
-              }
-
-              return {
-                id: service.id,
-                name: service.name,
-                slug: service.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-                icon: getIconForService(service.name),
-                desc: service.description,
-                price: `AED ${service.price}`,
-                image: service.imageUrl,
-                categoryId,
-                isFirebaseService: true,
-              }
-            })
-
-            const updatedCategories = DUMMY_SERVICE_CATEGORIES.map(category => ({
-              ...category,
-              services: [...category.services.map(service => ({ ...service, slug: service.slug }))],
-            }))
-
-            cachedFormattedServices.forEach(firebaseService => {
-              const categoryIndex = updatedCategories.findIndex(cat => cat.id === firebaseService.categoryId)
-              if (categoryIndex !== -1) {
-                updatedCategories[categoryIndex].services.unshift(firebaseService)
-              } else {
-                updatedCategories[0].services.unshift(firebaseService)
-              }
-            })
-
-            setServiceCategories(updatedCategories)
-            return
-          }
-        }
-      } catch {
-        // Continue to live fetch when cache is unavailable
-      }
-
-      try {
-        const querySnapshot = await getDocs(collection(db, 'services'))
-        const services: FirebaseService[] = []
-        
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          const service: FirebaseService = {
-            id: doc.id,
-            name: data.name || 'Service',
-            description: data.description || 'Professional cleaning service',
-            price: data.price || 0,
-            imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=1600',
-            categoryName: data.categoryName || 'Normal Cleaning',
-            status: data.status || 'ACTIVE',
-            type: data.type || 'SERVICE',
-            createdAt: data.createdAt || new Date().toISOString(),
-            updatedAt: data.updatedAt || new Date().toISOString(),
-            cost: data.cost || 0,
-            minStock: data.minStock || 0,
-            stock: data.stock || 0,
-            unit: data.unit || 'Unit',
-            sku: data.sku || '',
-            categoryId: data.categoryId || ''
-          }
-          services.push(service)
-        })
-        
-        setFirebaseServices(services)
-
-        try {
-          window.sessionStorage.setItem(
-            cacheKey,
-            JSON.stringify({ timestamp: Date.now(), services })
-          )
-        } catch {
-          // Ignore cache write failures
-        }
-
-        // Convert Firebase services to match our format
-        const firebaseFormattedServices = services.map(service => {
-          // Determine category based on categoryName or name
-          let categoryId = 'normal'
-          if (service.categoryName?.toLowerCase().includes('deep') || 
-              service.name?.toLowerCase().includes('deep')) {
-            categoryId = 'deep'
-          } else if (service.categoryName?.toLowerCase().includes('technical') ||
-                    service.name?.toLowerCase().includes('ac') ||
-                    service.name?.toLowerCase().includes('duct') ||
-                    service.name?.toLowerCase().includes('coil') ||
-                    service.name?.toLowerCase().includes('hood') ||
-                    service.name?.toLowerCase().includes('grease') ||
-                    service.name?.toLowerCase().includes('restaurant') ||
-                    service.name?.toLowerCase().includes('water') ||
-                    service.name?.toLowerCase().includes('pool') ||
-                    service.name?.toLowerCase().includes('gym') ||
-                    service.name?.toLowerCase().includes('facade')) {
-            categoryId = 'technical'
-          }
-
-          const icon = getIconForService(service.name)
-          
-          // Generate slug from service name - SAME FORMAT AS DUMMY SERVICES
-          const slug = service.name.toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '')
-          
-          return {
-            id: service.id,
-            name: service.name,
-            slug: slug,
-            icon: icon,
-            desc: service.description,
-            price: `AED ${service.price}`,
-            image: service.imageUrl,
-            categoryId: categoryId,
-            isFirebaseService: true // Flag to identify Firebase services
-          }
-        })
-
-        // Create a copy of dummy categories
-        const updatedCategories = DUMMY_SERVICE_CATEGORIES.map(category => ({
-          ...category,
-          services: [...category.services.map(service => ({
-            ...service,
-            slug: service.slug // Already just the slug
-          }))]
-        }))
-
-        // Add Firebase services to appropriate categories
-        firebaseFormattedServices.forEach(firebaseService => {
-          const categoryIndex = updatedCategories.findIndex(cat => cat.id === firebaseService.categoryId)
-          if (categoryIndex !== -1) {
-            // Add Firebase service at the beginning of the category
-            updatedCategories[categoryIndex].services.unshift(firebaseService)
-          } else {
-            // If category not found, add to normal category
-            updatedCategories[0].services.unshift(firebaseService)
-          }
-        })
-
-        // Update state with combined services
-        setServiceCategories(updatedCategories)
-
-      } catch (error) {
-        console.error('Error fetching services:', error)
-        // If Firebase fails, just show dummy services
-        setServiceCategories(DUMMY_SERVICE_CATEGORIES)
-      }
-    }
-
-    fetchFirebaseServices()
-  }, [])
+  const serviceCategories = DUMMY_SERVICE_CATEGORIES
+  const cms = defaultServicesPage
 
   const filteredCategories = useMemo(() => {
     let categories = [...serviceCategories]
@@ -384,12 +133,6 @@ export default function ServicesPage() {
               {cms.heroSubtitle}
             </p>
             
-            {/* Firebase services indicator */}
-            {firebaseServices.length > 0 && (
-              <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full">
-               
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -446,9 +189,6 @@ export default function ServicesPage() {
                         <span className="text-xs text-slate-500">
                           {category.services.length} services available
                         </span>
-                        {category.services.some((s: any) => s.isFirebaseService) && (
-                          <></>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -459,13 +199,6 @@ export default function ServicesPage() {
                         key={service.id || service.name}
                         className="group p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden flex flex-col h-full active:scale-95"
                       >
-                        {/* Firebase Service Badge */}
-                        {service.isFirebaseService && (
-                          <div className="absolute top-4 right-4 z-20">
-                           
-                          </div>
-                        )}
-
                         <div className="relative z-10 space-y-6 flex-1">
                           <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner group-hover:shadow-lg group-hover:shadow-primary/20 group-hover:rotate-12">
                             {service.icon && <service.icon className="h-6 w-6" />}
@@ -477,15 +210,6 @@ export default function ServicesPage() {
                             <p className="text-xs text-slate-500 font-bold leading-relaxed italic">
                               {service.desc}
                             </p>
-                            
-                            {/* Price for Firebase services */}
-                            {service.price && service.isFirebaseService && (
-                              <div className="pt-2">
-                                <span className="text-sm font-black text-primary">
-                                  {service.price}
-                                </span>
-                              </div>
-                            )}
                           </div>
                           
                           <div className="pt-4 flex items-center justify-between">

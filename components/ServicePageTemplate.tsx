@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   CheckCircle2,
@@ -19,8 +19,6 @@ import {
   Timer,
   CircleCheck,
 } from 'lucide-react'
-import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
 import Image from 'next/image'
 
 export type ServiceTrustStat = { label: string; value: string }
@@ -513,60 +511,8 @@ function SkeletonImg({
 
 export default function ServicePageTemplate({ slug }: { slug: string }) {
   const base = SERVICE_DEFAULTS[slug] ?? FALLBACK
-  // Render immediately with built-in defaults; Firestore overrides merge silently in background
-  const [content, setContent] = useState<ServicePageContent>(base)
-
-  useEffect(() => {
-    const fetchOverrides = async () => {
-      const cacheKey = `service-page:${slug}`
-      const cacheTtlMs = 10 * 60 * 1000
-
-      try {
-        const cachedRaw = window.sessionStorage.getItem(cacheKey)
-        if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw) as { timestamp: number; data: Partial<ServicePageContent> }
-          if (Date.now() - cached.timestamp < cacheTtlMs) {
-            setContent(prev => ({ ...prev, ...cached.data }))
-            return
-          }
-        }
-      } catch {
-        // Ignore cache read failures
-      }
-
-      try {
-        const docRef = doc(db, 'service-pages', slug)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          setContent((prev) => {
-            const mergedData = {
-              ...prev,
-              ...Object.fromEntries(
-                Object.entries(data).filter(([, v]) => v !== undefined && v !== null && v !== '')
-              ),
-              // merge features array if present and non-empty
-              ...(Array.isArray(data.features) && data.features.length > 0 ? { features: data.features } : {}),
-            }
-
-            try {
-              window.sessionStorage.setItem(
-                cacheKey,
-                JSON.stringify({ timestamp: Date.now(), data: mergedData })
-              )
-            } catch {
-              // Ignore cache write failures
-            }
-
-            return mergedData
-          })
-        }
-      } catch {
-        // use built-in defaults on error
-      }
-    }
-    fetchOverrides()
-  }, [slug])
+  // Render with built-in defaults only for JS-disabled and static-first reliability.
+  const content: ServicePageContent = base
 
   const fallbackImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80'
   const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'

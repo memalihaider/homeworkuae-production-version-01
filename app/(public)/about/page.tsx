@@ -2,9 +2,9 @@
 
 import { CheckCircle2, Users, Award, Leaf, Target, Eye, Heart, Sparkles, ShieldCheck, Zap, ArrowRight, History, Building2 } from 'lucide-react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef, useState, useEffect } from 'react'
+import { useRef } from 'react'
 import Image from 'next/image'
-import { getAboutPage, defaultAboutPage, type CMSAboutPage } from '@/lib/cms-data'
+import { defaultAboutPage } from '@/lib/cms-data'
 
 export default function About() {
   const ref = useRef(null)
@@ -13,13 +13,7 @@ export default function About() {
     offset: ["start start", "end start"]
   })
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"])
-  const [cms, setCms] = useState<CMSAboutPage>(defaultAboutPage)
-
-  useEffect(() => {
-    let m = true
-    getAboutPage().then(d => { if (m) setCms(d) }).catch(() => {})
-    return () => { m = false }
-  }, [])
+  const cms = defaultAboutPage
 
   return (
     <div className="flex flex-col overflow-hidden">

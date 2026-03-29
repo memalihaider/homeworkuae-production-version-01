@@ -11,9 +11,7 @@ import { useEffect, useState } from 'react'
 import NextImage from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
-import { getHomePage, defaultHomePage, type CMSHomePage } from '@/lib/cms-data'
-import { db } from '@/lib/firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { defaultHomePage } from '@/lib/cms-data'
 
 // Reusable CTA Button Component
 interface CTAButtonProps {
@@ -44,15 +42,6 @@ const CTAButton = ({ text, href, variant = "primary", icon: Icon = null, classNa
 }
 
 export default function HomePage() {
-  const fallbackHeroImages = [
-    'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1528740561666-dc2479dc08ab?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1603712725038-e9334ae8f39f?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=1800&q=80',
-  ]
-
   // Light scroll-reveal animation variants
   const fadeUp = {
     hidden: { opacity: 0, y: 18 },
@@ -63,14 +52,11 @@ export default function HomePage() {
     visible: { opacity: 1, transition: { duration: 0.3, ease: 'easeOut' as const } }
   }
 
-  const [isClient, setIsClient] = useState(false)
   const [blogSliderIndex, setBlogSliderIndex] = useState(0)
   const [airQuality, setAirQuality] = useState(72)
   const [airQualityStatus, setAirQualityStatus] = useState("Moderate")
   const [airQualityColor, setAirQualityColor] = useState("text-amber-500")
-  const [loading, setLoading] = useState(true)
-  const [heroImages, setHeroImages] = useState<string[]>(fallbackHeroImages)
-  const [cmsData, setCmsData] = useState<CMSHomePage>(defaultHomePage)
+  const cmsData = defaultHomePage
 
   const heroTexts = cmsData.hero.headings
   const activeHeroText = heroTexts[0] ?? 'PREMIUM\nCLEANING'
@@ -136,68 +122,11 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    setIsClient(true)
     let isMounted = true
-
-    const HERO_CACHE_KEY = 'home:hero-service-images'
-    const HERO_CACHE_TTL_MS = 10 * 60 * 1000
-
-    // Fetch home CMS content.
-    getHomePage({ bypassCache: true }).then(data => { if (isMounted) setCmsData(data) }).catch(() => {})
-
-    // Fetch service page images managed from admin portal
-    const fetchServiceHeroImages = async () => {
-      try {
-        const cached = window.sessionStorage.getItem(HERO_CACHE_KEY)
-        if (cached) {
-          const parsed = JSON.parse(cached) as { timestamp: number; images: string[] }
-          if (Date.now() - parsed.timestamp < HERO_CACHE_TTL_MS && parsed.images.length > 0) {
-            setHeroImages(parsed.images)
-            return
-          }
-        }
-      } catch {
-        // Continue with live fetch if cache read fails
-      }
-
-      try {
-        const snapshot = await getDocs(collection(db, 'service-pages'))
-        if (!isMounted) return
-
-        const dbImages = Array.from(
-          new Set(
-            snapshot.docs.flatMap((serviceDoc) => {
-              const data = serviceDoc.data() as Record<string, unknown>
-              const candidates = [data.heroImage, data.sectionImage]
-              return candidates.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-            })
-          )
-        )
-
-        if (dbImages.length > 0) {
-          const mergedImages = [...dbImages, ...fallbackHeroImages].slice(0, 6)
-          setHeroImages(mergedImages)
-
-          try {
-            window.sessionStorage.setItem(
-              HERO_CACHE_KEY,
-              JSON.stringify({ timestamp: Date.now(), images: mergedImages })
-            )
-          } catch {
-            // Ignore cache write failures
-          }
-        }
-      } catch {
-        // Keep fallback images if database fetch fails
-      }
-    }
-
-    fetchServiceHeroImages()
 
     const fetchAirQualityData = async () => {
       if (!isMounted) return
       try {
-        setLoading(true)
         const response = await fetch(
           'https://air-quality-api.open-meteo.com/v1/air_quality?latitude=25.2048&longitude=55.2708&current=us_aqi'
         )
@@ -214,11 +143,9 @@ export default function HomePage() {
         setAirQuality(Math.min(aqi, 100))
         setAirQualityStatus(status)
         setAirQualityColor(color)
-        setLoading(false)
       } catch (error) {
         if (!isMounted) return
         console.error('Error fetching air quality:', error)
-        setLoading(false)
       }
     }
 
@@ -234,14 +161,6 @@ export default function HomePage() {
       clearInterval(airQualityInterval)
     }
   }, [])
-
-  useEffect(() => {
-    // Preload first few hero images to improve first transition smoothness
-    heroImages.slice(0, 3).forEach((src) => {
-      const img = new window.Image()
-      img.src = src
-    })
-  }, [heroImages])
 
   return (
     <div className="flex flex-col overflow-hidden selection:bg-primary selection:text-white">

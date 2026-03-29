@@ -17,7 +17,8 @@ import {
   CheckCircle2
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { PUBLIC_SERVICES } from '@/lib/public-services'
 
 interface FirebaseService {
   id: string
@@ -28,6 +29,16 @@ interface FirebaseService {
   status: string
   cost: number
 }
+
+const STATIC_BOOKING_SERVICES: FirebaseService[] = PUBLIC_SERVICES.map((service) => ({
+  id: service.id,
+  name: service.name,
+  description: service.description,
+  price: service.price,
+  categoryName: service.categoryName,
+  status: 'ACTIVE',
+  cost: 0,
+}))
 
 interface FormData {
   serviceId: string
@@ -49,7 +60,7 @@ function BookingPageContent() {
   const selectedServiceId = searchParams.get('service') || ''
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [services, setServices] = useState<FirebaseService[]>([])
+  const [services] = useState<FirebaseService[]>(STATIC_BOOKING_SERVICES)
   const [selectedService, setSelectedService] = useState<FirebaseService | null>(null)
   const [formData, setFormData] = useState<FormData>({
     serviceId: selectedServiceId,
@@ -66,49 +77,20 @@ function BookingPageContent() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoadingServices, setIsLoadingServices] = useState(true)
+  const isLoadingServices = false
 
-  // Fetch active services from Firebase
+  // Sync selected service from query string when present.
   useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const servicesRef = collection(db, 'services')
-        const q = query(servicesRef, where('status', '==', 'ACTIVE'))
-        const querySnapshot = await getDocs(q)
-        
-        const servicesData: FirebaseService[] = []
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          servicesData.push({
-            id: doc.id,
-            name: data.name || 'Service',
-            description: data.description || '',
-            price: data.price || 0,
-            categoryName: data.categoryName || 'Uncategorized',
-            status: data.status || '',
-            cost: data.cost || 0
-          })
-        })
-        
-        setServices(servicesData)
-        
-        // Set selected service if coming from URL
-        if (selectedServiceId) {
-          const service = servicesData.find(s => s.id === selectedServiceId)
-          if (service) {
-            setSelectedService(service)
-            setFormData(prev => ({ ...prev, serviceId: selectedServiceId }))
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching services:', error)
-      } finally {
-        setIsLoadingServices(false)
-      }
+    if (!selectedServiceId) {
+      return
     }
 
-    fetchServices()
-  }, [selectedServiceId])
+    const service = services.find((item) => item.id === selectedServiceId)
+    if (service) {
+      setSelectedService(service)
+      setFormData((prev) => ({ ...prev, serviceId: selectedServiceId }))
+    }
+  }, [selectedServiceId, services])
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

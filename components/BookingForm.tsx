@@ -5,10 +5,11 @@ import {
   Send
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, addDoc, serverTimestamp, query, where } from 'firebase/firestore'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { useRouter } from 'next/navigation'
+import { PUBLIC_SERVICES } from '@/lib/public-services'
 
 interface FirebaseService {
   id: string
@@ -30,8 +31,13 @@ interface BookingFormProps {
 
 export default function BookingForm({ preselectedServiceName }: BookingFormProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [services, setServices] = useState<FirebaseService[]>([])
+  const services = useMemo<FirebaseService[]>(() => (
+    PUBLIC_SERVICES.map((service) => ({
+      id: service.id,
+      name: service.name,
+      categoryName: service.categoryName,
+    }))
+  ), [])
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -40,52 +46,23 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
     message: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isClient, setIsClient] = useState(false)
 
-  // Set client flag
   useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  // Fetch active services from Firebase
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const servicesRef = collection(db, 'services')
-        const q = query(servicesRef, where('status', '==', 'ACTIVE'))
-        const querySnapshot = await getDocs(q)
-        
-        const servicesData: FirebaseService[] = []
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          servicesData.push({
-            id: doc.id,
-            name: data.name || 'Service',
-            categoryName: data.categoryName || 'General'
-          })
-        })
-        
-        setServices(servicesData)
-        
-        // Pre-select service if name is provided
-        if (preselectedServiceName) {
-          const matchedService = servicesData.find(s => 
-            s.name.toLowerCase() === preselectedServiceName.toLowerCase()
-          )
-          if (matchedService) {
-            setFormData(prev => ({
-              ...prev,
-              service: matchedService.id
-            }))
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching services:', error)
-      }
+    if (!preselectedServiceName) {
+      return
     }
 
-    fetchServices()
-  }, [preselectedServiceName])
+    const matchedService = services.find((service) =>
+      service.name.toLowerCase() === preselectedServiceName.toLowerCase()
+    )
+
+    if (matchedService) {
+      setFormData((prev) => ({
+        ...prev,
+        service: matchedService.id,
+      }))
+    }
+  }, [preselectedServiceName, services])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target

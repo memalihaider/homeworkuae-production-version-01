@@ -2,23 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Star, Quote, User } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { db } from '@/lib/firebase'
-import { collection, getDocs } from 'firebase/firestore'
-
-// Firebase Testimonial Type
-type FirebaseTestimonial = {
-  id: string;
-  name: string;
-  description: string;
-  rating: number;
-  imageURL?: string;
-  location?: string;
-  role?: string;
-  featured?: boolean;
-  createdAt?: any;
-}
 
 // Define proper type for combined testimonials
 type TestimonialItem = {
@@ -131,103 +115,11 @@ const staticTestimonials: Omit<TestimonialItem, 'isFirebase'>[] = [
 ]
 
 export default function Testimonials() {
-  const [firebaseTestimonials, setFirebaseTestimonials] = useState<FirebaseTestimonial[]>([])
-
-  // Fetch testimonials from Firebase
-  useEffect(() => {
-    const fetchTestimonials = async () => {
-      const cacheKey = 'public:testimonials:v1'
-      const cacheTtlMs = 10 * 60 * 1000
-
-      try {
-        const cached = window.sessionStorage.getItem(cacheKey)
-        if (cached) {
-          const parsed = JSON.parse(cached) as { timestamp: number; testimonials: FirebaseTestimonial[] }
-          if (Date.now() - parsed.timestamp < cacheTtlMs) {
-            setFirebaseTestimonials(parsed.testimonials)
-            return
-          }
-        }
-      } catch {
-        // Continue with live fetch when cache read fails
-      }
-
-      try {
-        const querySnapshot = await getDocs(collection(db, 'testimonials'))
-        const testimonialsData: FirebaseTestimonial[] = []
-        
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          testimonialsData.push({
-            id: doc.id,
-            name: data.name || '',
-            description: data.description || '',
-            rating: data.rating || 5,
-            imageURL: data.imageURL,
-            location: data.location,
-            role: data.location ? `${data.location}` : 'Client',
-            featured: data.featured || false
-          })
-        })
-        
-        // Sort by featured first, then by name
-        const sortedTestimonials = testimonialsData.sort((a, b) => {
-          if (a.featured && !b.featured) return -1
-          if (!a.featured && b.featured) return 1
-          return a.name.localeCompare(b.name)
-        })
-
-        try {
-          window.sessionStorage.setItem(
-            cacheKey,
-            JSON.stringify({ timestamp: Date.now(), testimonials: sortedTestimonials })
-          )
-        } catch {
-          // Ignore cache write failures
-        }
-        
-        setFirebaseTestimonials(sortedTestimonials)
-      } catch (error) {
-        console.error('Error fetching testimonials:', error)
-        // Error handle silently, UI will still show static testimonials
-      }
-    }
-
-    fetchTestimonials()
-  }, [])
-
-  // Combine static and Firebase testimonials with proper typing
-  const allTestimonials: TestimonialItem[] = [
-    // Featured Firebase testimonials first
-    ...firebaseTestimonials
-      .filter(t => t.featured)
-      .map(t => ({
-        name: t.name,
-        role: t.role || 'Client',
-        content: t.description,
-        rating: t.rating,
-        imageURL: t.imageURL,  // Include imageURL
-        isFirebase: true
-      })),
-    
-    // Static testimonials
-    ...staticTestimonials.map(t => ({
-      ...t,
-      isFirebase: false
-    })),
-    
-    // Non-featured Firebase testimonials
-    ...firebaseTestimonials
-      .filter(t => !t.featured)
-      .map(t => ({
-        name: t.name,
-        role: t.role || 'Client',
-        content: t.description,
-        rating: t.rating,
-        imageURL: t.imageURL,  // Include imageURL
-        isFirebase: true
-      }))
-  ]
+  // Keep testimonials fully hardcoded for static/no-JS reliability.
+  const allTestimonials: TestimonialItem[] = staticTestimonials.map((item) => ({
+    ...item,
+    isFirebase: false,
+  }))
 
   return (
     <div className="flex flex-col overflow-hidden pt-20">

@@ -2,19 +2,51 @@
 
 import { motion } from 'framer-motion'
 import { ShieldCheck, Lock, Eye, FileText, Shield } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { db } from '@/lib/firebase'
-import { collection, getDocs } from 'firebase/firestore'
 
 // Firebase Privacy Policy Type
 type PrivacyPolicyItem = {
   id: string;
   title: string;
   content: string;
-  order?: number;
-  createdAt?: any;
-  updatedAt?: any;
 }
+
+const STATIC_PRIVACY_SECTIONS: PrivacyPolicyItem[] = [
+  {
+    id: 'information-collection',
+    title: 'Information We Collect',
+    content: `We collect personal information you provide directly to us when you submit booking forms, contact requests, or quote inquiries.\n\nThis can include your name, email address, phone number, service address, and service preferences.\n\nWe also collect limited technical information required for website security and analytics.`
+  },
+  {
+    id: 'how-we-use-information',
+    title: 'How We Use Your Information',
+    content: `We use your information to provide and improve our services, respond to inquiries, and manage bookings.\n\nYour details may be used for:\n• Scheduling and confirming services\n• Sending booking and quotation updates\n• Customer support and issue resolution\n• Internal service quality improvements`
+  },
+  {
+    id: 'data-protection',
+    title: 'Data Protection and Security',
+    content: `We apply appropriate technical and organizational safeguards to protect your personal data against unauthorized access, alteration, disclosure, or destruction.\n\nAccess to personal data is limited to authorized personnel who require the information to perform business operations.`
+  },
+  {
+    id: 'data-sharing',
+    title: 'Data Sharing and Disclosure',
+    content: `We do not sell your personal information.\n\nWe may share data with trusted service providers strictly for operational purposes such as email notifications, booking processing, and website hosting, subject to confidentiality obligations.`
+  },
+  {
+    id: 'your-rights',
+    title: 'Your Rights',
+    content: `You may request access, correction, or deletion of your personal information by contacting us.\n\nWhere applicable, you may also request limitation of processing or object to specific processing activities.`
+  },
+  {
+    id: 'cookies-tracking',
+    title: 'Cookies and Tracking',
+    content: `Our website may use cookies and similar technologies to improve user experience, understand website traffic, and support basic functionality.\n\nYou can manage cookie preferences through your browser settings.`
+  },
+  {
+    id: 'contact-privacy',
+    title: 'Contact Us for Privacy Queries',
+    content: `For privacy-related questions or requests, please contact us at:\n• Email: services@homeworkuae.com\n• Phone: +971 50 717 7059\n\nWe will respond as quickly as reasonably possible.`
+  }
+]
 
 // Icon mapping based on title
 const getIconForTitle = (title: string) => {
@@ -105,86 +137,12 @@ const formatContent = (content: string) => {
 };
 
 export default function PrivacyPolicy() {
-  const [privacySections, setPrivacySections] = useState<PrivacyPolicyItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Fetch all privacy policy documents from Firebase
-  useEffect(() => {
-    const fetchPrivacyPolicy = async () => {
-      setIsLoading(true)
-      try {
-        const querySnapshot = await getDocs(collection(db, 'privacy-policy'))
-        const sections: PrivacyPolicyItem[] = []
-        
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          sections.push({
-            id: doc.id,
-            title: data.title || 'Privacy Policy Section',
-            content: data.content || '',
-            order: data.order || 0,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt
-          })
-        })
-        
-        // Sort by order (from CMS), then by creation date
-        const sortedSections = sections.sort((a, b) => {
-          // First sort by order number from CMS
-          if (a.order !== b.order) return (a.order || 0) - (b.order || 0)
-          
-          // If same order, sort by creation date
-          try {
-            const dateA = a.createdAt?.toDate?.() || new Date(0)
-            const dateB = b.createdAt?.toDate?.() || new Date(0)
-            return dateA.getTime() - dateB.getTime()
-          } catch {
-            return 0
-          }
-        })
-        
-        setPrivacySections(sortedSections)
-      } catch (error) {
-        console.error('Error fetching privacy policy:', error)
-        // No fallback data - show empty state
-        setPrivacySections([])
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchPrivacyPolicy()
-  }, [])
+  const privacySections = STATIC_PRIVACY_SECTIONS
+  const isLoading = false
 
   // Get the latest updated date from all documents
   const getLastUpdated = () => {
-    if (privacySections.length === 0) return 'January 2026';
-    
-    let latestDate = new Date(0);
-    
-    privacySections.forEach((section) => {
-      try {
-        if (section.updatedAt) {
-          const date = section.updatedAt.toDate();
-          if (date > latestDate) {
-            latestDate = date;
-          }
-        } else if (section.createdAt) {
-          const date = section.createdAt.toDate();
-          if (date > latestDate) {
-            latestDate = date;
-          }
-        }
-      } catch (error) {
-        // Ignore date parsing errors
-      }
-    });
-    
-    if (latestDate.getTime() > 0) {
-      return latestDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    }
-    
-    return 'January 2026';
+    return 'March 2026';
   }
 
   return (
@@ -246,7 +204,7 @@ export default function PrivacyPolicy() {
                     >
                       {/* Section Header with Number */}
                       <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0">
+                        <div className="shrink-0">
                           <div className="relative">
                             {/* Number Badge */}
                             <div className="absolute -top-2 -left-2 z-10">
@@ -282,7 +240,7 @@ export default function PrivacyPolicy() {
                       {/* Divider (except for last item) */}
                       {index < privacySections.length - 1 && (
                         <div className="pt-6">
-                          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                          <div className="h-px bg-linear-to-r from-transparent via-slate-200 to-transparent"></div>
                         </div>
                       )}
                     </motion.div>

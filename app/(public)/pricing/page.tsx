@@ -2,18 +2,11 @@
 
 import { CheckCircle2, ArrowRight, Zap, ShieldCheck, Star, Heart } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { getPricingPage, defaultPricingPage, type CMSPricingPage } from '@/lib/cms-data'
+import { defaultPricingPage } from '@/lib/cms-data'
 
 export default function Pricing() {
-  const [cms, setCms] = useState<CMSPricingPage>(defaultPricingPage)
-
-  useEffect(() => {
-    let m = true
-    getPricingPage().then(d => { if (m) setCms(d) }).catch(() => {})
-    return () => { m = false }
-  }, [])
+  const cms = defaultPricingPage
 
   const tierIcons = [Zap, Star, Heart]
   const packages = cms.tiers.map((t, i) => ({

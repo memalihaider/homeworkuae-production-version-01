@@ -249,6 +249,19 @@ a[role="button"]:active {
   @apply bg-muted-foreground/30;
 }
 
+/* Keep client-animated content visible when JavaScript is disabled */
+html.no-js [style*="opacity:0"],
+html.no-js [style*="opacity: 0"] {
+  opacity: 1 !important;
+}
+
+html.no-js [style*="transform: translate"],
+html.no-js [style*="transform:translate"],
+html.no-js [style*="transform: scale"],
+html.no-js [style*="transform:scale"] {
+  transform: none !important;
+}
+
 /* Global performance mode: disable non-essential motion */
 .reduce-motion *,
 .reduce-motion *::before,

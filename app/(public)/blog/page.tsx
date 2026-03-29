@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Search, ChevronRight, Clock, User, Zap } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { db } from '@/lib/firebase'
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 
 const POSTS_PER_PAGE = 6
 
@@ -53,101 +52,27 @@ export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [firebasePosts, setFirebasePosts] = useState<FirebaseBlogPost[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Fetch posts from Firebase only
-  useEffect(() => {
-    const fetchFirebasePosts = async () => {
-      setLoading(true)
-
-      const cacheKey = 'public:blog-posts:v1'
-      const cacheTtlMs = 5 * 60 * 1000
-
-      try {
-        const cached = window.sessionStorage.getItem(cacheKey)
-        if (cached) {
-          const parsed = JSON.parse(cached) as { timestamp: number; posts: FirebaseBlogPost[] }
-          if (Date.now() - parsed.timestamp < cacheTtlMs) {
-            setFirebasePosts(parsed.posts)
-            setLoading(false)
-            return
-          }
-        }
-      } catch {
-        // Continue with live fetch when cache read fails
-      }
-
-      try {
-        const q = query(collection(db, 'blog-post'), orderBy('createdAt', 'desc'))
-        const querySnapshot = await getDocs(q)
-        
-        const posts: FirebaseBlogPost[] = []
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          
-          // Generate slug from title
-          const slug = data.title 
-            ? data.title.toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '')
-            : `post-${doc.id}`
-          
-          // Format date
-          let publishedAt = new Date().toISOString()
-          if (data.createdAt) {
-            if (data.createdAt.toDate) {
-              publishedAt = data.createdAt.toDate().toISOString()
-            } else if (data.createdAt.seconds) {
-              publishedAt = new Date(data.createdAt.seconds * 1000).toISOString()
-            }
-          }
-          
-          // Determine category from first tag or use 'uncategorized'
-          const category = data.tags?.[0] 
-            ? data.tags[0].toLowerCase().replace(/\s+/g, '-')
-            : 'uncategorized'
-          
-          const firebasePost: FirebaseBlogPost = {
-            id: doc.id,
-            title: data.title || 'Untitled Post',
-            name: data.name || 'Admin',
-            description: data.description || '',
-            content: data.content || '',
-            readTime: data.readTime || 5,
-            imageURL: data.imageURL || '/api/placeholder/600/400',
-            featured: data.featured || false,
-            tags: data.tags || [],
-            createdAt: data.createdAt,
-            slug: slug,
-            excerpt: data.description?.substring(0, 120) + (data.description?.length > 120 ? '...' : '') || 'No description available',
-            author: data.name || 'Admin',
-            category: category,
-            publishedAt: publishedAt,
-            image: data.imageURL || '/api/placeholder/600/400'
-          }
-          posts.push(firebasePost)
-        })
-        
-        setFirebasePosts(posts)
-
-        try {
-          window.sessionStorage.setItem(
-            cacheKey,
-            JSON.stringify({ timestamp: Date.now(), posts })
-          )
-        } catch {
-          // Ignore cache write failures
-        }
-      } catch (error) {
-        console.error('Error fetching blog posts:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchFirebasePosts()
-  }, [])
+  const firebasePosts = useMemo<FirebaseBlogPost[]>(() => (
+    INITIAL_BLOG_POSTS.map((post) => ({
+      id: post.id,
+      title: post.title,
+      name: post.author,
+      description: post.excerpt,
+      content: post.content,
+      readTime: post.readTime,
+      imageURL: post.image,
+      featured: post.featured,
+      tags: [post.category],
+      createdAt: post.publishedAt,
+      slug: post.slug,
+      excerpt: post.excerpt,
+      author: post.author,
+      category: post.category,
+      publishedAt: post.publishedAt,
+      image: post.image,
+    }))
+  ), [])
+  const loading = false
 
   // Get categories from Firebase posts
   const blogCategories = useMemo(() => {
