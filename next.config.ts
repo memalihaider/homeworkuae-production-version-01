@@ -37,86 +37,36 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'homeworkuae.com',
-          },
-        ],
+        has: [{ type: 'host', value: 'homeworkuae.com' }],
         destination: 'https://www.homeworkuae.com/:path*',
         permanent: true,
       },
-      
-      {
-        source: '/feed',
-        destination: '/',
-        permanent: true,
-      },
-      {
-        source: '/:path*/feed',
-        destination: '/:path*',
-        permanent: true,
-      },
-      {
-        source: '/sitemap_index.xml',
-        destination: '/sitemap.xml',
-        permanent: true,
-      },
-      {
-        source: '/author-sitemap.xml',
-        destination: '/sitemap.xml',
-        permanent: true,
-      },
-      {
-        source: '/category-sitemap.xml',
-        destination: '/sitemap.xml',
-        permanent: true,
-      },
-      {
-        source: '/booking-form',
-        destination: '/booking',
-        permanent: true,
-      },
-      {
-        source: '/faq',
-        destination: '/faqs',
-        permanent: true,
-      },
-      {
-        source: '/faqs/:slug',
-        destination: '/faqs',
-        permanent: true,
-      },
-      {
-        source: '/cleaning-services/:slug*',
-        destination: '/services',
-        permanent: true,
-      },
-      {
-        source: '/cleaning-services2/:slug*',
-        destination: '/services',
-        permanent: true,
-      },
-      {
-        source: '/deep-cleaning/:slug*',
-        destination: '/services',
-        permanent: true,
-      },
-      {
-        source: '/techanical-cleaning/:slug*',
-        destination: '/services',
-        permanent: true,
-      },
-      {
-        source: '/services/deep-cleaning',
-        destination: '/services',
-        permanent: true,
-      },
-      {
-        source: '/cleaning-services/deep-cleaning',
-        destination: '/services',
-        permanent: true,
-      },
+
+      // Feed redirects
+      { source: '/feed', destination: '/', permanent: true },
+      { source: '/:path*/feed', destination: '/:path*', permanent: true },
+
+      // Sitemap redirects
+      { source: '/sitemap_index.xml', destination: '/sitemap.xml', permanent: true },
+      { source: '/author-sitemap.xml', destination: '/sitemap.xml', permanent: true },
+      { source: '/category-sitemap.xml', destination: '/sitemap.xml', permanent: true },
+
+      // Page redirects
+      { source: '/booking-form', destination: '/booking', permanent: true },
+      { source: '/faq', destination: '/faqs', permanent: true },
+      { source: '/faqs/:slug', destination: '/faqs', permanent: true },
+      { source: '/404', destination: '/', permanent: true },
+      { source: '/not-found', destination: '/', permanent: true },
+
+      // Broad service section redirects
+      { source: '/cleaning-services/:slug*', destination: '/services', permanent: true },
+      { source: '/cleaning-services2/:slug*', destination: '/services', permanent: true },
+      { source: '/deep-cleaning/:slug*', destination: '/services', permanent: true },
+      { source: '/techanical-cleaning/:slug*', destination: '/services', permanent: true },
+      { source: '/services/deep-cleaning', destination: '/services', permanent: true },
+      { source: '/cleaning-services/deep-cleaning', destination: '/services', permanent: true },
+
+      // Specific service page redirects
       {
         source: '/services/move-in-move-out-cleaning',
         destination: '/services/move-in-out-cleaning',
@@ -162,16 +112,6 @@ const nextConfig: NextConfig = {
         destination: '/services/window-cleaning',
         permanent: true,
       },
-      {
-        source: '/404',
-        destination: '/',
-        permanent: true,
-      },
-      {
-        source: '/not-found',
-        destination: '/',
-        permanent: true,
-      },
     ];
   },
   
@@ -180,21 +120,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/fonts/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         source: '/images/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
     ];
   },
