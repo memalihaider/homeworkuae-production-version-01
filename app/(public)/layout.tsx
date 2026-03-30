@@ -7,9 +7,8 @@ import {
   Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, 
   Wind, Grid3X3, Warehouse, CookingPot, HardHat, Building, Truck, Brush,
   Fan, Pipette, Utensils, Waves, Dumbbell, PanelTop, ThermometerSnowflake,
-  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, User, X
+  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, X
 } from 'lucide-react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { defaultLayoutSettings } from '@/lib/cms-data'
@@ -19,6 +18,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   const hasShownWelcomePopup = useRef(false)
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const welcomePopupStorageKey = 'homeworkuae_welcome_popup_shown'
+  const welcomePopupDismissedKey = 'homeworkuae_welcome_popup_dismissed'
   const profileData = {
     phone: '+971507177059',
     email: 'services@homeworkuae.com',
@@ -30,30 +30,48 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (pathname !== '/' || hasShownWelcomePopup.current) {
-      setShowWelcomePopup(false)
       return
     }
 
-    const alreadyShown = typeof window !== 'undefined'
-      ? window.localStorage.getItem(welcomePopupStorageKey)
-      : null
-
-    if (alreadyShown === 'true') {
-      hasShownWelcomePopup.current = true
-      setShowWelcomePopup(false)
+    if (typeof window === 'undefined') {
       return
     }
 
-    const timer = setTimeout(() => {
-      setShowWelcomePopup(true)
+    const alreadyDismissed = window.localStorage.getItem(welcomePopupDismissedKey) === 'true'
+    const legacyShown = window.localStorage.getItem(welcomePopupStorageKey) === 'true'
+
+    if (alreadyDismissed || legacyShown) {
       hasShownWelcomePopup.current = true
-      window.localStorage.setItem(welcomePopupStorageKey, 'true')
-    }, 700)
+      return
+    }
+
+    const handleScrollTrigger = () => {
+      if (hasShownWelcomePopup.current) return
+
+      if (window.scrollY >= 60) {
+        hasShownWelcomePopup.current = true
+        setShowWelcomePopup(true)
+      }
+    }
+
+    window.addEventListener('scroll', handleScrollTrigger, { passive: true })
+    handleScrollTrigger()
 
     return () => {
-      clearTimeout(timer)
+      window.removeEventListener('scroll', handleScrollTrigger)
     }
-  }, [pathname, welcomePopupStorageKey])
+  }, [pathname, welcomePopupDismissedKey, welcomePopupStorageKey])
+
+  const closeWelcomePopup = () => {
+    setShowWelcomePopup(false)
+    hasShownWelcomePopup.current = true
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(welcomePopupDismissedKey, 'true')
+      // Keep legacy key synced for older checks.
+      window.localStorage.setItem(welcomePopupStorageKey, 'true')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -353,11 +371,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      {showWelcomePopup && (
+      {pathname === '/' && showWelcomePopup && (
         <div className="fixed inset-0 z-10000 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center px-4">
           <div className="relative w-full max-w-xl rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
             <button
-              onClick={() => setShowWelcomePopup(false)}
+              onClick={closeWelcomePopup}
               className="absolute top-4 right-4 h-9 w-9 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center justify-center"
               aria-label="Close popup"
             >
@@ -380,6 +398,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
                   href="https://www.homeworkuae.com/book-service"
+                  onClick={closeWelcomePopup}
                   className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-primary text-white font-black uppercase text-xs tracking-widest hover:bg-pink-600 transition-colors"
                 >
                   Book Service
@@ -389,6 +408,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                   href="https://wa.me/971507177059"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={closeWelcomePopup}
                   className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#25D366] text-white font-black uppercase text-xs tracking-widest hover:bg-[#1fb65a] transition-colors"
                 >
                   WhatsApp +971 50 717 7059
