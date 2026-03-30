@@ -36,6 +36,7 @@ import { db } from '@/lib/firebase'
 import { 
   collection, 
   getDocs, 
+  getDoc,
   addDoc, 
   updateDoc, 
   doc, 
@@ -118,6 +119,24 @@ interface Expense {
   notes: string;
 }
 
+const DEFAULT_BANK_DETAILS = {
+  accountName: 'HOMEWORK CLEANING SERVICES LLC',
+  accountNumber: '',
+  bankName: 'Emirates NBD',
+  swiftCode: '',
+  iban: ''
+}
+
+const DEFAULT_DOC_SETTINGS = {
+  confirmationLetter: '',
+  insuranceSectionTitle: 'Insurance (please tick one)',
+  insuranceAcceptedText: '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.',
+  insuranceDeclinedText: '[ ] No, I do not need insurance.',
+  insuranceTextFieldLabel: 'Insurance Value / Notes:',
+  companySealImage: '',
+  bankDetails: DEFAULT_BANK_DETAILS
+}
+
 export default function UnifiedFinancePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -168,6 +187,8 @@ export default function UnifiedFinancePage() {
     transactionRef: '',
     attachments: [] as { name: string; size: string; type: string }[]
   })
+
+  const [invoiceDocSettings, setInvoiceDocSettings] = useState(DEFAULT_DOC_SETTINGS)
 
   // Firebase se data fetch
   useEffect(() => {
@@ -273,6 +294,27 @@ export default function UnifiedFinancePage() {
         })
       })
       setExpenses(expensesData)
+
+      // Quotation/invoice document defaults fetch
+      const settingsRef = doc(db, 'profile-setting', 'admin-settings')
+      const settingsSnap = await getDoc(settingsRef)
+      if (settingsSnap.exists()) {
+        const settingsData = settingsSnap.data()
+        const quotationDefaults = settingsData?.quotationDefaults || {}
+
+        setInvoiceDocSettings({
+          confirmationLetter: quotationDefaults.confirmationLetter || '',
+          insuranceSectionTitle: quotationDefaults.insuranceSectionTitle || DEFAULT_DOC_SETTINGS.insuranceSectionTitle,
+          insuranceAcceptedText: quotationDefaults.insuranceAcceptedText || DEFAULT_DOC_SETTINGS.insuranceAcceptedText,
+          insuranceDeclinedText: quotationDefaults.insuranceDeclinedText || DEFAULT_DOC_SETTINGS.insuranceDeclinedText,
+          insuranceTextFieldLabel: quotationDefaults.insuranceTextFieldLabel || DEFAULT_DOC_SETTINGS.insuranceTextFieldLabel,
+          companySealImage: quotationDefaults.companySealImage || '',
+          bankDetails: {
+            ...DEFAULT_BANK_DETAILS,
+            ...(quotationDefaults.bankDetails || {})
+          }
+        })
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -415,47 +457,123 @@ export default function UnifiedFinancePage() {
   }
 
   const generateInvoicePDF = (invoice: Invoice) => {
+    const escapeHtml = (value: string) =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+
+    const multilineToHtml = (value: string) => escapeHtml(value).replace(/\n/g, '<br/>')
+    const taxPercent = Math.round((invoice.taxRate || 0) * 100)
+
+    const clientEmailLine = invoice.clientEmail?.trim()
+      ? `<p><strong>Email:</strong> ${escapeHtml(invoice.clientEmail)}</p>`
+      : ''
+
+    const confirmationText = invoiceDocSettings.confirmationLetter?.trim()
+      ? multilineToHtml(invoiceDocSettings.confirmationLetter.trim())
+      : `I/We confirm Invoice No: <strong>${escapeHtml(invoice.invoiceNumber)}</strong> dated ${escapeHtml(formatDate(invoice.invoiceDate))} and agree to proceed as per the agreed terms.`
+
+    const insuranceSectionTitle = escapeHtml(invoiceDocSettings.insuranceSectionTitle || DEFAULT_DOC_SETTINGS.insuranceSectionTitle)
+    const insuranceAcceptedText = multilineToHtml(invoiceDocSettings.insuranceAcceptedText || DEFAULT_DOC_SETTINGS.insuranceAcceptedText)
+    const insuranceDeclinedText = multilineToHtml(invoiceDocSettings.insuranceDeclinedText || DEFAULT_DOC_SETTINGS.insuranceDeclinedText)
+    const insuranceTextFieldLabel = escapeHtml(invoiceDocSettings.insuranceTextFieldLabel || DEFAULT_DOC_SETTINGS.insuranceTextFieldLabel)
+
+    const bankDetails = invoiceDocSettings.bankDetails || DEFAULT_BANK_DETAILS
+    const hasBankDetails = Boolean(
+      bankDetails.accountName?.trim() ||
+      bankDetails.accountNumber?.trim() ||
+      bankDetails.bankName?.trim() ||
+      bankDetails.swiftCode?.trim() ||
+      bankDetails.iban?.trim(),
+    )
+
+    const companySealHtml = invoiceDocSettings.companySealImage?.trim()
+      ? `<img src="${invoiceDocSettings.companySealImage}" alt="Company seal" class="company-seal-image" />`
+      : '<div class="seal-placeholder">Company Seal / Signature</div>'
+
     // Simple browser print function
     const printContent = `
       <html>
         <head>
           <title>Invoice ${invoice.invoiceNumber}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .invoice-info { margin-bottom: 20px; }
-            .line-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            .line-items th, .line-items td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .totals { float: right; margin-top: 20px; }
-            .total-row { font-weight: bold; }
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; background: #fff; }
+            .doc { max-width: 900px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 18px; }
+            .title { margin: 0; font-size: 30px; letter-spacing: 0.05em; color: #111827; }
+            .invoice-no { margin: 6px 0 0; font-size: 16px; font-weight: 700; color: #6b7280; }
+            .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+            .meta-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+            .meta-box h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+            .meta-box p { margin: 4px 0; font-size: 13px; }
+            .line-items { width: 100%; border-collapse: collapse; margin: 16px 0; }
+            .line-items th, .line-items td { border: 1px solid #d1d5db; padding: 9px 10px; font-size: 13px; vertical-align: top; }
+            .line-items th { background: #f3f4f6; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+            .line-items td:nth-child(2), .line-items td:nth-child(3), .line-items td:nth-child(4) { text-align: right; }
+            .totals-wrap { display: flex; justify-content: flex-end; margin: 14px 0 24px; }
+            .totals { width: 340px; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; }
+            .totals p { margin: 7px 0; font-size: 13px; display: flex; justify-content: space-between; }
+            .total-row { margin-top: 10px; padding-top: 8px; border-top: 1px solid #d1d5db; font-weight: 700; font-size: 15px; color: #111827; }
+            .section-title { margin: 0 0 10px; background: #f3f4f6; border: 1px solid #e5e7eb; text-align: center; padding: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+            .confirm-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 13px; line-height: 1.55; }
+            .insurance-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+            .insurance-table td { border: 1px solid #d1d5db; padding: 10px; font-size: 13px; vertical-align: top; }
+            .insurance-table tr:first-child td { background: #f3f4f6; font-weight: 700; }
+            .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin: 18px 0 22px; }
+            .sign-box { border: 1px solid #d1d5db; min-height: 140px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; }
+            .sign-label { font-size: 12px; color: #4b5563; }
+            .seal-placeholder { font-size: 12px; color: #6b7280; text-align: center; margin-top: 20px; }
+            .company-seal-image { width: 100%; max-height: 92px; object-fit: contain; margin-top: 8px; }
+            .bank-table { width: 100%; border-collapse: collapse; }
+            .bank-table td { border: 1px solid #d1d5db; padding: 9px 10px; font-size: 13px; }
+            .bank-table td:first-child { width: 220px; background: #f9fafb; font-weight: 700; color: #374151; }
+            .notes-line { margin-top: 10px; font-size: 12px; color: #6b7280; }
           </style>
         </head>
         <body>
+          <div class="doc">
           <div class="header">
-            <h1>INVOICE</h1>
-            <h2>${invoice.invoiceNumber}</h2>
+            <div>
+              <h1 class="title">INVOICE</h1>
+              <p class="invoice-no">${escapeHtml(invoice.invoiceNumber)}</p>
+            </div>
+            <div style="text-align:right; font-size:13px; color:#4b5563;">
+              <p style="margin:0 0 4px;"><strong>Date:</strong> ${escapeHtml(formatDate(invoice.invoiceDate))}</p>
+              <p style="margin:0;"><strong>Due:</strong> ${escapeHtml(formatDate(invoice.dueDate))}</p>
+            </div>
           </div>
-          
-          <div class="invoice-info">
-            <p><strong>Date:</strong> ${formatDate(invoice.invoiceDate)}</p>
-            <p><strong>Due Date:</strong> ${formatDate(invoice.dueDate)}</p>
-            <p><strong>Client:</strong> ${invoice.clientName}</p>
-            <p><strong>Email:</strong> ${invoice.clientEmail}</p>
+
+          <div class="meta-grid">
+            <div class="meta-box">
+              <h3>Bill To</h3>
+              <p><strong>Client:</strong> ${escapeHtml(invoice.clientName)}</p>
+              ${clientEmailLine}
+            </div>
+            <div class="meta-box">
+              <h3>Invoice Details</h3>
+              <p><strong>Status:</strong> ${escapeHtml(invoice.status)}</p>
+              <p><strong>Payment Terms:</strong> ${escapeHtml(invoice.paymentTerms)}</p>
+              <p><strong>Currency:</strong> ${escapeHtml(invoice.currencyCode || 'AED')}</p>
+            </div>
           </div>
-          
+
           <table class="line-items">
             <thead>
               <tr>
                 <th>Description</th>
                 <th>Qty</th>
-                <th>Price</th>
-                <th>Total</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
               </tr>
             </thead>
             <tbody>
               ${invoice.lineItems.map(item => `
                 <tr>
-                  <td>${item.description}</td>
+                  <td>${escapeHtml(item.description)}</td>
                   <td>${item.quantity}</td>
                   <td>${formatCurrency(item.unitPrice)}</td>
                   <td>${formatCurrency(item.amount)}</td>
@@ -463,13 +581,54 @@ export default function UnifiedFinancePage() {
               `).join('')}
             </tbody>
           </table>
-          
-          <div class="totals">
-            <p>Subtotal: ${formatCurrency(invoice.subtotal)}</p>
-            <p>Tax (10%): ${formatCurrency(invoice.tax)}</p>
-            <p class="total-row">Total: ${formatCurrency(invoice.total)}</p>
-            <p><strong>Payment Terms:</strong> ${invoice.paymentTerms}</p>
-            <p><strong>Status:</strong> ${invoice.status}</p>
+
+          <div class="totals-wrap">
+            <div class="totals">
+              <p><span>Subtotal</span><span>${formatCurrency(invoice.subtotal)}</span></p>
+              <p><span>Tax (${taxPercent}%)</span><span>${formatCurrency(invoice.tax)}</span></p>
+              <p class="total-row"><span>Total</span><span>${formatCurrency(invoice.total)}</span></p>
+            </div>
+          </div>
+
+          <p class="section-title">Confirmation Letter / Acceptance Form</p>
+          <div class="confirm-box">${confirmationText}</div>
+
+          <table class="insurance-table">
+            <tr><td>${insuranceSectionTitle}</td></tr>
+            <tr><td>${insuranceAcceptedText}</td></tr>
+            <tr><td>${insuranceDeclinedText}</td></tr>
+            <tr><td>${insuranceTextFieldLabel} _______________________________________________</td></tr>
+          </table>
+
+          <div class="signatures">
+            <div class="sign-box">
+              <div></div>
+              <div>
+                <div class="sign-label">Customer Signature</div>
+                <div class="sign-label" style="margin-top:6px;">Date:</div>
+              </div>
+            </div>
+            <div class="sign-box">
+              <div>
+                <div class="sign-label" style="font-weight:700; color:#111827;">For Homework UAE (Authorized Signatory)</div>
+                ${companySealHtml}
+              </div>
+              <div class="sign-label"></div>
+            </div>
+          </div>
+
+          ${hasBankDetails ? `
+          <p class="section-title">Bank Details (AED)</p>
+          <table class="bank-table">
+            <tr><td>ACCOUNT NAME</td><td>${escapeHtml(bankDetails.accountName || '')}</td></tr>
+            <tr><td>ACCOUNT NO</td><td>${escapeHtml(bankDetails.accountNumber || '')}</td></tr>
+            <tr><td>BANK NAME</td><td>${escapeHtml(bankDetails.bankName || '')}</td></tr>
+            <tr><td>SWIFT CODE</td><td>${escapeHtml(bankDetails.swiftCode || '')}</td></tr>
+            <tr><td>IBAN NO</td><td>${escapeHtml(bankDetails.iban || '')}</td></tr>
+          </table>
+          ` : ''}
+
+          ${invoice.notes?.trim() ? `<p class="notes-line"><strong>Notes:</strong> ${multilineToHtml(invoice.notes)}</p>` : ''}
           </div>
         </body>
       </html>
@@ -484,7 +643,7 @@ export default function UnifiedFinancePage() {
   }
 
   const handleAddClient = async () => {
-    if (!newClient.name || !newClient.email) {
+    if (!newClient.name.trim()) {
       alert('Please fill required fields')
       return
     }
@@ -1362,7 +1521,7 @@ export default function UnifiedFinancePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-bold mb-2 block">Email *</label>
+                  <label className="text-sm font-bold mb-2 block">Email</label>
                   <input
                     type="email"
                     value={newClient.email}

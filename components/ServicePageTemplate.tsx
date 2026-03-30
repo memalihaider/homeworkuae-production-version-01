@@ -51,6 +51,10 @@ export type ServicePageContent = {
   whyChoosePoints?: string[]
   faqs?: ServiceFAQItem[]
   reviews?: ServiceReviewItem[]
+  qualityHeading?: string
+  qualityDescription?: string
+  qualityCardText?: string
+  beforeAfterImage?: string
 }
 
 export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
@@ -200,19 +204,114 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
   },
   'kitchen-deep-cleaning': {
     name: 'Kitchen Deep Cleaning',
-    badge: 'Deep Cleaning Services',
-    heroTitleLine1: 'HYGIENIC',
-    heroTitleLine2: 'KITCHEN PURITY',
-    heroSubtitle: "Immaculate Kitchen Deep Cleaning in UAE – Hygienic and Spotless",
-    heroImage: '',
-    sectionImage: '',
-    specialistLabel: 'Kitchen Specialists',
-    aboutHeading1: 'Deep Kitchen',
-    aboutHeading2: 'Sanitization & Degreasing',
-    description: "A sparkling clean kitchen is the heart of a happy home. At Homework Cleaning Services LLC, we offer comprehensive kitchen deep cleaning services to ensure your kitchen is not only visually spotless but also hygienically clean. Our professional team uses advanced techniques and eco-friendly products to tackle every corner.",
-    features: ['Cabinet Interior & Exterior Cleaning', 'Stubborn Stain & Grease Removal', 'Full Refrigerator & Freezer Clean', 'Oven & Stovetop Deep Degreasing', 'Descaling of Taps & Sinks', 'Floor Machine Scrubbing'],
-    ctaTitle: 'Transform Your Kitchen',
-    ctaSubtitle: 'Contact us today for a professional kitchen deep cleaning experience.',
+    badge: 'Dubai Kitchen Cleaning Services',
+    heroTitleLine1: 'Professional Kitchen',
+    heroTitleLine2: 'Cleaning Services in Dubai',
+    heroSubtitle: "Dubai's kitchens work hard, and grease, grime, and residue build up fast in the heat and humidity. Homework UAE's certified kitchen cleaning specialists serve apartments, villas, and commercial kitchens across Dubai, delivering deep cleans that go far beyond the surface. From hood and duct maintenance to appliance deep-cleaning, every session leaves your kitchen hygienic, safe, and genuinely spotless.",
+    heroImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
+    sectionImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
+    specialistLabel: 'Dubai Kitchen Cleaning Services',
+    aboutHeading1: 'Dubai Kitchen',
+    aboutHeading2: 'Cleaning Services',
+    description: "Need expert Kitchen Cleaning? Dubai's cooking environment, rich in spices, oils, and high-frequency use, creates grease layers and bacteria buildup that regular wiping simply cannot address. Homework UAE sends trained professionals who assess your kitchen first, then work through every surface, appliance, duct, and hood using eco-friendly disinfectants proven safe for food-prep spaces. Whether you live in an apartment, villa, or run a commercial kitchen, the result is the same: a fully sanitized, fresh kitchen that meets hygiene standards and feels as clean as it looks.",
+    features: [
+      'Standard Kitchen Cleaning',
+      'Deep Kitchen Cleaning',
+      'Kitchen Duct Cleaning',
+      'Hood Cleaning',
+      'Appliance Deep Cleaning',
+      'Eco-Friendly Surface Sanitization',
+      'Final Quality Inspection',
+    ],
+    offerCards: [
+      { title: 'Standard Kitchen Cleaning' },
+      { title: 'Deep Kitchen Cleaning' },
+      { title: 'Kitchen Duct Cleaning' },
+      { title: 'Hood Cleaning' },
+      { title: 'Appliance Deep Cleaning' },
+      { title: 'Eco-Friendly Surface Sanitization' },
+      { title: 'Final Quality Inspection' },
+    ],
+    processSteps: [
+      {
+        title: 'Assessment',
+        detail: 'We inspect your kitchen first, identify grease buildup zones, and map a cleaning plan based on usage and property type.',
+      },
+      {
+        title: 'Surface Cleaning',
+        detail: 'We clean and sanitize countertops, cabinets, tiles, and high-touch zones using eco-friendly food-safe disinfectants.',
+      },
+      {
+        title: 'Appliance Cleaning',
+        detail: 'We deep-clean key appliances and remove built-up grease from ovens, stovetops, and surrounding preparation areas.',
+      },
+      {
+        title: 'Duct & Hood Maintenance',
+        detail: 'We clean kitchen hoods and duct-access points to reduce grease residue and support safer kitchen operation.',
+      },
+      {
+        title: 'Final Inspection',
+        detail: 'We complete a final quality check before handover to ensure hygiene standards are met and results are visibly spotless.',
+      },
+    ],
+    qualityHeading: 'Quality You Can See',
+    qualityDescription:
+      'Every Homework UAE kitchen clean is documented so you can see the difference before and after our team is done. From grease-coated hood filters restored to clean metal, to stovetops and cabinet surfaces stripped of built-up residue, the transformations are visible and lasting. Real projects across Dubai homes and commercial kitchens show consistent results that clients come back for again and again.',
+    qualityCardText:
+      'Documented kitchen cleaning outcomes from real Dubai projects, before-and-after quality you can clearly verify.',
+    beforeAfterImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/Hood%20before%20and%20after%20cleaning.png?alt=media&token=48e9348b-94dc-4375-a068-0a40a981cae9',
+    whyChoosePoints: [
+      "Homework UAE uses professional-grade, eco-friendly disinfectants that are certified safe for kitchen environments, including food-prep and cooking surfaces.",
+      'Every clean follows a structured five-step process: assessment, surface cleaning, appliance cleaning, duct and hood maintenance, and a final inspection before the team leaves.',
+      "All products are selected to protect your family's health and the environment, with no harsh chemicals that linger near food or cookware.",
+      "Homework UAE's kitchen cleaning professionals are trained, background-checked, and experienced across Dubai's diverse property types, from compact apartments to large villas and commercial setups.",
+      "Pricing is fully transparent, calculated by number of professionals and time required, so you know exactly what you're paying for with no hidden fees.",
+      "Choose Homework UAE for a kitchen that's hygienically clean, safe for your family, and consistently maintained to the highest standard.",
+    ],
+    faqs: [
+      {
+        q: "What is included in Homework UAE's kitchen cleaning service in Dubai?",
+        a: "Homework UAE's kitchen cleaning covers full surface wiping, appliance deep-cleaning, cabinet interiors and exteriors, floor cleaning, hood cleaning, and duct maintenance. Every session also includes a final inspection to confirm everything meets hygiene standards before the team leaves.",
+      },
+      {
+        q: 'How is deep kitchen cleaning different from standard kitchen cleaning?',
+        a: 'Standard cleaning handles everyday surfaces, appliances, and floors. Deep cleaning goes further, targeting hard-to-reach areas behind and beneath appliances, stubborn grease layers inside ovens and hoods, built-up residue inside ducts, and any surface that regular cleaning typically skips.',
+      },
+      {
+        q: 'How long does a kitchen cleaning session take?',
+        a: 'The duration depends on the size of your kitchen and the level of cleaning required. Homework UAE calculates time based on your specific needs during the initial assessment, so you get an accurate estimate before the session begins.',
+      },
+      {
+        q: 'Are the cleaning products safe for my family and food surfaces?',
+        a: 'Yes. Homework UAE uses eco-friendly, food-safe disinfectants that are certified safe for kitchen environments. No harsh chemicals are left behind on surfaces that come into contact with food or cookware.',
+      },
+      {
+        q: 'How is the pricing calculated?',
+        a: 'Homework UAE prices kitchen cleaning based on the number of professionals required and the time needed to complete the job, not on kitchen size alone. This ensures you pay for exactly what your kitchen needs, nothing more.',
+      },
+      {
+        q: 'Do I need to be home during the cleaning?',
+        a: 'It is recommended that someone is present, at least for the initial assessment and final inspection. However, Homework UAE\'s team can coordinate access arrangements based on your schedule and comfort level.',
+      },
+      {
+        q: 'How often should I book a professional kitchen cleaning in Dubai?',
+        a: "For most Dubai households, a deep kitchen clean every one to three months is ideal, given the high cooking frequency and the city's dusty, humid environment. Standard cleaning can be scheduled more regularly depending on usage.",
+      },
+      {
+        q: 'Does Homework UAE clean commercial kitchens as well?',
+        a: 'Yes. Homework UAE serves apartments, villas, and commercial kitchens across Dubai. Commercial environments are assessed individually to ensure the cleaning plan matches the scale and hygiene requirements of the space.',
+      },
+      {
+        q: 'What areas in Dubai does Homework UAE cover?',
+        a: 'Homework UAE operates across Dubai and also serves Abu Dhabi, Sharjah, and Ajman. You can check specific service coverage on the Homework UAE website when booking.',
+      },
+      {
+        q: 'How do I book a kitchen cleaning service with Homework UAE?',
+        a: 'Booking is fully online. Visit the Homework UAE website, select your kitchen cleaning service, choose a date and time that works for you, and the team handles the rest.',
+      },
+    ],
+    ctaTitle: 'Book Your Kitchen Clean Today',
+    ctaSubtitle: 'Schedule your clean today with Homework UAE and enjoy a hygienic, spotless kitchen.',
   },
   'post-construction-cleaning': {
     name: 'Post Construction Cleaning',
@@ -317,7 +416,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine2: 'CLEANING',
     heroSubtitle: "Breathe Easy with UAE's Professional AC Duct Cleaning Services",
     heroImage: '',
-    sectionImage: '',
+    sectionImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773',
     specialistLabel: 'Air Quality Specialists',
     aboutHeading1: 'Breathe Easy: Your Ultimate',
     aboutHeading2: 'Guide to AC Duct Cleaning',
@@ -508,10 +607,33 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
   // Render with built-in defaults only for JS-disabled and static-first reliability.
   const content: ServicePageContent = base
 
-  const fallbackImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80'
+  const heroFallbackImages = [
+    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=80',
+  ]
+  const sectionFallbackImages = [
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1800&q=80',
+  ]
+  const beforeAfterFallbackImages = [
+    'https://images.unsplash.com/photo-1585435557343-3b092031e21f?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1800&q=80',
+    'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/Hood%20before%20and%20after%20cleaning.png?alt=media&token=48e9348b-94dc-4375-a068-0a40a981cae9',
+  ]
+  const slugSeed = [...slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
+  const heroFallbackImage = heroFallbackImages[slugSeed % heroFallbackImages.length]
+  const sectionFallbackImage = sectionFallbackImages[slugSeed % sectionFallbackImages.length]
+  let beforeAfterFallbackImage = beforeAfterFallbackImages[(slugSeed + 1) % beforeAfterFallbackImages.length]
+  if (beforeAfterFallbackImage === sectionFallbackImage) {
+    beforeAfterFallbackImage = beforeAfterFallbackImages[(slugSeed + 2) % beforeAfterFallbackImages.length]
+  }
+
   const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'
-  const heroImage = content.heroImage || content.sectionImage || fallbackImage
-  const detailsImage = content.sectionImage || content.heroImage || fallbackImage
+  const heroImage = content.heroImage || heroFallbackImage
+  const detailsImage = content.sectionImage || sectionFallbackImage
+  const beforeAfterImage = content.beforeAfterImage || beforeAfterFallbackImage
   const serviceName = content.name || 'Professional Cleaning Service'
 
   const trustStatIcons = [Users, Star, UserCheck, MapPin]
@@ -620,6 +742,14 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
         },
       ]
 
+  const qualityHeading = content.qualityHeading || 'Real Results'
+  const qualityDescription =
+    content.qualityDescription ||
+    'Explore service quality from real projects with consistent standards and detail-focused execution.'
+  const qualityCardText =
+    content.qualityCardText ||
+    `Real service outcomes captured from professional ${serviceName.toLowerCase()} projects.`
+
   const googleBusinessIcon = (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
       <path fill="#EA4335" d="M12 11V8h10a10 10 0 0 1 .2 2c0 6-4 10-10.2 10A10 10 0 1 1 12 2c2.7 0 5 .9 6.8 2.5l-2.8 2.8A5.9 5.9 0 0 0 12 5a6 6 0 0 0 0 12c3 0 5-1.7 5.6-4H12Z" />
@@ -657,9 +787,8 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
               </span>
 
               <h1 className="mb-5 text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-5xl md:text-6xl xl:text-7xl">
-                {content.heroTitleLine1}
-                <br />
-                <span className="bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">
+                <span className="block">{content.heroTitleLine1}</span>
+                <span className="block bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">
                   {content.heroTitleLine2}
                 </span>
               </h1>
@@ -831,9 +960,9 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
         <div className="container relative z-10 mx-auto px-4 sm:px-6">
           <div className="mb-12 flex flex-col items-center text-center sm:mb-16">
             <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary/90 sm:text-[11px]">Quality You Can See</span>
-            <h3 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">Real <span className="italic text-primary">Results</span></h3>
+            <h3 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">{qualityHeading}</h3>
             <p className="mt-4 max-w-xl text-slate-300">
-              Explore service quality from real projects with consistent standards and detail-focused execution.
+              {qualityDescription}
             </p>
           </div>
 
@@ -841,7 +970,7 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
             <article className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-primary/35 hover:bg-white/8 sm:rounded-[3rem]">
               <div className="relative aspect-video bg-slate-950/40">
                 <SkeletonImg
-                  src={detailsImage}
+                  src={beforeAfterImage}
                   alt={`${content.name} quality results`}
                   imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   skeletonClassName="bg-slate-800"
@@ -849,7 +978,7 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
               </div>
               <div className="p-6 sm:p-8">
                 <p className="text-sm font-medium leading-relaxed text-slate-300">
-                  Real service outcomes captured from professional {serviceName.toLowerCase()} projects.
+                  {qualityCardText}
                 </p>
               </div>
             </article>

@@ -125,8 +125,16 @@ export default function ServicesPage() {
               Our Expertise
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
-              {cms.heroTitle.split('\n').map((line, i) => (
-                <span key={i}>{i > 0 && <br />}{i === cms.heroTitle.split('\n').length - 1 ? <span className="text-primary italic text-5xl md:text-8xl lowercase underline decoration-white/10 decoration-8 underline-offset-10">{line}</span> : line}{' '}</span>
+              {cms.heroTitle.split('\n').map((line, i, lines) => (
+                <span key={i} className="block">
+                  {i === lines.length - 1 ? (
+                    <span className="text-primary italic text-5xl md:text-8xl lowercase underline decoration-white/10 decoration-8 underline-offset-10">
+                      {line}
+                    </span>
+                  ) : (
+                    line
+                  )}
+                </span>
               ))}
             </h1>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-bold uppercase tracking-tight italic">

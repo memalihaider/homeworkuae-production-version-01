@@ -4,7 +4,7 @@ import {
   CheckCircle2, ArrowRight, Star, Shield, Clock, Users, Award, Sparkles,
   ShieldCheck, Zap, ChevronLeft, ChevronRight,
   Home, Building2, Wind, ShieldAlert, Utensils, Construction,
-  Sofa, Layout, Waves, Dumbbell, Calendar, BookOpen, ArrowUpRight
+  Sofa, Layout, Waves, Dumbbell, Calendar, BookOpen, ArrowUpRight, MessageCircle
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
@@ -12,6 +12,8 @@ import NextImage from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
 import { defaultHomePage } from '@/lib/cms-data'
+import { db } from '@/lib/firebase'
+import { doc, getDoc } from 'firebase/firestore'
 
 // Reusable CTA Button Component
 interface CTAButtonProps {
@@ -56,7 +58,10 @@ export default function HomePage() {
   const [airQuality, setAirQuality] = useState(72)
   const [airQualityStatus, setAirQualityStatus] = useState("Moderate")
   const [airQualityColor, setAirQualityColor] = useState("text-amber-500")
+  const [heroWhatsapp, setHeroWhatsapp] = useState('+971 50 717 7059')
   const cmsData = defaultHomePage
+  const whatsappDigits = heroWhatsapp.replace(/\D/g, '')
+  const whatsappHref = whatsappDigits ? `https://wa.me/${whatsappDigits}` : '#'
 
   const heroTexts = cmsData.hero.headings
   const activeHeroText = heroTexts[0] ?? 'PREMIUM\nCLEANING'
@@ -162,6 +167,38 @@ export default function HomePage() {
     }
   }, [])
 
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchWhatsappFromSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'profile-setting', 'admin-settings')
+        const settingsSnap = await getDoc(settingsRef)
+
+        if (!isMounted || !settingsSnap.exists()) return
+
+        const settings = settingsSnap.data() as {
+          profile?: {
+            whatsapp?: string
+          }
+        }
+
+        const configuredWhatsapp = settings.profile?.whatsapp?.trim()
+        if (configuredWhatsapp) {
+          setHeroWhatsapp(configuredWhatsapp)
+        }
+      } catch (error) {
+        console.warn('Could not load WhatsApp number from settings:', error)
+      }
+    }
+
+    fetchWhatsappFromSettings()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   return (
     <div className="flex flex-col overflow-hidden selection:bg-primary selection:text-white">
 
@@ -258,8 +295,21 @@ export default function HomePage() {
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 2.5 }}
                       className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg]"
                     />
-                    {cmsData.hero.ctaText}
+                    Book your service
                     <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </motion.a>
+
+                  <motion.a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="px-8 py-3.5 rounded-full font-bold text-sm bg-white text-emerald-700 border border-emerald-200 shadow-md inline-flex items-center gap-2 hover:bg-emerald-50"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp {heroWhatsapp}
                   </motion.a>
 
                   <div className="flex items-center gap-3">

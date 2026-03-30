@@ -3,7 +3,26 @@ import ServicePageTemplate from '@/components/ServicePageTemplate'
 import ServiceStructuredData from '@/components/ServiceStructuredData'
 import { buildServiceMetadata } from '@/lib/service-seo'
 
-export const metadata: Metadata = buildServiceMetadata('kitchen-deep-cleaning')
+const baseMetadata = buildServiceMetadata('kitchen-deep-cleaning')
+
+export const metadata: Metadata = {
+  ...baseMetadata,
+  title: '#1 Kitchen Cleaning Service in Dubai | Homework UAE',
+  description:
+    "Homework UAE delivers expert kitchen cleaning in Dubai for homes and businesses. We clean grease, grime, hoods, ducts, and appliances using eco-friendly products and certified professionals.",
+  openGraph: {
+    ...baseMetadata.openGraph,
+    title: '#1 Kitchen Cleaning Service in Dubai | Homework UAE',
+    description:
+      "Homework UAE delivers expert kitchen cleaning in Dubai for homes and businesses. We clean grease, grime, hoods, ducts, and appliances using eco-friendly products and certified professionals.",
+  },
+  twitter: {
+    ...baseMetadata.twitter,
+    title: '#1 Kitchen Cleaning Service in Dubai | Homework UAE',
+    description:
+      "Homework UAE delivers expert kitchen cleaning in Dubai for homes and businesses. We clean grease, grime, hoods, ducts, and appliances using eco-friendly products and certified professionals.",
+  },
+}
 
 export default function KitchenDeepCleaning() {
   return (

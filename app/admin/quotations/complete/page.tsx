@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { 
   Plus, FileText, TrendingUp, Bell, CheckSquare, 
-  Download, History, Sparkles, ArrowUpRight
+  Download, History, Sparkles, ArrowUpRight, Loader2
 } from 'lucide-react'
+import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
 import QuotationDashboard from './components/QuotationDashboard'
 import QuotationList from './components/QuotationList'
@@ -48,6 +49,17 @@ export interface LocalQuotation extends BaseQuotation {
 export default function QuotationsPage() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'list' | 'builder' | 'approval' | 'reminders'>('dashboard')
   const [editingQuotation, setEditingQuotation] = useState<LocalQuotation | null>(null)
+  const [selectedQuotation, setSelectedQuotation] = useState<(Partial<LocalQuotation> & { id?: string | number }) | null>(null)
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null)
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      if (previewPdfUrl) {
+        URL.revokeObjectURL(previewPdfUrl)
+      }
+    }
+  }, [previewPdfUrl])
 
   const handleEdit = (quotation: Partial<LocalQuotation> & { id?: string | number }) => {
     // Convert any quotation format to LocalQuotation
@@ -80,6 +92,67 @@ export default function QuotationsPage() {
     }
     setEditingQuotation(editedQuotation)
     setActiveTab('builder')
+  }
+
+  const handleView = async (quotation: Partial<LocalQuotation> & { id?: string | number }) => {
+    setSelectedQuotation(quotation)
+    setIsGeneratingPreview(true)
+
+    if (previewPdfUrl) {
+      URL.revokeObjectURL(previewPdfUrl)
+      setPreviewPdfUrl(null)
+    }
+
+    try {
+      const previewData = {
+        ...quotation,
+        id: quotation.id?.toString() || '',
+        client: quotation.client || 'Valued Customer',
+        company: quotation.company || '',
+        email: quotation.email || '',
+        phone: quotation.phone || '',
+        location: quotation.location || 'Dubai, UAE',
+        quoteNumber: quotation.quoteNumber || `QUOTE-${Date.now()}`,
+        date: quotation.date || new Date().toISOString().split('T')[0],
+        validUntil: quotation.validUntil || new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        dueDate: quotation.validUntil || new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        currency: quotation.currency || 'AED',
+        taxRate: (quotation as any).taxRate || 5,
+        discount: (quotation as any).discount || 0,
+        discountAmount: (quotation as any).discountAmount || 0,
+        discountType: (quotation as any).discountType || 'percentage',
+        status: quotation.status || 'Draft',
+        subtotal: (quotation as any).subtotal || quotation.total || 0,
+        taxAmount: (quotation as any).taxAmount || 0,
+        total: quotation.total || 0,
+        notes: quotation.notes || '',
+        terms: quotation.terms || '',
+        paymentMethods: (quotation as any).paymentMethods || ['bank-transfer'],
+        services: (quotation as any).services || [],
+        products: (quotation as any).products || [],
+        createdAt: (quotation as any).createdAt || new Date().toISOString(),
+        updatedAt: (quotation as any).updatedAt || new Date().toISOString(),
+        createdBy: (quotation as any).createdBy || '',
+      }
+
+      const pdfBlob = getPDFAsBlob(previewData as any)
+      const objectUrl = URL.createObjectURL(pdfBlob)
+      setPreviewPdfUrl(objectUrl)
+    } catch (error) {
+      console.error('Error generating quotation preview:', error)
+      setPreviewPdfUrl(null)
+    } finally {
+      setIsGeneratingPreview(false)
+    }
+  }
+
+  const closePreview = () => {
+    if (previewPdfUrl) {
+      URL.revokeObjectURL(previewPdfUrl)
+      setPreviewPdfUrl(null)
+    }
+    setSelectedQuotation(null)
+    setIsGeneratingPreview(false)
   }
 
   const tabs = [
@@ -157,6 +230,7 @@ export default function QuotationsPage() {
         {activeTab === 'list' && (
           <QuotationList 
             onEdit={handleEdit}
+            onView={handleView}
           />
         )}
         {activeTab === 'builder' && (
@@ -175,6 +249,56 @@ export default function QuotationsPage() {
         {activeTab === 'approval' && <QuotationApproval />}
         {activeTab === 'reminders' && <QuotationReminders />}
       </div>
+
+      {selectedQuotation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[92vh] overflow-hidden border border-gray-200">
+            <div className="p-5 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-black">{selectedQuotation.quoteNumber || 'Quotation Preview'}</h3>
+                <p className="text-sm text-gray-500">Complete quotation PDF preview</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {previewPdfUrl && (
+                  <a
+                    href={previewPdfUrl}
+                    download={`Quotation_${(selectedQuotation.quoteNumber || 'Preview').toString().replace('#', '')}.pdf`}
+                    className="px-3 py-2 border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download PDF
+                  </a>
+                )}
+                <button
+                  onClick={closePreview}
+                  className="px-3 py-2 border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 h-[76vh]">
+              {isGeneratingPreview ? (
+                <div className="h-full flex items-center justify-center text-gray-600">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Generating quotation preview...
+                </div>
+              ) : previewPdfUrl ? (
+                <iframe
+                  title={`Quotation preview ${selectedQuotation.quoteNumber || ''}`}
+                  src={previewPdfUrl}
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  Unable to generate preview. Please try again.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

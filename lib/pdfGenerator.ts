@@ -24,6 +24,11 @@ interface QuotationData {
   notes: string;
   terms: string;
   confirmationLetter?: string;
+  insuranceSectionTitle?: string;
+  insuranceAcceptedText?: string;
+  insuranceDeclinedText?: string;
+  insuranceTextFieldLabel?: string;
+  companySealImage?: string;
   bankDetails?: {
     accountName: string;
     accountNumber: string;
@@ -60,682 +65,605 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
-  let yPos = margin;
+  const contentWidth = pageWidth - margin * 2;
 
-  const checkPageBreak = (requiredSpace: number) => {
-    if (yPos + requiredSpace > pageHeight - 15) {
+  const BRAND: [number, number, number] = [236, 72, 153];
+  const BRAND_SOFT: [number, number, number] = [252, 240, 247];
+  const SOFT_GRAY: [number, number, number] = [244, 244, 244];
+  const BORDER_GRAY: [number, number, number] = [210, 210, 210];
+  const TEXT_PRIMARY: [number, number, number] = [28, 30, 34];
+  const TEXT_MUTED: [number, number, number] = [68, 70, 74];
+  const TEXT_SUBTLE: [number, number, number] = [110, 112, 116];
+  const FONT_HEADING = 'helvetica';
+  const FONT_BODY = 'times';
+  const pageTopContentY = 34;
+  const pageBottomSafeY = 14;
+
+  let yPos = pageTopContentY;
+
+  const allItems = [
+    ...quotation.services.map(service => ({
+      description: service.description ? `${service.name}\n${service.description}` : service.name,
+      quantity: service.quantity,
+      amount: service.total,
+    })),
+    ...quotation.products.map(product => ({
+      description: [product.name, product.description, product.sku ? `SKU: ${product.sku}` : ''].filter(Boolean).join('\n'),
+      quantity: product.quantity,
+      amount: product.total,
+    })),
+  ];
+
+  const currencyCode = (quotation.currency || 'AED').toUpperCase();
+  const hasContactPhone = Boolean(quotation.phone?.trim());
+  const hasContactEmail = Boolean(quotation.email?.trim());
+
+  const serviceSummary = allItems.length > 0
+    ? allItems[0].description.split('\n')[0]
+    : 'General Cleaning Service';
+
+  const getValidityText = () => {
+    if (!quotation.date || !quotation.validUntil) return formatDate(quotation.validUntil);
+    const issueDate = new Date(quotation.date);
+    const validDate = new Date(quotation.validUntil);
+    if (Number.isNaN(issueDate.getTime()) || Number.isNaN(validDate.getTime())) {
+      return formatDate(quotation.validUntil);
+    }
+
+    const dayMs = 1000 * 60 * 60 * 24;
+    const diffDays = Math.max(0, Math.ceil((validDate.getTime() - issueDate.getTime()) / dayMs));
+    return diffDays > 0 ? `${diffDays} days` : formatDate(quotation.validUntil);
+  };
+
+  const getImageFormat = (imageSource: string): 'PNG' | 'JPEG' => {
+    const lower = imageSource.toLowerCase();
+    if (lower.startsWith('data:image/png')) return 'PNG';
+    return 'JPEG';
+  };
+
+  const drawHeader = () => {
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+
+    doc.setFont(FONT_BODY, 'bold');
+    doc.setFontSize(15.5);
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.text('QUOTATION', margin, 14.5);
+
+    doc.setFont(FONT_BODY, 'italic');
+    doc.setFontSize(8.2);
+    doc.setTextColor(...TEXT_SUBTLE);
+    doc.text('Service Proposal', margin, 19.2);
+
+    try {
+      doc.addImage('/logo.jpeg', 'JPEG', pageWidth - margin - 28, 5, 28, 20);
+    } catch {
+      doc.setFont(FONT_HEADING, 'bold');
+      doc.setFontSize(9);
+      doc.text('HOMEWORK UAE', pageWidth - margin, 14, { align: 'right' });
+    }
+
+    doc.setDrawColor(...BRAND);
+    doc.setLineWidth(0.35);
+    doc.line(margin, 28, pageWidth - margin, 28);
+  };
+
+  const drawFooter = (pageNumber: number, totalPages: number) => {
+    const y = pageHeight - 7;
+    doc.setDrawColor(...BORDER_GRAY);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y - 3, pageWidth - margin, y - 3);
+
+    doc.setFont(FONT_BODY, 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...TEXT_SUBTLE);
+    doc.text(`Page ${pageNumber}`, pageWidth - margin, y, { align: 'right' });
+
+    if (pageNumber === 1) {
+      doc.text(quotation.quoteNumber, margin, y);
+    } else {
+      doc.text(`${quotation.quoteNumber} | ${pageNumber}/${totalPages}`, margin, y);
+    }
+  };
+
+  const ensureSpace = (requiredSpace: number) => {
+    if (yPos + requiredSpace > pageHeight - pageBottomSafeY) {
       doc.addPage();
-      yPos = margin;
-      addHeader();
-      yPos = 32;
+      drawHeader();
+      yPos = pageTopContentY;
       return true;
     }
     return false;
   };
 
-  const addHeader = () => {
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, pageWidth, 26, 'F');
-    
-    doc.setFillColor(40, 40, 40);
-    doc.rect(0, 26, pageWidth, 0.5, 'F');
-    
-    try {
-      const logoSize = 24;
-      const logoX = margin;
-      const logoY = 1;
-      
-      doc.addImage('/logo.jpeg', 'JPEG', logoX, logoY, logoSize, logoSize);
+  const drawSectionBar = (label: string) => {
+    ensureSpace(9);
+    doc.setFillColor(...SOFT_GRAY);
+    doc.rect(margin, yPos, contentWidth, 7, 'F');
+    doc.setDrawColor(...BORDER_GRAY);
+    doc.setLineWidth(0.2);
+    doc.rect(margin, yPos, contentWidth, 7, 'S');
 
-      doc.setDrawColor(120, 120, 120);
-      doc.setLineWidth(0.5);
-      doc.circle(logoX + (logoSize / 2), logoY + (logoSize / 2), logoSize / 2);
-    } catch {
-      console.log('Logo not found, using text only');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('LOGO', margin, 15);
-    }
-    
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    
-    doc.setTextColor(255, 105, 180);
-    doc.text('QUOTATION', pageWidth / 2 - 9, 13, { align: 'center' });
-    
-    // doc.setTextColor(70, 130, 180);
-    // doc.text('ATION', pageWidth / 2 + 7, 13, { align: 'center' });
-    
-    doc.setFontSize(6);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(120, 120, 120);
-    doc.text(`Ref: ${quotation.quoteNumber}`, pageWidth / 2, 20, { align: 'center' });
-    
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('HOMEWORK', pageWidth - margin, 12, { align: 'right' });
-    
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'light');
-    doc.setTextColor(0, 0, 0);
-    doc.text('CLEANING', pageWidth - margin, 19, { align: 'right' });
+    doc.setFont(FONT_HEADING, 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.text(label, pageWidth / 2, yPos + 4.6, { align: 'center' });
+    yPos += 9;
   };
 
-  addHeader();
-  yPos = 32;
+  const drawWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize = 8, lineHeight = 4) => {
+    doc.setFont(FONT_BODY, 'normal');
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...TEXT_MUTED);
+    const lines = doc.splitTextToSize(text, maxWidth);
+    ensureSpace((lines.length * lineHeight) + 2);
+    doc.text(lines, x, y);
+    return lines.length * lineHeight;
+  };
 
-  // ==================== QUOTATION INFO BAR ====================
-  doc.setFillColor(248, 248, 248);
-  doc.rect(margin, yPos - 2, pageWidth - (2 * margin), 8, 'F');
-  
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'normal');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.text('REF:', margin + 1, yPos);
-  doc.setFont('helvetica', 'normal');
-  doc.text(quotation.quoteNumber, margin + 12, yPos);
+  const estimateTextHeight = (text: string, maxWidth: number, fontSize = 8, lineHeight = 4) => {
+    doc.setFont(FONT_BODY, 'normal');
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(text, maxWidth);
+    return lines.length * lineHeight;
+  };
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('ISSUE:', pageWidth / 2 - 15, yPos);
-  doc.setFont('helvetica', 'normal');
-  doc.text(formatDate(quotation.date), pageWidth / 2 - 7, yPos);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.text('VALID:', pageWidth - margin - 15, yPos, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.text(formatDate(quotation.validUntil), pageWidth - margin - 2, yPos, { align: 'right' });
+  drawHeader();
 
-  yPos += 11;
+  // Header info blocks
+  const infoGap = 4;
+  const infoBoxWidth = (contentWidth - infoGap) / 2;
+  const rightInfoRows = [
+    ['Quote No:', quotation.quoteNumber || 'N/A'],
+    ['Date:', formatDate(quotation.date)],
+    ['Sales Executive:', quotation.createdBy || 'N/A'],
+    ['Service:', serviceSummary],
+  ] as const;
 
-  // ==================== FROM / TO SECTION ====================
-  checkPageBreak(32);
-
-  const fromToBaseY = yPos - 1;
-  let fromToContentHeight = 24;
-  const hasCreatorDetails = Boolean(quotation.createdBy || quotation.createdByPhone);
-  
-  if (quotation.company) {
-    fromToContentHeight += 3;
+  const recipientLines: string[] = [];
+  if (quotation.company?.trim()) recipientLines.push(quotation.company.trim());
+  if (quotation.client?.trim() && quotation.client.trim() !== quotation.company?.trim()) {
+    recipientLines.push(quotation.client.trim());
   }
-  if (hasCreatorDetails) {
-    fromToContentHeight += 7;
-  }
-  
-  const fromToBoxHeight = fromToContentHeight;
+  if (hasContactPhone) recipientLines.push(`Phone: ${quotation.phone.trim()}`);
+  if (hasContactEmail) recipientLines.push(`Email: ${quotation.email.trim()}`);
+  if (recipientLines.length === 0) recipientLines.push('Valued Customer');
 
-  doc.setFillColor(255, 255, 255);
-  doc.rect(margin, fromToBaseY, pageWidth - (2 * margin), fromToBoxHeight, 'F');
-  
-  doc.setFillColor(255, 105, 180);
-  doc.rect(margin, fromToBaseY, 2, fromToBoxHeight, 'F');
-  
-  doc.setFillColor(70, 130, 180);
-  doc.rect(pageWidth - margin - 2, fromToBaseY, 2, fromToBoxHeight, 'F');
-  
-  doc.setDrawColor(220, 220, 220);
+  const leftLineCount = recipientLines.reduce((sum, line) => {
+    return sum + doc.splitTextToSize(line, infoBoxWidth - 6).length;
+  }, 0);
+
+  const rightLineCount = rightInfoRows.reduce((sum, [, value]) => {
+    return sum + doc.splitTextToSize(value, infoBoxWidth - 34).length;
+  }, 0);
+
+  const infoBoxHeight = Math.max(25, (Math.max(leftLineCount, rightLineCount) * 3.4) + 10);
+  const leftX = margin;
+  const rightX = margin + infoBoxWidth + infoGap;
+
+  doc.setDrawColor(...BRAND);
   doc.setLineWidth(0.3);
-  doc.rect(margin, fromToBaseY, pageWidth - (2 * margin), fromToBoxHeight, 'S');
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(leftX, yPos, infoBoxWidth, infoBoxHeight, 1, 1, 'FD');
+  doc.roundedRect(rightX, yPos, infoBoxWidth, infoBoxHeight, 1, 1, 'FD');
 
-  // FROM Section
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
-  doc.text('FROM:', margin + 4, fromToBaseY + 4);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.setTextColor(80, 80, 80);
-  
-  let fromY = fromToBaseY + 8;
-  doc.text('HOMEWORK CLEANING', margin + 4, fromY);
-  fromY += 3;
-  doc.text('Al Quoz Ind Area 1', margin + 4, fromY);
-  fromY += 3;
-  doc.text('Dubai, UAE', margin + 4, fromY);
-  fromY += 4;
-  doc.setTextColor(0, 0, 0);
-  doc.text('+971 50 717 7059', margin + 4, fromY);
-  fromY += 3;
-  doc.text('services@homeworkuae.com', margin + 4, fromY);
+  doc.setFont(FONT_HEADING, 'bold');
+  doc.setFontSize(8.2);
+  doc.setTextColor(...TEXT_PRIMARY);
+  doc.text('Attention:', leftX + 3, yPos + 4.8);
 
-  if (hasCreatorDetails) {
-    fromY += 4;
-    const creatorName = quotation.createdBy || 'N/A';
-    const creatorPhone = quotation.createdByPhone || 'N/A';
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Prepared By: ${creatorName}`, margin + 4, fromY);
-    fromY += 3;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Phone: ${creatorPhone}`, margin + 4, fromY);
-  }
+  let leftInfoY = yPos + 8.8;
 
-  doc.setDrawColor(220, 220, 220);
-  doc.line(pageWidth / 2, fromToBaseY, pageWidth / 2, fromToBaseY + fromToBoxHeight);
+  recipientLines.forEach((line, idx) => {
+    const wrapped = doc.splitTextToSize(line, infoBoxWidth - 6);
+    wrapped.forEach((wrappedLine: string, wrappedIndex: number) => {
+      doc.setFont(idx <= 1 && wrappedIndex === 0 ? FONT_HEADING : FONT_BODY, idx <= 1 && wrappedIndex === 0 ? 'bold' : 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...TEXT_PRIMARY);
+      doc.text(wrappedLine, leftX + 3, leftInfoY);
+      leftInfoY += 3.4;
+    });
+  });
 
-  // TO Section
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
-  doc.text('TO:', pageWidth / 2 + 4, fromToBaseY + 4);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.setTextColor(80, 80, 80);
-  
-  let toY = fromToBaseY + 8;
-  const clientName = quotation.client || 'Valued Customer';
-  doc.text(clientName, pageWidth / 2 + 4, toY);
-  toY += 3;
-  
-  const companyName = quotation.company || '';
-  if (companyName) {
-    doc.text(companyName, pageWidth / 2 + 4, toY);
-    toY += 3;
-  }
-  
-  const location = quotation.location || 'Dubai, UAE';
-  doc.text(location, pageWidth / 2 + 4, toY);
-  toY += 4;
-  
-  doc.setTextColor(0, 0, 0);
-  const clientPhone = quotation.phone || '+971 XX XXX';
-  doc.text(clientPhone, pageWidth / 2 + 4, toY);
-  toY += 3;
-  
-  const clientEmail = quotation.email || 'client@email.com';
-  doc.text(clientEmail, pageWidth / 2 + 4, toY);
+  doc.setFont(FONT_HEADING, 'bold');
+  doc.setFontSize(7.7);
+  const rightLabelX = rightX + 3;
+  const rightValueX = rightX + 30;
+  let rightInfoY = yPos + 4.8;
 
-  yPos = fromToBaseY + fromToBoxHeight + 3;
+  rightInfoRows.forEach(([label, value]) => {
+    doc.setFont(FONT_HEADING, 'bold');
+    doc.setTextColor(...TEXT_SUBTLE);
+    doc.text(label, rightLabelX, rightInfoY);
+    doc.setFont(FONT_BODY, 'normal');
+    doc.setTextColor(...TEXT_PRIMARY);
+    const wrappedValue = doc.splitTextToSize(value, infoBoxWidth - 34);
+    doc.text(wrappedValue, rightValueX, rightInfoY);
+    rightInfoY += Math.max(3.7, wrappedValue.length * 3.4);
+  });
 
-  // ==================== SECTION TITLE ====================
-  checkPageBreak(15);
-  
-  doc.setFillColor(245, 245, 245);
-  doc.rect(margin, yPos - 1, pageWidth - (2 * margin), 8, 'F');
-  
-  doc.setFillColor(255, 105, 180);
-  doc.rect(margin, yPos - 1, (pageWidth - (2 * margin)) / 2, 1.5, 'F');
-  
-  doc.setFillColor(70, 130, 180);
-  doc.rect(margin + ((pageWidth - (2 * margin)) / 2), yPos - 1, (pageWidth - (2 * margin)) / 2, 1.5, 'F');
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(40, 40, 40);
-  doc.text('SERVICES & PRODUCTS', pageWidth / 2, yPos + 4, { align: 'center' });
+  yPos += infoBoxHeight + 6;
 
-  yPos += 9;
+  // Recipient highlight bar
+  const recipientText = quotation.company || quotation.client || 'Valued Customer';
+  const recipientLinesWrapped = doc.splitTextToSize(recipientText, contentWidth - 6);
+  const recipientBarHeight = Math.max(6.5, (recipientLinesWrapped.length * 3.5) + 2);
 
-  // ==================== ITEMS TABLE ====================
-  const allItems = [
-    ...quotation.services.map(service => ({
-      type: 'Service',
-      name: service.name,
-      description: service.description,
-      quantity: service.quantity,
-      unitPrice: service.unitPrice,
-      total: service.total
-    })),
-    ...quotation.products.map(product => ({
-      type: 'Product',
-      name: product.name,
-      description: [product.description, product.sku ? `SKU: ${product.sku}` : ''].filter(Boolean).join('\n'),
-      quantity: product.quantity,
-      unitPrice: product.unitPrice,
-      total: product.total
-    }))
-  ];
+  doc.setFillColor(...SOFT_GRAY);
+  doc.rect(margin, yPos, contentWidth, recipientBarHeight, 'F');
+  doc.setDrawColor(...BORDER_GRAY);
+  doc.setLineWidth(0.2);
+  doc.rect(margin, yPos, contentWidth, recipientBarHeight, 'S');
+  doc.setFont(FONT_BODY, 'bold');
+  doc.setFontSize(9.2);
+  doc.setTextColor(...TEXT_PRIMARY);
+  const recipientTextY = yPos + ((recipientBarHeight - (recipientLinesWrapped.length * 3.5)) / 2) + 2.8;
+  doc.text(recipientLinesWrapped, pageWidth / 2, recipientTextY, { align: 'center' });
+  yPos += recipientBarHeight + 3.5;
+
+  // Intro text
+  const introText =
+    'We thank you for giving us an opportunity to quote for this service. Based on your request, we are pleased to present our proposal for your consideration. Rest assured that every care and attention will be offered throughout as quality of service and customer satisfaction is paramount to Homework UAE.';
+  ensureSpace(estimateTextHeight(introText, contentWidth, 8.1, 4.2) + 9);
+  doc.setFont(FONT_BODY, 'italic');
+  doc.setFontSize(8.7);
+  doc.setTextColor(...TEXT_SUBTLE);
+  doc.text('Dear Valued Client,', margin, yPos);
+  yPos += 5;
+  yPos += drawWrappedText(introText, margin, yPos, contentWidth, 8.1, 4.2) + 4;
+
+  // Charges table
+  ensureSpace(40);
+  const chargesHeader = `${quotation.location ? `Location - ${quotation.location}` : 'Service Location'} (${currencyCode})`;
+  const tableItems = allItems.length > 0
+    ? allItems
+    : [{ description: 'Cleaning service as per agreed scope', quantity: 1, amount: quotation.subtotal || quotation.total || 0 }];
 
   autoTable(doc, {
     startY: yPos,
-    head: [['#', 'DESCRIPTION', 'QTY', 'PRICE', 'TOTAL']],
-    body: allItems.map((item, index) => [
-      index + 1,
-      { 
-        content: item.description ? `${item.name}\n${item.description}` : item.name,
-        styles: { valign: 'top' }
-      },
-      item.quantity,
-      { 
-        content: formatCurrency(item.unitPrice),
-        styles: { halign: 'right', fontStyle: 'normal' }
-      },
-      { 
-        content: formatCurrency(item.total),
-        styles: { halign: 'right', fontStyle: 'bold' }
-      }
-    ]),
+    head: [[chargesHeader, `Charges(${currencyCode})`]],
+    body: [
+      ...tableItems.map(item => [item.description, formatCurrency(item.amount)]),
+      [`VAT ${quotation.taxRate}%`, formatCurrency(quotation.taxAmount)],
+      ['TOTAL', formatCurrency(quotation.total)],
+    ],
     theme: 'grid',
-    headStyles: { 
-      fillColor: [135, 206, 235],
-      textColor: [255, 255, 255], 
+    margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+    styles: {
+      font: FONT_BODY,
+      fontSize: 7.8,
+      cellPadding: 2.4,
+      lineColor: BORDER_GRAY,
+      lineWidth: 0.2,
+      textColor: TEXT_PRIMARY,
+    },
+    headStyles: {
+      fillColor: SOFT_GRAY,
+      textColor: TEXT_PRIMARY,
+      font: FONT_HEADING,
+      fontSize: 8,
       fontStyle: 'bold',
-      fontSize: 6.5,
-      halign: 'center',
-      lineWidth: 0
-    },
-    alternateRowStyles: {
-      fillColor: [250, 250, 250]
-    },
-    styles: { 
-      fontSize: 6.5,
-      cellPadding: 2.5,
-      overflow: 'linebreak',
-      lineColor: [230, 230, 230],
-      lineWidth: 0.1
+      halign: 'left',
     },
     columnStyles: {
-      0: { cellWidth: 23, halign: 'center' },
-      1: { cellWidth: 88, halign: 'left' },
-      2: { cellWidth: 23, halign: 'center' },
-      3: { cellWidth: 23, halign: 'right' },
-      4: { cellWidth: 23, halign: 'right' }
+      0: { cellWidth: contentWidth - 38 },
+      1: { cellWidth: 38, halign: 'right' },
     },
-    margin: { left: margin, right: margin },
-    didParseCell: (data) => {
+    didParseCell: data => {
+      if (data.section === 'body' && data.row.index === tableItems.length + 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.font = FONT_HEADING;
+      }
       if (data.section === 'body' && data.column.index === 1) {
-        data.cell.styles.fontStyle = 'bold'
+        data.cell.styles.halign = 'right';
+      }
+      if (data.section === 'body' && data.column.index === 0) {
+        data.cell.styles.font = FONT_BODY;
       }
     },
     didDrawPage: () => {
-      addHeader();
-    }
+      drawHeader();
+    },
   });
 
-  const docWithTable = doc as jsPDF & { lastAutoTable?: { finalY: number } };
-  yPos = (docWithTable.lastAutoTable?.finalY ?? yPos) + 4;
+  const tableDoc = doc as jsPDF & { lastAutoTable?: { finalY: number } };
+  yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 7;
 
-  // ==================== FINANCIAL SUMMARY ====================
-  checkPageBreak(35);
-
-  const summaryWidth = 105;
-  const summaryX = pageWidth - margin - summaryWidth;
-
-  let summaryLines = 3;
-  if (quotation.discountAmount > 0) {
-    summaryLines += 1;
-  }
-  
-  const summaryContentHeight = (summaryLines * 4) + 8;
-  const summaryBoxHeight = summaryContentHeight + 1;
-
-  doc.setFillColor(250, 250, 250);
-  doc.rect(summaryX - 1, yPos - 2, summaryWidth + 2, summaryBoxHeight, 'F');
-  
-  doc.setFillColor(230, 230, 230);
-  doc.rect(summaryX, yPos - 1, summaryWidth, summaryBoxHeight - 2, 'F');
-  
-  doc.setFillColor(255, 255, 255);
-  doc.rect(summaryX, yPos - 1, summaryWidth, summaryBoxHeight - 2, 'F');
-  
-  doc.setFillColor(255, 105, 180);
-  doc.rect(summaryX, yPos - 1, summaryWidth / 2, 2, 'F');
-  
-  doc.setFillColor(70, 130, 180);
-  doc.rect(summaryX + (summaryWidth / 2), yPos - 1, summaryWidth / 2, 2, 'F');
-  
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.3);
-  doc.rect(summaryX, yPos - 1, summaryWidth, summaryBoxHeight - 2, 'S');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(40, 40, 40);
-  doc.text('FINANCIAL SUMMARY', summaryX + (summaryWidth / 2), yPos + 5, { align: 'center' });
-
-  let summaryY = yPos + 6;
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  const lineHeight = 4;
-  
-  doc.setTextColor(100, 100, 100);
-  doc.text('Subtotal:', summaryX + 5, summaryY);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text(formatCurrency(quotation.subtotal), summaryX + summaryWidth - 5, summaryY, { align: 'right' });
-  summaryY += lineHeight;
-  
-  if (quotation.discountAmount > 0) {
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    const discountText = quotation.discountType === 'percentage' 
-      ? `Disc (${quotation.discount}%):` : 'Discount:';
-    doc.text(discountText, summaryX + 5, summaryY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 105, 180);
-    doc.text(`- ${formatCurrency(quotation.discountAmount)}`, summaryX + summaryWidth - 5, summaryY, { align: 'right' });
-    summaryY += lineHeight;
-  }
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text(`VAT (${quotation.taxRate}%):`, summaryX + 5, summaryY);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(70, 130, 180);
-  doc.text(formatCurrency(quotation.taxAmount), summaryX + summaryWidth - 5, summaryY, { align: 'right' });
-  summaryY += lineHeight + 1;
-  
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.1);
-  doc.line(summaryX + 5, summaryY - 1, summaryX + summaryWidth - 5, summaryY - 1);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(0, 0, 0);
-  doc.text('TOTAL:', summaryX + 5, summaryY + 2);
-  doc.setFontSize(9);
-  doc.setTextColor(40, 40, 40);
-  doc.text(formatCurrency(quotation.total), summaryX + summaryWidth - 5, summaryY + 2, { align: 'right' });
-
-  yPos += summaryBoxHeight + 3;
-
-  // ==================== NOTES SECTION ====================
-  if (quotation.notes) {
-    checkPageBreak(20);
-    
-    const notesLabel = 'PAYMENT TERMS';
-    doc.setFillColor(255, 240, 245);
-    doc.rect(pageWidth / 2 - 18, yPos - 3, 36, 8, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text(notesLabel, pageWidth / 2, yPos + 1, { align: 'center' });
-
-    yPos += 8;
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(80, 80, 80);
-    const notesLines = doc.splitTextToSize(quotation.notes, pageWidth - (2 * margin) - 10);
-    
-    const notesRequiredSpace = (notesLines.length * 4) + 5;
-    
-    if (yPos + notesRequiredSpace > pageHeight - 15) {
-      doc.addPage();
-      yPos = margin;
-      addHeader();
-      yPos = 32;
-    }
-    
-    doc.text(notesLines, margin + 5, yPos);
-    yPos += notesLines.length * 4 + 5;
-  }
-  
-  // ==================== TERMS SECTION (WITHOUT (Cont.)) ====================
-  if (quotation.terms) {
-    checkPageBreak(12);
-    
-    const termsLabel = 'TERMS AND CONDITIONS';
-    doc.setFillColor(235, 245, 250);
-    doc.rect(pageWidth / 2 - 18, yPos - 3, 36, 8, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text(termsLabel, pageWidth / 2, yPos + 1, { align: 'center' });
-
-    yPos += 8;
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(80, 80, 80);
-    
-    const termsLines = doc.splitTextToSize(quotation.terms, pageWidth - (2 * margin) - 10);
-    
-    // Print terms with proper formatting on multiple pages
-    let termsIndex = 0;
-    let currentY = yPos;
-    
-    while (termsIndex < termsLines.length) {
-      const availableSpace = pageHeight - 15 - currentY;
-      const maxLinesPerPage = Math.floor(availableSpace / 4);
-      
-      if (maxLinesPerPage <= 0) {
-        doc.addPage();
-        currentY = margin;
-        addHeader();
-        currentY = 32;
-        continue;
+  // Payment terms table
+  ensureSpace(28);
+  autoTable(doc, {
+    startY: yPos,
+    body: [
+      ['Payment Terms', quotation.paymentMethods?.length ? quotation.paymentMethods.join(', ') : '100% Advance'],
+      ['Quote Validity', getValidityText()],
+      ['VAT', `Prices are inclusive of ${quotation.taxRate}% Tax except for per-hour rates and extra services.`],
+    ],
+    theme: 'grid',
+    margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+    styles: {
+      font: FONT_BODY,
+      fontSize: 7.6,
+      cellPadding: 2.5,
+      lineColor: BORDER_GRAY,
+      lineWidth: 0.2,
+      textColor: TEXT_PRIMARY,
+    },
+    columnStyles: {
+      0: { cellWidth: 38, fontStyle: 'bold' },
+      1: { cellWidth: contentWidth - 38 },
+    },
+    didDrawPage: () => {
+      drawHeader();
+    },
+    didParseCell: data => {
+      if (data.section === 'body' && data.column.index === 0) {
+        data.cell.styles.font = FONT_HEADING;
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.textColor = TEXT_SUBTLE;
       }
-      
-      const linesForThisPage = Math.min(maxLinesPerPage, termsLines.length - termsIndex);
-      const pageLines = termsLines.slice(termsIndex, termsIndex + linesForThisPage);
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(80, 80, 80);
-      doc.text(pageLines, margin + 5, currentY);
-      
-      termsIndex += linesForThisPage;
-      currentY += pageLines.length * 4;
-      
-      // Agar next page pe continue karna hai to simple terms header with same label
-      if (termsIndex < termsLines.length) {
-        doc.addPage();
-        currentY = margin;
-        addHeader();
-        currentY = 32;
-        
-        // Simple header with same label (without Cont.)
-        doc.setFillColor(235, 245, 250);
-        doc.rect(pageWidth / 2 - 18, currentY - 3, 36, 8, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        doc.text(termsLabel, pageWidth / 2, currentY + 1, { align: 'center' });
-        currentY += 8;
-      }
-    }
-    
-    yPos = currentY + 2;
+    },
+  });
+
+  yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 8;
+
+  // Terms section
+  drawSectionBar('Terms & Conditions');
+
+  const termsText = quotation.terms?.trim();
+  const notesText = quotation.notes?.trim();
+
+  const liabilityText = termsText ||
+    'In the event of damage, Homework UAE will carry out a reasonable repair (not replacement) for the damaged goods and the cost of which will be limited to market value of similar items in the local market.';
+
+  const quoteExclusions = [
+    'Disconnection & reconnection of electrical or electronic equipment.',
+    'Custom-made furniture and specialty fixtures.',
+    'De-arrangement of internal mechanical/electrical installations unless pre-approved.',
+  ];
+
+  const nextSteps = [
+    'Allow us to follow up with you to discuss our proposal further.',
+    'If accepted, please complete and return the acceptance form by email.',
+  ];
+
+  const termsRows: Array<[string, string]> = [
+    ['Liability', liabilityText],
+    ['Quote Exclusion', quoteExclusions.map(item => `- ${item}`).join('\n')],
+    ['Next Steps', nextSteps.map((step, idx) => `${idx + 1}. ${step}`).join('\n')],
+  ];
+
+  if (notesText) {
+    termsRows.push(['Additional Notes', notesText]);
   }
-  
-  // ==================== CONFIRMATION LETTER SECTION (FIXED) ====================
-  if (quotation.confirmationLetter && quotation.confirmationLetter.trim() !== '') {
-    // Pehle se check karo ke space hai ya nahi
-    checkPageBreak(10);
-    
-    const confirmLines = doc.splitTextToSize(quotation.confirmationLetter, pageWidth - (2 * margin) - 10);
-    const acceptanceText = `We accept the terms & conditions of your above quotation with Quotation No: ${quotation.quoteNumber} dated on ${formatDate(quotation.date)}`;
-    const acceptLines = doc.splitTextToSize(acceptanceText, pageWidth - (2 * margin) - 10);
-    
-    // Confirmation letter ke liye space check karo
-    const totalConfirmHeight = 8 + (confirmLines.length * 4) + 4 + (acceptLines.length * 4) + 6 + 35 + 5;
-    
-    console.log('yPos:', yPos, 'pageHeight:', pageHeight, 'totalConfirmHeight:', totalConfirmHeight);
-    
-    if (yPos + totalConfirmHeight > pageHeight - 15) {
-      console.log('Not enough space, adding new page for confirmation letter');
-      doc.addPage();
-      yPos = margin;
-      addHeader();
-      yPos = 32;
-    }
-    
-    const confirmLabel = 'CONFIRMATION LETTER';
-    doc.setFillColor(230, 245, 230);
-    doc.rect(pageWidth / 2 - 18, yPos - 3, 36, 8, 'F');
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(0, 100, 0);
-    doc.text(confirmLabel, pageWidth / 2, yPos + 1, { align: 'center' });
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Section', 'Details']],
+    body: termsRows,
+    theme: 'grid',
+    margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+    styles: {
+      font: FONT_BODY,
+      fontSize: 7.5,
+      cellPadding: 2.6,
+      lineColor: BORDER_GRAY,
+      lineWidth: 0.2,
+      textColor: TEXT_PRIMARY,
+      overflow: 'linebreak',
+      valign: 'top',
+    },
+    headStyles: {
+      fillColor: SOFT_GRAY,
+      textColor: TEXT_PRIMARY,
+      font: FONT_HEADING,
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      0: { cellWidth: 34, fontStyle: 'bold' },
+      1: { cellWidth: contentWidth - 34 },
+    },
+    didParseCell: data => {
+      if (data.section === 'body' && data.column.index === 0) {
+        data.cell.styles.fillColor = BRAND_SOFT;
+        data.cell.styles.font = FONT_HEADING;
+        data.cell.styles.textColor = TEXT_SUBTLE;
+      }
+    },
+    didDrawPage: () => {
+      drawHeader();
+    },
+  });
 
-    yPos += 8;
-    
-    // Print confirmation letter content
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    doc.text(confirmLines, margin + 5, yPos);
-    yPos += confirmLines.length * 4 + 4;
-    
-    // Print acceptance text
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    doc.text(acceptLines, margin + 5, yPos);
-    yPos += acceptLines.length * 4 + 6;
-    
-    // Signature div ke liye space check karo
-    if (yPos + 35 > pageHeight - 15) {
-      console.log('Not enough space for signature div, adding new page');
-      doc.addPage();
-      yPos = margin;
-      addHeader();
-      yPos = 32;
-    }
-    
-    // ===== CENTERED SIGNATURE DIV =====
-    const signatureDivWidth = 140;
-    const signatureDivX = (pageWidth - signatureDivWidth) / 2;
-    const signatureDivY = yPos;
-    const signatureDivHeight = 35;
-    
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.5);
-    doc.rect(signatureDivX, signatureDivY, signatureDivWidth, signatureDivHeight, 'S');
-    
-    doc.setFillColor(250, 250, 250);
-    doc.rect(signatureDivX, signatureDivY, signatureDivWidth, signatureDivHeight, 'F');
-    
-    // Signature Line
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(80, 80, 80);
-    doc.text('Signature:', signatureDivX + 10, signatureDivY + 13);
-    
-    doc.setDrawColor(150, 150, 150);
-    doc.setLineWidth(0.3);
-    doc.line(signatureDivX + 35, signatureDivY + 13, signatureDivX + 100, signatureDivY + 13);
-    
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(4.5);
-    doc.setTextColor(150, 150, 150);
-    doc.text('(Sign here)', signatureDivX + 65, signatureDivY + 16, { align: 'center' });
-    
-    // Date Line
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(80, 80, 80);
-    doc.text('Date:', signatureDivX + 10, signatureDivY + 24);
-    
-    doc.setDrawColor(150, 150, 150);
-    doc.setLineWidth(0.3);
-    doc.line(signatureDivX + 35, signatureDivY + 24, signatureDivX + 100, signatureDivY + 24);
-    
-    const todayForSig = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+  yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 6;
+
+  yPos += 5;
+  ensureSpace(estimateTextHeight('On behalf of all at Homework UAE, thank you for your enquiry. We hope to serve you and look forward to hearing from you soon.', contentWidth, 8, 4) + 8);
+  doc.setFont(FONT_BODY, 'normal');
+  doc.setFontSize(8.2);
+  doc.setTextColor(...TEXT_MUTED);
+  const closingLines = doc.splitTextToSize('On behalf of all at Homework UAE, thank you for your enquiry. We hope to serve you and look forward to hearing from you soon.', contentWidth);
+  doc.text(closingLines, margin, yPos);
+  yPos += (closingLines.length * 4) + 4;
+
+  doc.setFont(FONT_BODY, 'italic');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...TEXT_SUBTLE);
+  doc.text('Yours sincerely,', margin, yPos);
+  yPos += 4.5;
+  doc.setFont(FONT_HEADING, 'bold');
+  doc.setFontSize(8.8);
+  doc.setTextColor(...TEXT_PRIMARY);
+  doc.text((quotation.createdBy || 'Sales Executive').toUpperCase(), margin, yPos);
+
+  // Optional acceptance/bank page
+  if ((quotation.confirmationLetter && quotation.confirmationLetter.trim()) || quotation.bankDetails) {
+    doc.addPage();
+    drawHeader();
+    yPos = pageTopContentY;
+
+    drawSectionBar('CONFIRMATION LETTER / ACCEPTANCE FORM');
+
+    const acceptanceText = quotation.confirmationLetter?.trim() ||
+      `I/We accept the terms & conditions of your above quotation with Quotation No: ${quotation.quoteNumber} dated on ${formatDate(quotation.date)} and request you to commence packing on _______________.`;
+
+    const insuranceSectionTitle = quotation.insuranceSectionTitle?.trim() || 'Insurance (please tick one)';
+    const insuranceAcceptedText = quotation.insuranceAcceptedText?.trim() || '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.';
+    const insuranceDeclinedText = quotation.insuranceDeclinedText?.trim() || '[ ] No, I do not need insurance.';
+    const insuranceTextFieldLabel = quotation.insuranceTextFieldLabel?.trim() || 'Insurance Value / Notes:';
+
+    autoTable(doc, {
+      startY: yPos,
+      body: [[acceptanceText]],
+      theme: 'grid',
+      margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+      styles: {
+        font: FONT_BODY,
+        fontSize: 7.6,
+        cellPadding: 2.6,
+        lineColor: BORDER_GRAY,
+        lineWidth: 0.2,
+        textColor: TEXT_PRIMARY,
+        overflow: 'linebreak',
+        valign: 'top',
+      },
+      columnStyles: {
+        0: { cellWidth: contentWidth },
+      },
+      didDrawPage: () => {
+        drawHeader();
+      },
     });
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(4.5);
-    doc.setTextColor(180, 180, 180);
-    doc.text(todayForSig, signatureDivX + 40, signatureDivY + 22);
-    
-    // Stamp box
-    doc.setDrawColor(200, 200, 200);
+
+    yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 4;
+
+    autoTable(doc, {
+      startY: yPos,
+      body: [
+        [insuranceSectionTitle],
+        [insuranceAcceptedText],
+        [insuranceDeclinedText],
+        [`${insuranceTextFieldLabel} _______________________________________________`],
+      ],
+      theme: 'grid',
+      margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+      styles: {
+        font: FONT_BODY,
+        fontSize: 7.5,
+        cellPadding: 2.4,
+        lineColor: BORDER_GRAY,
+        lineWidth: 0.2,
+        textColor: TEXT_PRIMARY,
+      },
+      columnStyles: {
+        0: { cellWidth: contentWidth },
+      },
+      didParseCell: data => {
+        if (data.section === 'body' && data.row.index === 0) {
+          data.cell.styles.fillColor = SOFT_GRAY;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: () => {
+        drawHeader();
+      },
+    });
+
+    yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 8;
+
+    const signBoxWidth = (contentWidth - 28) / 2;
+    const signBoxHeight = 36;
+    if (ensureSpace(signBoxHeight + 12)) {
+      drawSectionBar('SIGNATURES');
+    }
+
+    doc.setDrawColor(...BORDER_GRAY);
     doc.setLineWidth(0.2);
-    doc.rect(signatureDivX + 110, signatureDivY + 7, 18, 18, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(4.5);
-    doc.setTextColor(150, 150, 150);
-    doc.text('STAMP', signatureDivX + 119, signatureDivY + 15, { align: 'center' });
-    
-    yPos += signatureDivHeight + 5;
-    
-    console.log('Confirmation letter added successfully at yPos:', yPos);
-  }
-  
-  // ==================== BANK DETAILS SECTION ====================
-  if (quotation.bankDetails) {
-    // Calculate space needed for bank details
-    const bankDetailsHeight = 8 + (5 * 4) + 3; // header + 5 lines + margin
-    
-    if (yPos + bankDetailsHeight > pageHeight - 15) {
-      doc.addPage();
-      yPos = margin;
-      addHeader();
-      yPos = 32;
-    }
-    
-    const bankLabel = 'BANK ACCOUNT DETAILS (AED)';
-    doc.setFillColor(235, 245, 250);
-    doc.rect(pageWidth / 2 - 22, yPos - 3, 44, 8, 'F');
+    doc.rect(margin + 14, yPos, signBoxWidth, signBoxHeight, 'S');
+    doc.rect(margin + 14 + signBoxWidth + 28, yPos, signBoxWidth, signBoxHeight, 'S');
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.text(bankLabel, pageWidth / 2, yPos + 1, { align: 'center' });
-
-    yPos += 8;
-    
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(0, 0, 0);
-    
-    const bankDetails = [
-      ['Account Name:', quotation.bankDetails.accountName || 'HOMEWORK CLEANING SERVICES LLC'],
-      ['Account Number:', quotation.bankDetails.accountNumber || '1234567890123'],
-      ['Bank Name:', quotation.bankDetails.bankName || 'Emirates NBD'],
-      ['SWIFT Code:', quotation.bankDetails.swiftCode || 'EBILAEAD'],
-      ['IBAN Number:', quotation.bankDetails.iban || 'AE180260001234567890123']
-    ];
-    
-    let bankY = yPos;
-    const leftColX = margin + 8;
-    const rightColX = margin + 45;
-    
-    bankDetails.forEach(([label, value]) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(80, 80, 80);
-      doc.text(label, leftColX, bankY);
-      
+    doc.setFontSize(8.1);
+    doc.setTextColor(...TEXT_SUBTLE);
+    const leftBoxX = margin + 14;
+    const rightBoxX = margin + 14 + signBoxWidth + 28;
+
+    doc.text('Customer Signature', leftBoxX + 2, yPos + signBoxHeight - 10);
+    doc.line(leftBoxX + 36, yPos + signBoxHeight - 10.5, leftBoxX + signBoxWidth - 3, yPos + signBoxHeight - 10.5);
+    doc.text('Date:', leftBoxX + 2, yPos + signBoxHeight - 4);
+    doc.line(leftBoxX + 18, yPos + signBoxHeight - 4.5, leftBoxX + signBoxWidth - 3, yPos + signBoxHeight - 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.text('For Homework UAE (Authorized Signatory)', rightBoxX + 2, yPos + 5);
+
+    if (quotation.companySealImage?.trim()) {
+      try {
+        const imageFormat = getImageFormat(quotation.companySealImage);
+        doc.addImage(
+          quotation.companySealImage,
+          imageFormat,
+          rightBoxX + 4,
+          yPos + 8,
+          signBoxWidth - 8,
+          signBoxHeight - 16,
+        );
+      } catch {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...TEXT_SUBTLE);
+        doc.text('Company Seal/Signature', rightBoxX + 2, yPos + signBoxHeight - 4);
+      }
+    } else {
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.text(value, rightColX, bankY);
-      
-      bankY += 4;
-    });
-    
-    yPos = bankY + 3;
+      doc.setFontSize(7.5);
+      doc.setTextColor(...TEXT_SUBTLE);
+      doc.text('Company Seal/Signature', rightBoxX + 2, yPos + signBoxHeight - 4);
+    }
+
+    yPos += signBoxHeight + 8;
+
+    if (quotation.bankDetails) {
+      drawSectionBar(`Homework UAE Bank Details (${currencyCode})`);
+      autoTable(doc, {
+        startY: yPos,
+        body: [
+          ['ACCOUNT NAME', quotation.bankDetails.accountName || 'HOMEWORK CLEANING SERVICES LLC'],
+          ['ACCOUNT NO', quotation.bankDetails.accountNumber || ''],
+          ['BANK NAME', quotation.bankDetails.bankName || ''],
+          ['SWIFT CODE', quotation.bankDetails.swiftCode || ''],
+          ['IBAN NO', quotation.bankDetails.iban || ''],
+        ],
+        theme: 'grid',
+        margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin + 4, right: margin + 4 },
+        styles: {
+          font: FONT_BODY,
+          fontSize: 7.7,
+          cellPadding: 2.5,
+          lineColor: BORDER_GRAY,
+          lineWidth: 0.2,
+          textColor: TEXT_PRIMARY,
+        },
+        columnStyles: {
+          0: { cellWidth: 56, fontStyle: 'bold' },
+          1: { cellWidth: contentWidth - 64 },
+        },
+        didDrawPage: () => {
+          drawHeader();
+        },
+      });
+    }
   }
-  
-  // ==================== MINIMAL FOOTER ====================
+
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    
-    const footerY = pageHeight - 6;
-    
-    doc.setFillColor(255, 105, 180);
-    doc.rect(margin, footerY - 3, (pageWidth - (2 * margin)) / 2, 0.2, 'F');
-    doc.setFillColor(70, 130, 180);
-    doc.rect(margin + ((pageWidth - (2 * margin)) / 2), footerY - 3, (pageWidth - (2 * margin)) / 2, 0.2, 'F');
-    
-    doc.setFontSize(4.5);
-    doc.setTextColor(100, 100, 100);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('HW', margin, footerY);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(120, 120, 120);
-    doc.text(`${i}/${totalPages} | ${quotation.quoteNumber}`, pageWidth - margin, footerY, { align: 'right' });
+    drawFooter(i, totalPages);
   }
-  
+
   const fileName = `Quotation_${quotation.quoteNumber.replace('#', '')}_${(quotation.client || 'Client').replace(/\s+/g, '_')}.pdf`;
   const pdfBlob = doc.output('blob');
   const blobUrl = URL.createObjectURL(pdfBlob);
-  
+
   return { pdf: doc, fileName, blobUrl };
 };
 

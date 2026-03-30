@@ -63,6 +63,11 @@ const DEFAULT_BANK_DETAILS = {
   iban: ''
 }
 
+const DEFAULT_INSURANCE_SECTION_TITLE = 'Insurance (please tick one)'
+const DEFAULT_INSURANCE_ACCEPTED_TEXT = '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.'
+const DEFAULT_INSURANCE_DECLINED_TEXT = '[ ] No, I do not need insurance.'
+const DEFAULT_INSURANCE_TEXT_FIELD_LABEL = 'Insurance Value / Notes:'
+
 export default function QuotationBuilder({ initialData, onSave, onCancel }: Props) {
   // 👇 NEW STATES FOR EDIT MODE
   const [isEditing, setIsEditing] = useState(false);
@@ -101,6 +106,11 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       createdByName: '', // Store employee name for Firebase
       createdByPhone: '',
       confirmationLetter: saved.confirmationLetter ?? '',
+      insuranceSectionTitle: saved.insuranceSectionTitle ?? DEFAULT_INSURANCE_SECTION_TITLE,
+      insuranceAcceptedText: saved.insuranceAcceptedText ?? DEFAULT_INSURANCE_ACCEPTED_TEXT,
+      insuranceDeclinedText: saved.insuranceDeclinedText ?? DEFAULT_INSURANCE_DECLINED_TEXT,
+      insuranceTextFieldLabel: saved.insuranceTextFieldLabel ?? DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
+      companySealImage: saved.companySealImage ?? '',
       bankDetails: {
         ...DEFAULT_BANK_DETAILS,
         ...(saved.bankDetails ?? {})
@@ -177,6 +187,11 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         createdByName: createdByName, // Store name for display
         createdByPhone: createdByPhone,
         confirmationLetter: initialData.confirmationLetter || '',
+        insuranceSectionTitle: initialData.insuranceSectionTitle || DEFAULT_INSURANCE_SECTION_TITLE,
+        insuranceAcceptedText: initialData.insuranceAcceptedText || DEFAULT_INSURANCE_ACCEPTED_TEXT,
+        insuranceDeclinedText: initialData.insuranceDeclinedText || DEFAULT_INSURANCE_DECLINED_TEXT,
+        insuranceTextFieldLabel: initialData.insuranceTextFieldLabel || DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
+        companySealImage: initialData.companySealImage || '',
         bankDetails: {
           ...DEFAULT_BANK_DETAILS,
           ...(initialData.bankDetails || {})
@@ -221,6 +236,11 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           notes: quotationDefaults.notes ?? prev.notes,
           terms: quotationDefaults.terms ?? prev.terms,
           confirmationLetter: quotationDefaults.confirmationLetter ?? prev.confirmationLetter,
+          insuranceSectionTitle: quotationDefaults.insuranceSectionTitle ?? prev.insuranceSectionTitle,
+          insuranceAcceptedText: quotationDefaults.insuranceAcceptedText ?? prev.insuranceAcceptedText,
+          insuranceDeclinedText: quotationDefaults.insuranceDeclinedText ?? prev.insuranceDeclinedText,
+          insuranceTextFieldLabel: quotationDefaults.insuranceTextFieldLabel ?? prev.insuranceTextFieldLabel,
+          companySealImage: quotationDefaults.companySealImage ?? prev.companySealImage,
           bankDetails: {
             ...DEFAULT_BANK_DETAILS,
             ...bankDetailsFromSettings
@@ -482,6 +502,11 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         createdById: quotationData.createdBy || '', // Save employee ID for future edits
         createdByPhone: quotationData.createdByPhone || '',
         confirmationLetter: quotationData.confirmationLetter || '',
+        insuranceSectionTitle: quotationData.insuranceSectionTitle || DEFAULT_INSURANCE_SECTION_TITLE,
+        insuranceAcceptedText: quotationData.insuranceAcceptedText || DEFAULT_INSURANCE_ACCEPTED_TEXT,
+        insuranceDeclinedText: quotationData.insuranceDeclinedText || DEFAULT_INSURANCE_DECLINED_TEXT,
+        insuranceTextFieldLabel: quotationData.insuranceTextFieldLabel || DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
+        companySealImage: quotationData.companySealImage || '',
         bankDetails: {
           ...DEFAULT_BANK_DETAILS,
           ...(quotationData.bankDetails || {})
@@ -543,6 +568,11 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           notes: quotationData.notes ?? '',
           terms: quotationData.terms ?? '',
           confirmationLetter: quotationData.confirmationLetter ?? '',
+          insuranceSectionTitle: quotationData.insuranceSectionTitle ?? DEFAULT_INSURANCE_SECTION_TITLE,
+          insuranceAcceptedText: quotationData.insuranceAcceptedText ?? DEFAULT_INSURANCE_ACCEPTED_TEXT,
+          insuranceDeclinedText: quotationData.insuranceDeclinedText ?? DEFAULT_INSURANCE_DECLINED_TEXT,
+          insuranceTextFieldLabel: quotationData.insuranceTextFieldLabel ?? DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
+          companySealImage: quotationData.companySealImage ?? '',
           bankDetails: quotationData.bankDetails ?? {}
         }))
       } catch {}
@@ -714,6 +744,17 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         [field]: value
       }
     })
+  }
+
+  const handleCompanySealUpload = (file: File | null) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : ''
+      if (!result) return
+      setFormData({ ...formData, companySealImage: result })
+    }
+    reader.readAsDataURL(file)
   }
 
   // Handle employee selection - store both ID and NAME
@@ -1203,6 +1244,75 @@ I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning 
             <p className="text-[10px] text-gray-400">
               Client confirmation message (optional) - This will appear in the PDF after terms & conditions
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance Section Title</label>
+              <input
+                type="text"
+                value={formData.insuranceSectionTitle || ''}
+                onChange={(e) => setFormData({ ...formData, insuranceSectionTitle: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black"
+                placeholder="Insurance (please tick one)"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance Yes Text</label>
+              <textarea
+                rows={3}
+                value={formData.insuranceAcceptedText || ''}
+                onChange={(e) => setFormData({ ...formData, insuranceAcceptedText: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance No Text</label>
+              <textarea
+                rows={3}
+                value={formData.insuranceDeclinedText || ''}
+                onChange={(e) => setFormData({ ...formData, insuranceDeclinedText: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
+              />
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance Text Field Label</label>
+              <input
+                type="text"
+                value={formData.insuranceTextFieldLabel || ''}
+                onChange={(e) => setFormData({ ...formData, insuranceTextFieldLabel: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black"
+                placeholder="Insurance Value / Notes:"
+              />
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Company Seal / Signature Image</label>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => handleCompanySealUpload(e.target.files?.[0] || null)}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black"
+              />
+              {formData.companySealImage && (
+                <div className="border border-gray-200 rounded p-3 bg-gray-50">
+                  <img src={formData.companySealImage} alt="Company seal preview" className="h-16 object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, companySealImage: '' })}
+                    className="mt-2 text-[10px] text-red-600 hover:text-red-700"
+                  >
+                    Remove image
+                  </button>
+                </div>
+              )}
+              <p className="text-[10px] text-gray-400">
+                Loaded from Settings by default. This will print in the company authorization box.
+              </p>
+            </div>
           </div>
         </div>
 

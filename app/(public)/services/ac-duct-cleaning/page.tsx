@@ -135,6 +135,12 @@ export default function ACDuctCleaning() {
     'Mirdif',
   ]
 
+  const heroSectionImage = 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80'
+  const detailsSectionImage = 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773'
+  const beforeAfterSectionImage = 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-28%20at%2000.31.31.jpeg?alt=media&token=66edf9da-16d4-4381-9c06-1dab9ac2fe79'
+  const whyChooseSectionImage = 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773'
+  const expertsSectionImage = 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773'
+
   const googleBusinessIcon = (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
       <path fill="#EA4335" d="M12 11V8h10a10 10 0 0 1 .2 2c0 6-4 10-10.2 10A10 10 0 1 1 12 2c2.7 0 5 .9 6.8 2.5l-2.8 2.8A5.9 5.9 0 0 0 12 5a6 6 0 0 0 0 12c3 0 5-1.7 5.6-4H12Z" />
@@ -163,7 +169,7 @@ export default function ACDuctCleaning() {
         <section className="relative isolate flex min-h-[78vh] items-center overflow-hidden bg-[#08172b] text-white md:min-h-[85vh]">
           <div className="absolute inset-0 z-0">
             <Image
-              src="https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773"
+              src={heroSectionImage}
               alt="AC duct cleaning background"
               fill
               className="object-cover opacity-30 shadow-2xl transition-opacity duration-700"
@@ -271,7 +277,7 @@ export default function ACDuctCleaning() {
               <div className="relative overflow-hidden rounded-3xl border-4 border-white shadow-2xl md:[clip-path:polygon(14%_0,100%_0,86%_100%,0_100%)]">
                 <div className="relative aspect-4/3">
                   <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773"
+                    src={detailsSectionImage}
                     alt="Inside of cleaned AC duct"
                     fill
                     className="object-cover"
@@ -330,7 +336,7 @@ export default function ACDuctCleaning() {
               <article className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-primary/35 hover:bg-white/8 sm:rounded-[3rem]">
                 <div className="relative aspect-video bg-slate-950/40">
                   <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-28%20at%2000.31.31.jpeg?alt=media&token=66edf9da-16d4-4381-9c06-1dab9ac2fe79"
+                    src={beforeAfterSectionImage}
                     alt="AC duct cleaning results"
                     fill
                     className="object-contain p-2 transition-transform duration-700 group-hover:scale-105 sm:p-4"
@@ -405,7 +411,7 @@ export default function ACDuctCleaning() {
               <div className="relative overflow-hidden rounded-3xl border-2 border-white/20 shadow-2xl md:[clip-path:polygon(18%_0,100%_0,82%_100%,0_100%)]">
                 <div className="relative aspect-4/3">
                   <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773"
+                    src={whyChooseSectionImage}
                     alt="Professional AC duct interior cleaning"
                     fill
                     className="object-cover"
@@ -556,7 +562,7 @@ export default function ACDuctCleaning() {
               <div className="relative lg:w-1/2">
                 <div className="relative aspect-square overflow-hidden rounded-3xl border border-blue-100 shadow-2xl sm:rounded-[4rem]">
                   <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/WhatsApp%20Image%202026-03-27%20at%2023.28.14.jpeg?alt=media&token=f472eafa-4a11-4031-9ea0-d824fabaf773"
+                    src={expertsSectionImage}
                     alt="AC duct technicians"
                     fill
                     className="object-cover"
