@@ -109,17 +109,17 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
       {/* Main Navbar - Premium Glass */}
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="container mx-auto flex h-18 items-center justify-between px-4 sm:px-6">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4 sm:px-6">
           <a href="/" className="flex items-center">
-            <div className="h-24 w-24">
+            <div className="h-14 w-14">
               <Image
                 src="/logo.jpeg"
                 alt="Logo"
-                width={96}
-                height={96}
+                width={56}
+                height={56}
                 priority
-                sizes="96px"
-                className="w-full h-full object-contain rounded-2xl"
+                sizes="56px"
+                className="h-full w-full rounded-xl object-contain"
               />
             </div>
           </a>
@@ -284,13 +284,51 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
                   <details className="rounded-xl border border-slate-100 bg-slate-50/70">
                     <summary className="cursor-pointer list-none px-3 py-2.5 font-semibold text-slate-800">Services</summary>
-                    <div className="grid gap-1 px-2 pb-2 text-[13px] font-medium">
-                      <a href="/services" className="rounded-lg px-2 py-2 hover:bg-white">All Services</a>
-                      <a href="/services/residential-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Regular Residential</a>
-                      <a href="/services/office-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Regular Office</a>
-                      <a href="/services/kitchen-deep-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Kitchen Deep Cleaning</a>
-                      <a href="/services/ac-duct-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">AC Duct Cleaning</a>
-                      <a href="/services/villa-deep-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Villa Deep Cleaning</a>
+                    <div className="grid gap-2 px-2 pb-2 text-[13px] font-medium">
+                      <a href="/services" className="rounded-lg bg-white px-2 py-2 font-semibold hover:bg-white">All Services</a>
+
+                      <details className="rounded-lg border border-slate-200 bg-white">
+                        <summary className="cursor-pointer list-none px-2 py-2 text-xs font-bold uppercase tracking-wider text-slate-700">Normal Cleaning</summary>
+                        <div className="grid gap-1 px-2 pb-2">
+                          <a href="/services/residential-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Regular Residential</a>
+                          <a href="/services/office-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Regular Office</a>
+                          <a href="/services/window-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Window Cleaning</a>
+                          <a href="/services/balcony-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Balcony Cleaning</a>
+                          <a href="/services/sofa-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Sofa Cleaning</a>
+                          <a href="/services/carpets-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Carpets Cleaning</a>
+                          <a href="/services/mattress-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Mattress Cleaning</a>
+                        </div>
+                      </details>
+
+                      <details className="rounded-lg border border-slate-200 bg-white">
+                        <summary className="cursor-pointer list-none px-2 py-2 text-xs font-bold uppercase tracking-wider text-slate-700">Deep Cleaning</summary>
+                        <div className="grid gap-1 px-2 pb-2">
+                          <a href="/services/grout-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Grout Deep Clean</a>
+                          <a href="/services/garage-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Garage Deep Clean</a>
+                          <a href="/services/kitchen-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Kitchen Deep Clean</a>
+                          <a href="/services/post-construction-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Post Construction</a>
+                          <a href="/services/office-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Office Deep Clean</a>
+                          <a href="/services/apartment-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Apartment Deep</a>
+                          <a href="/services/move-in-out-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Move In/Out</a>
+                          <a href="/services/villa-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Villa Deep Clean</a>
+                          <a href="/services/floor-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Floor Deep Clean</a>
+                        </div>
+                      </details>
+
+                      <details className="rounded-lg border border-slate-200 bg-white">
+                        <summary className="cursor-pointer list-none px-2 py-2 text-xs font-bold uppercase tracking-wider text-slate-700">Technical Cleaning</summary>
+                        <div className="grid gap-1 px-2 pb-2">
+                          <a href="/services/ac-duct-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">AC Duct Cleaning</a>
+                          <a href="/services/ac-coil-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">AC Coil Cleaning</a>
+                          <a href="/services/kitchen-hood-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Kitchen Hood Clean</a>
+                          <a href="/services/grease-trap-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Grease Trap Clean</a>
+                          <a href="/services/restaurant-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Restaurant Clean</a>
+                          <a href="/services/water-tank-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Water Tank Clean</a>
+                          <a href="/services/swimming-pool-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Swimming Pool</a>
+                          <a href="/services/gym-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Gym Deep Clean</a>
+                          <a href="/services/facade-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Facade Cleaning</a>
+                        </div>
+                      </details>
                     </div>
                   </details>
 
