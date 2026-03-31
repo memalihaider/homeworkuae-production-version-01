@@ -7,7 +7,7 @@ import {
   Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, 
   Wind, Grid3X3, Warehouse, CookingPot, HardHat, Building, Truck, Brush,
   Fan, Pipette, Utensils, Waves, Dumbbell, PanelTop, ThermometerSnowflake,
-  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, X
+  Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, X, Menu
 } from 'lucide-react'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -109,7 +109,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
       {/* Main Navbar - Premium Glass */}
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-2xl border-b border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="container mx-auto flex h-18 items-center justify-between px-6">
+        <div className="container mx-auto flex h-18 items-center justify-between px-4 sm:px-6">
           <a href="/" className="flex items-center">
             <div className="h-24 w-24">
               <Image
@@ -264,10 +264,57 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <a 
               href={cms.navbar.ctaLink} 
-              className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-7 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] tracking-wide"
+              className="hidden sm:inline-flex h-10 items-center justify-center rounded-full bg-primary px-7 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] tracking-wide"
             >
               {cms.navbar.ctaText}
             </a>
+
+            <details className="relative lg:hidden">
+              <summary
+                className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                aria-label="Open navigation menu"
+              >
+                <Menu className="h-5 w-5" />
+              </summary>
+
+              <div className="absolute right-0 mt-3 w-[min(92vw,22rem)] max-h-[80vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+                <div className="space-y-1 text-sm font-semibold text-slate-700">
+                  <a href="/" className="block rounded-xl px-3 py-2.5 hover:bg-slate-50">Home</a>
+                  <a href="/about" className="block rounded-xl px-3 py-2.5 hover:bg-slate-50">About</a>
+
+                  <details className="rounded-xl border border-slate-100 bg-slate-50/70">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 font-semibold text-slate-800">Services</summary>
+                    <div className="grid gap-1 px-2 pb-2 text-[13px] font-medium">
+                      <a href="/services" className="rounded-lg px-2 py-2 hover:bg-white">All Services</a>
+                      <a href="/services/residential-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Regular Residential</a>
+                      <a href="/services/office-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Regular Office</a>
+                      <a href="/services/kitchen-deep-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Kitchen Deep Cleaning</a>
+                      <a href="/services/ac-duct-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">AC Duct Cleaning</a>
+                      <a href="/services/villa-deep-cleaning" className="rounded-lg px-2 py-2 hover:bg-white">Villa Deep Cleaning</a>
+                    </div>
+                  </details>
+
+                  <details className="rounded-xl border border-slate-100 bg-slate-50/70">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 font-semibold text-slate-800">More</summary>
+                    <div className="grid gap-1 px-2 pb-2 text-[13px] font-medium">
+                      <a href="/testimonials" className="rounded-lg px-2 py-2 hover:bg-white">Testimonials</a>
+                      <a href="/faqs" className="rounded-lg px-2 py-2 hover:bg-white">FAQs</a>
+                      <a href="/privacy-policy" className="rounded-lg px-2 py-2 hover:bg-white">Privacy Policy</a>
+                      <a href="/blog" className="rounded-lg px-2 py-2 hover:bg-white">Blog</a>
+                    </div>
+                  </details>
+
+                  <a href="/contact" className="block rounded-xl px-3 py-2.5 hover:bg-slate-50">Contact</a>
+                </div>
+
+                <a
+                  href={cms.navbar.ctaLink}
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-xs font-black uppercase tracking-widest text-white"
+                >
+                  {cms.navbar.ctaText}
+                </a>
+              </div>
+            </details>
           </div>
         </div>
       </header>

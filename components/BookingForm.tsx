@@ -29,6 +29,12 @@ interface BookingFormProps {
   preselectedServiceName?: string
 }
 
+const CONTACT = {
+  phone: '+971507177059',
+  email: 'services@homeworkuae.com',
+  whatsapp: '+971 50 717 7059',
+}
+
 export default function BookingForm({ preselectedServiceName }: BookingFormProps) {
   const router = useRouter()
   const services = useMemo<FirebaseService[]>(() => (
@@ -187,23 +193,34 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="p-10 md:p-16 bg-white rounded-[3.5rem] border border-slate-100 shadow-3xl relative overflow-hidden"
+      className="relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-6 shadow-3xl sm:rounded-[2.5rem] sm:p-8 md:p-12 xl:rounded-[3.5rem] xl:p-14"
     >
-        <div className="absolute top-0 right-0 p-8">
-          <div className="h-20 w-20 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center animate-pulse">
+        <div className="absolute right-0 top-0 p-4 sm:p-6 md:p-8">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-100 bg-slate-50 animate-pulse sm:h-16 sm:w-16 md:h-20 md:w-20">
              <Send className="h-8 w-8 text-primary/20" />
           </div>
         </div>
 
         <div className="max-w-2xl relative z-10">
           <span className="text-sm font-black text-primary uppercase tracking-[0.4em] mb-4 block underline decoration-primary/20 underline-offset-8">Book Now</span>
-          <h3 className="text-4xl md:text-5xl font-black text-slate-900 mb-10 tracking-tighter uppercase whitespace-pre-line">
+          <h3 className="mb-8 whitespace-pre-line text-3xl font-black uppercase tracking-tighter text-slate-900 sm:text-4xl md:mb-10 md:text-5xl">
             BOOK YOUR{"\n"}
             <span className="text-primary italic lowercase">cleaning service</span>
           </h3>
+
+          <noscript>
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+              JavaScript is disabled. Use quick contact options:
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <a href={`tel:${CONTACT.phone}`} className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-wider text-white">Call</a>
+                <a href={`mailto:${CONTACT.email}`} className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-wider text-white">Email</a>
+                <a href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, '')}`} className="inline-flex items-center justify-center rounded-xl bg-[#25D366] px-4 py-2 text-xs font-black uppercase tracking-wider text-white">WhatsApp</a>
+              </div>
+            </div>
+          </noscript>
           
-          <form onSubmit={handleSubmit} className="space-y-10">
-            <div className="grid md:grid-cols-2 gap-10">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 md:space-y-10">
+            <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-10">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name *</label>
                 <input 
@@ -213,7 +230,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
                   onChange={handleInputChange}
                   placeholder="Your Name"
                   required
-                  className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all font-bold text-slate-900 shadow-inner"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 sm:rounded-3xl sm:px-6 sm:py-5 md:px-8"
                 />
               </div>
               <div className="space-y-3">
@@ -225,12 +242,12 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
                   onChange={handleInputChange}
                   placeholder="email@example.com"
                   required
-                  className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all font-bold text-slate-900 shadow-inner"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 sm:rounded-3xl sm:px-6 sm:py-5 md:px-8"
                 />
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-10">
+            <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-10">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number *</label>
                 <input 
@@ -240,7 +257,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
                   onChange={handleInputChange}
                   placeholder="+971 5X XXX XXXX"
                   required
-                  className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all font-bold text-slate-900 shadow-inner"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 sm:rounded-3xl sm:px-6 sm:py-5 md:px-8"
                 />
               </div>
               <div className="space-y-3 relative group">
@@ -250,7 +267,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
                   value={formData.service}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all font-black text-slate-900 appearance-none shadow-inner cursor-pointer"
+                  className="w-full cursor-pointer appearance-none rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 font-black text-slate-900 shadow-inner transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 sm:rounded-3xl sm:px-6 sm:py-5 md:px-8"
                 >
                   <option value="">Select a Service</option>
                   {Object.entries(groupServicesByCategory()).map(([category, categoryServices]) => (
@@ -263,7 +280,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
                     </optgroup>
                   ))}
                 </select>
-                <ArrowRight className="absolute right-6 bottom-6 h-5 w-5 rotate-90 text-primary pointer-events-none" />
+                <ArrowRight className="pointer-events-none absolute bottom-5 right-5 h-5 w-5 rotate-90 text-primary sm:bottom-6 sm:right-6" />
               </div>
             </div>
 
@@ -275,7 +292,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
                 onChange={handleInputChange}
                 rows={5}
                 placeholder="Tell us about the space, size, and any special requirements..."
-                className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-4xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all font-bold text-slate-900 resize-none shadow-inner"
+                className="w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-5 py-5 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/5 sm:rounded-4xl sm:px-6 sm:py-6 md:px-8"
               ></textarea>
             </div>
 
@@ -283,7 +300,7 @@ export default function BookingForm({ preselectedServiceName }: BookingFormProps
               type="submit"
               disabled={isSubmitting}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-slate-900 text-white rounded-4xl py-6 font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-primary transition-all flex items-center justify-center gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-2xl transition-all hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-4xl sm:py-5 sm:text-xs sm:tracking-[0.2em] md:py-6"
             >
               {isSubmitting ? (
                 <>
