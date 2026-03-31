@@ -28,6 +28,11 @@ interface BaseQuotation {
   validUntil: string;
 }
 
+interface FirestoreTimestampLike {
+  toDate?: () => Date;
+  seconds?: number;
+}
+
 // For QuotationBuilder and local state
 export interface LocalQuotation extends BaseQuotation {
   services: Array<Record<string, unknown>>;
@@ -44,6 +49,23 @@ export interface LocalQuotation extends BaseQuotation {
   amount?: number;
   version?: number;
   lastModified?: string;
+  clientId?: string;
+  dueDate?: string;
+  paymentMethods?: string[];
+  createdBy?: string;
+  createdById?: string;
+  createdByPhone?: string;
+  confirmationLetter?: string;
+  companySealImage?: string;
+  bankDetails?: {
+    accountName?: string;
+    accountNumber?: string;
+    bankName?: string;
+    swiftCode?: string;
+    iban?: string;
+  };
+  createdAt?: string | Date | FirestoreTimestampLike;
+  updatedAt?: string | Date | FirestoreTimestampLike;
 }
 
 export default function QuotationsPage() {
@@ -64,30 +86,32 @@ export default function QuotationsPage() {
   const handleEdit = (quotation: Partial<LocalQuotation> & { id?: string | number }) => {
     // Convert any quotation format to LocalQuotation
     const editedQuotation: LocalQuotation = {
+      ...(quotation as LocalQuotation),
       id: quotation.id?.toString() || '',
       quoteNumber: quotation.quoteNumber || `QUOTE-${Date.now()}`,
       client: quotation.client || 'No Client',
-      company: quotation.company || 'No Company',
+      company: quotation.company || '',
       email: quotation.email || '',
       phone: quotation.phone || '',
-      total: quotation.total || quotation.amount || 0,
+      total: quotation.total ?? quotation.amount ?? 0,
       currency: quotation.currency || 'AED',
       status: quotation.status || 'Draft',
       date: quotation.date || new Date().toISOString().split('T')[0],
       validUntil: quotation.validUntil || '',
+      dueDate: (quotation as LocalQuotation).dueDate || quotation.validUntil || '',
       services: quotation.services || [],
       products: quotation.products || [],
-      notes: quotation.notes || '',
-      terms: quotation.terms || '',
-      subtotal: quotation.subtotal || quotation.total || 0,
-      taxAmount: quotation.taxAmount || 0,
-      taxRate: quotation.taxRate || 0,
-      discountAmount: quotation.discountAmount || 0,
-      discount: quotation.discount || 0,
+      notes: quotation.notes ?? '',
+      terms: quotation.terms ?? '',
+      subtotal: quotation.subtotal ?? quotation.total ?? 0,
+      taxAmount: quotation.taxAmount ?? 0,
+      taxRate: quotation.taxRate ?? 0,
+      discountAmount: quotation.discountAmount ?? 0,
+      discount: quotation.discount ?? 0,
       discountType: quotation.discountType || 'percentage',
       location: quotation.location || '',
-      amount: quotation.amount || quotation.total || 0,
-      version: quotation.version || 1,
+      amount: quotation.amount ?? quotation.total ?? 0,
+      version: quotation.version ?? 1,
       lastModified: quotation.lastModified || new Date().toISOString()
     }
     setEditingQuotation(editedQuotation)

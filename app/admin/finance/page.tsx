@@ -129,10 +129,6 @@ const DEFAULT_BANK_DETAILS = {
 
 const DEFAULT_DOC_SETTINGS = {
   confirmationLetter: '',
-  insuranceSectionTitle: 'Insurance (please tick one)',
-  insuranceAcceptedText: '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.',
-  insuranceDeclinedText: '[ ] No, I do not need insurance.',
-  insuranceTextFieldLabel: 'Insurance Value / Notes:',
   companySealImage: '',
   bankDetails: DEFAULT_BANK_DETAILS
 }
@@ -304,10 +300,6 @@ export default function UnifiedFinancePage() {
 
         setInvoiceDocSettings({
           confirmationLetter: quotationDefaults.confirmationLetter || '',
-          insuranceSectionTitle: quotationDefaults.insuranceSectionTitle || DEFAULT_DOC_SETTINGS.insuranceSectionTitle,
-          insuranceAcceptedText: quotationDefaults.insuranceAcceptedText || DEFAULT_DOC_SETTINGS.insuranceAcceptedText,
-          insuranceDeclinedText: quotationDefaults.insuranceDeclinedText || DEFAULT_DOC_SETTINGS.insuranceDeclinedText,
-          insuranceTextFieldLabel: quotationDefaults.insuranceTextFieldLabel || DEFAULT_DOC_SETTINGS.insuranceTextFieldLabel,
           companySealImage: quotationDefaults.companySealImage || '',
           bankDetails: {
             ...DEFAULT_BANK_DETAILS,
@@ -476,11 +468,6 @@ export default function UnifiedFinancePage() {
       ? multilineToHtml(invoiceDocSettings.confirmationLetter.trim())
       : `I/We confirm Invoice No: <strong>${escapeHtml(invoice.invoiceNumber)}</strong> dated ${escapeHtml(formatDate(invoice.invoiceDate))} and agree to proceed as per the agreed terms.`
 
-    const insuranceSectionTitle = escapeHtml(invoiceDocSettings.insuranceSectionTitle || DEFAULT_DOC_SETTINGS.insuranceSectionTitle)
-    const insuranceAcceptedText = multilineToHtml(invoiceDocSettings.insuranceAcceptedText || DEFAULT_DOC_SETTINGS.insuranceAcceptedText)
-    const insuranceDeclinedText = multilineToHtml(invoiceDocSettings.insuranceDeclinedText || DEFAULT_DOC_SETTINGS.insuranceDeclinedText)
-    const insuranceTextFieldLabel = escapeHtml(invoiceDocSettings.insuranceTextFieldLabel || DEFAULT_DOC_SETTINGS.insuranceTextFieldLabel)
-
     const bankDetails = invoiceDocSettings.bankDetails || DEFAULT_BANK_DETAILS
     const hasBankDetails = Boolean(
       bankDetails.accountName?.trim() ||
@@ -520,9 +507,6 @@ export default function UnifiedFinancePage() {
             .total-row { margin-top: 10px; padding-top: 8px; border-top: 1px solid #d1d5db; font-weight: 700; font-size: 15px; color: #111827; }
             .section-title { margin: 0 0 10px; background: #f3f4f6; border: 1px solid #e5e7eb; text-align: center; padding: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
             .confirm-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 13px; line-height: 1.55; }
-            .insurance-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-            .insurance-table td { border: 1px solid #d1d5db; padding: 10px; font-size: 13px; vertical-align: top; }
-            .insurance-table tr:first-child td { background: #f3f4f6; font-weight: 700; }
             .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin: 18px 0 22px; }
             .sign-box { border: 1px solid #d1d5db; min-height: 140px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; }
             .sign-label { font-size: 12px; color: #4b5563; }
@@ -592,13 +576,6 @@ export default function UnifiedFinancePage() {
 
           <p class="section-title">Confirmation Letter / Acceptance Form</p>
           <div class="confirm-box">${confirmationText}</div>
-
-          <table class="insurance-table">
-            <tr><td>${insuranceSectionTitle}</td></tr>
-            <tr><td>${insuranceAcceptedText}</td></tr>
-            <tr><td>${insuranceDeclinedText}</td></tr>
-            <tr><td>${insuranceTextFieldLabel} _______________________________________________</td></tr>
-          </table>
 
           <div class="signatures">
             <div class="sign-box">

@@ -415,21 +415,8 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   const liabilityText = termsText ||
     'In the event of damage, Homework UAE will carry out a reasonable repair (not replacement) for the damaged goods and the cost of which will be limited to market value of similar items in the local market.';
 
-  const quoteExclusions = [
-    'Disconnection & reconnection of electrical or electronic equipment.',
-    'Custom-made furniture and specialty fixtures.',
-    'De-arrangement of internal mechanical/electrical installations unless pre-approved.',
-  ];
-
-  const nextSteps = [
-    'Allow us to follow up with you to discuss our proposal further.',
-    'If accepted, please complete and return the acceptance form by email.',
-  ];
-
   const termsRows: Array<[string, string]> = [
-    ['Liability', liabilityText],
-    ['Quote Exclusion', quoteExclusions.map(item => `- ${item}`).join('\n')],
-    ['Next Steps', nextSteps.map((step, idx) => `${idx + 1}. ${step}`).join('\n')],
+    ['Payment Terms', liabilityText],
   ];
 
   if (notesText) {
@@ -506,10 +493,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     const acceptanceText = quotation.confirmationLetter?.trim() ||
       `I/We accept the terms & conditions of your above quotation with Quotation No: ${quotation.quoteNumber} dated on ${formatDate(quotation.date)} and request you to commence packing on _______________.`;
 
-    const insuranceSectionTitle = quotation.insuranceSectionTitle?.trim() || 'Insurance (please tick one)';
-    const insuranceAcceptedText = quotation.insuranceAcceptedText?.trim() || '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.';
-    const insuranceDeclinedText = quotation.insuranceDeclinedText?.trim() || '[ ] No, I do not need insurance.';
-    const insuranceTextFieldLabel = quotation.insuranceTextFieldLabel?.trim() || 'Insurance Value / Notes:';
 
     autoTable(doc, {
       startY: yPos,
@@ -535,38 +518,6 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     });
 
     yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 4;
-
-    autoTable(doc, {
-      startY: yPos,
-      body: [
-        [insuranceSectionTitle],
-        [insuranceAcceptedText],
-        [insuranceDeclinedText],
-        [`${insuranceTextFieldLabel} _______________________________________________`],
-      ],
-      theme: 'grid',
-      margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
-      styles: {
-        font: FONT_BODY,
-        fontSize: 7.5,
-        cellPadding: 2.4,
-        lineColor: BORDER_GRAY,
-        lineWidth: 0.2,
-        textColor: TEXT_PRIMARY,
-      },
-      columnStyles: {
-        0: { cellWidth: contentWidth },
-      },
-      didParseCell: data => {
-        if (data.section === 'body' && data.row.index === 0) {
-          data.cell.styles.fillColor = SOFT_GRAY;
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
-      didDrawPage: () => {
-        drawHeader();
-      },
-    });
 
     yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 8;
 

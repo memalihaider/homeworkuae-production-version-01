@@ -40,6 +40,7 @@ interface Job {
   status: 'Pending' | 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled' | 'Expired'
   priority: 'Low' | 'Medium' | 'High' | 'Critical'
   scheduledDate: string | null
+  scheduledEndDate?: string | null
   scheduledTime?: string
   endTime?: string
   location: string
@@ -175,6 +176,7 @@ interface NewJobForm {
   clientId: string | null
   priority: 'Low' | 'Medium' | 'High' | 'Critical'
   scheduledDate: string
+  scheduledEndDate: string
   scheduledTime: string
   endTime: string
   location: string
@@ -250,6 +252,7 @@ export default function JobsPage() {
     clientId: null,
     priority: 'Medium',
     scheduledDate: '',
+    scheduledEndDate: '',
     scheduledTime: '',
     endTime: '',
     location: '',
@@ -300,6 +303,7 @@ export default function JobsPage() {
             status: data.status || 'Pending',
             priority: data.priority || 'Medium',
             scheduledDate: data.scheduledDate || null,
+            scheduledEndDate: data.scheduledEndDate || data.scheduledDate || null,
             scheduledTime: normalizeTime24(data.scheduledTime) || '',
             endTime: normalizeTime24(data.endTime) || '',
             location: data.location || '',
@@ -543,6 +547,7 @@ export default function JobsPage() {
           clientId: jobData.clientId || null,
           priority: jobData.priority || 'Medium',
           scheduledDate: jobData.scheduledDate || '',
+          scheduledEndDate: jobData.scheduledEndDate || jobData.scheduledDate || '',
           scheduledTime: normalizeTime24(jobData.scheduledTime) || '',
           endTime: normalizeTime24(jobData.endTime) || '',
           location: jobData.location || '',
@@ -671,6 +676,18 @@ export default function JobsPage() {
     return 'sunday'
   }
 
+  const isDateInRange = (target: string, start?: string | null, end?: string | null) => {
+    if (!target || !start) return false
+    const targetDate = new Date(`${target}T00:00:00`)
+    const startDate = new Date(`${start}T00:00:00`)
+    const endDateValue = end || start
+    const endDate = new Date(`${endDateValue}T00:00:00`)
+
+    if ([targetDate, startDate, endDate].some((date) => Number.isNaN(date.getTime()))) return false
+
+    return targetDate >= startDate && targetDate <= endDate
+  }
+
   const schedulingInsights = useMemo(() => {
     if (!newJobForm.scheduledDate) {
       return {
@@ -704,7 +721,7 @@ export default function JobsPage() {
 
     const activeJobs = jobs.filter((job) => {
       if (editingJobId && job.id === editingJobId) return false
-      if (job.scheduledDate !== newJobForm.scheduledDate) return false
+      if (!newJobForm.scheduledDate || !isDateInRange(newJobForm.scheduledDate, job.scheduledDate, job.scheduledEndDate)) return false
       if (!job.scheduledTime || !job.endTime) return false
       return ['Pending', 'Scheduled', 'In Progress'].includes(job.status)
     })
@@ -817,7 +834,7 @@ export default function JobsPage() {
 
     const activeJobs = jobs.filter((job) => {
       if (editingJobId && job.id === editingJobId) return false
-      if (job.scheduledDate !== newJobForm.scheduledDate) return false
+      if (!newJobForm.scheduledDate || !isDateInRange(newJobForm.scheduledDate, job.scheduledDate, job.scheduledEndDate)) return false
       if (!job.scheduledTime || !job.endTime) return false
       return ['Pending', 'Scheduled', 'In Progress'].includes(job.status)
     })
@@ -1007,6 +1024,19 @@ export default function JobsPage() {
       return
     }
 
+    if (newJobForm.scheduledDate && newJobForm.scheduledEndDate) {
+      const startDate = new Date(`${newJobForm.scheduledDate}T00:00:00`)
+      const endDate = new Date(`${newJobForm.scheduledEndDate}T00:00:00`)
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        alert('Please enter valid start and end dates.')
+        return
+      }
+      if (endDate < startDate) {
+        alert('End date must be the same as or after the start date.')
+        return
+      }
+    }
+
     if (newJobForm.scheduledDate && (newJobForm.scheduledTime || newJobForm.endTime)) {
       if (!schedulingInsights.isValidTimeRange) {
         alert('End time must be greater than start time.')
@@ -1059,6 +1089,7 @@ export default function JobsPage() {
         clientId: newJobForm.clientId || '',
         priority: newJobForm.priority,
         scheduledDate: newJobForm.scheduledDate || null,
+        scheduledEndDate: newJobForm.scheduledEndDate || newJobForm.scheduledDate || null,
         scheduledTime: normalizeTime24(newJobForm.scheduledTime),
         endTime: normalizeTime24(newJobForm.endTime),
         location: newJobForm.location,
@@ -1243,6 +1274,25 @@ export default function JobsPage() {
     return ''
   }
 
+  const getJobDateRange = (job: Job) => {
+    if (job.scheduledDate) {
+      return {
+        start: job.scheduledDate,
+        end: job.scheduledEndDate || job.scheduledDate
+      }
+    }
+
+    if (job.createdAt) {
+      const parsed = new Date(job.createdAt)
+      if (!Number.isNaN(parsed.getTime())) {
+        const createdKey = getLocalDateKey(parsed)
+        return { start: createdKey, end: createdKey }
+      }
+    }
+
+    return { start: '', end: '' }
+  }
+
   const filteredJobs = useMemo(() => {
     const now = new Date()
     const todayKey = getLocalDateKey(now)
@@ -1269,18 +1319,18 @@ export default function JobsPage() {
       const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter
       const matchesCreator = creatorFilter === 'all' || job.jobCreatedBy === creatorFilter
 
-      const jobDateKey = getJobDateKey(job)
+      const { start: jobStartDate, end: jobEndDate } = getJobDateRange(job)
       const matchesDate =
         dateFilter === 'all'
           ? true
           : dateFilter === 'today'
-            ? jobDateKey === todayKey
+            ? isDateInRange(todayKey, jobStartDate, jobEndDate)
             : dateFilter === 'yesterday'
-              ? jobDateKey === yesterdayKey
+              ? isDateInRange(yesterdayKey, jobStartDate, jobEndDate)
               : dateFilter === 'nextDay'
-                ? jobDateKey === nextDayKey
+                ? isDateInRange(nextDayKey, jobStartDate, jobEndDate)
               : customDateFilter
-                ? jobDateKey === customDateFilter
+                ? isDateInRange(customDateFilter, jobStartDate, jobEndDate)
                 : true
 
       let matchesTime = true
@@ -1317,6 +1367,7 @@ export default function JobsPage() {
       'Priority': job.priority,
       'Risk Level': job.riskLevel,
       'Scheduled Date': job.scheduledDate || '',
+      'Scheduled End Date': job.scheduledEndDate || job.scheduledDate || '',
       'Scheduled Time': job.scheduledTime || '',
       'End Time': job.endTime || '',
       'Location': job.location,
@@ -1413,6 +1464,7 @@ export default function JobsPage() {
       clientId: null,
       priority: 'Medium',
       scheduledDate: '',
+      scheduledEndDate: '',
       scheduledTime: '',
       endTime: '',
       location: '',
@@ -1964,7 +2016,13 @@ export default function JobsPage() {
                     <div className="flex items-center gap-4 text-sm text-gray-600 mt-3">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 shrink-0" />
-                        <span>{job.scheduledDate ? new Date(job.scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : 'Not scheduled'}</span>
+                        <span>
+                          {job.scheduledDate
+                            ? `${new Date(job.scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}${job.scheduledEndDate && job.scheduledEndDate !== job.scheduledDate
+                              ? ` - ${new Date(job.scheduledEndDate + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}`
+                              : ''}`
+                            : 'Not scheduled'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 shrink-0" />
@@ -2545,13 +2603,25 @@ export default function JobsPage() {
                 </h3>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Scheduled Date</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Start Date</label>
                   <input
                     type="date"
                     value={newJobForm.scheduledDate}
                     onChange={(e) => setNewJobForm({...newJobForm, scheduledDate: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">End Date</label>
+                  <input
+                    type="date"
+                    min={newJobForm.scheduledDate || undefined}
+                    value={newJobForm.scheduledEndDate}
+                    onChange={(e) => setNewJobForm({...newJobForm, scheduledEndDate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty for single-day jobs.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

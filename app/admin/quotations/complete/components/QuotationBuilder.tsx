@@ -63,10 +63,6 @@ const DEFAULT_BANK_DETAILS = {
   iban: ''
 }
 
-const DEFAULT_INSURANCE_SECTION_TITLE = 'Insurance (please tick one)'
-const DEFAULT_INSURANCE_ACCEPTED_TEXT = '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.'
-const DEFAULT_INSURANCE_DECLINED_TEXT = '[ ] No, I do not need insurance.'
-const DEFAULT_INSURANCE_TEXT_FIELD_LABEL = 'Insurance Value / Notes:'
 
 export default function QuotationBuilder({ initialData, onSave, onCancel }: Props) {
   // 👇 NEW STATES FOR EDIT MODE
@@ -106,10 +102,6 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       createdByName: '', // Store employee name for Firebase
       createdByPhone: '',
       confirmationLetter: saved.confirmationLetter ?? '',
-      insuranceSectionTitle: saved.insuranceSectionTitle ?? DEFAULT_INSURANCE_SECTION_TITLE,
-      insuranceAcceptedText: saved.insuranceAcceptedText ?? DEFAULT_INSURANCE_ACCEPTED_TEXT,
-      insuranceDeclinedText: saved.insuranceDeclinedText ?? DEFAULT_INSURANCE_DECLINED_TEXT,
-      insuranceTextFieldLabel: saved.insuranceTextFieldLabel ?? DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
       companySealImage: saved.companySealImage ?? '',
       bankDetails: {
         ...DEFAULT_BANK_DETAILS,
@@ -138,71 +130,89 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
   // 👇 NEW EFFECT - Handle initialData for editing
   useEffect(() => {
     if (initialData && initialData.id) {
-      setIsEditing(true);
-      setQuotationId(initialData.id);
-      
-      // Find the employee name if createdBy is ID
-      let createdByName = initialData.createdBy || '';
-      let createdById = '';
-      let createdByPhone = initialData.createdByPhone || '';
-      
-      if (initialData.createdById) {
-        createdById = initialData.createdById;
-        const employeeById = employees.find(e => e.id === initialData.createdById);
+      setIsEditing(true)
+      setQuotationId(initialData.id)
+
+      setFormData((prev: any) => ({
+        ...prev,
+        quoteNumber: initialData.quoteNumber || prev.quoteNumber,
+        clientId: initialData.clientId || prev.clientId || '',
+        client: initialData.client || prev.client || '',
+        company: initialData.company || prev.company || '',
+        email: initialData.email || prev.email || '',
+        phone: initialData.phone || prev.phone || '',
+        location: initialData.location || prev.location || '',
+        date: initialData.date || prev.date || new Date().toISOString().split('T')[0],
+        validUntil: initialData.validUntil || prev.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        dueDate: initialData.dueDate || prev.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        currency: initialData.currency || prev.currency || 'AED',
+        taxRate: typeof initialData.taxRate === 'number' ? initialData.taxRate : prev.taxRate,
+        discount: typeof initialData.discount === 'number' ? initialData.discount : prev.discount,
+        discountType: initialData.discountType || prev.discountType || 'percentage',
+        template: initialData.template || prev.template || 'professional',
+        status: initialData.status || prev.status || 'Draft',
+        services: initialData.services || prev.services || [],
+        products: initialData.products || prev.products || [],
+        notes: initialData.notes ?? prev.notes ?? '',
+        terms: initialData.terms ?? prev.terms ?? '',
+        createdBy: initialData.createdById || prev.createdBy || '',
+        createdByName: initialData.createdBy || prev.createdByName || '',
+        createdByPhone: initialData.createdByPhone || prev.createdByPhone || '',
+        confirmationLetter: initialData.confirmationLetter ?? prev.confirmationLetter ?? '',
+        companySealImage: initialData.companySealImage ?? prev.companySealImage ?? '',
+        bankDetails: {
+          ...DEFAULT_BANK_DETAILS,
+          ...(prev.bankDetails || {}),
+          ...(initialData.bankDetails || {})
+        },
+        paymentMethods: initialData.paymentMethods || prev.paymentMethods || ['bank-transfer']
+      }))
+    } else {
+      setIsEditing(false)
+      setQuotationId(null)
+    }
+  }, [initialData])
+
+  useEffect(() => {
+    if (!initialData?.id || employees.length === 0) {
+      return
+    }
+
+    setFormData((prev: any) => {
+      if (prev.createdBy && prev.createdByName) {
+        return prev
+      }
+
+      let createdByName = initialData.createdBy || prev.createdByName || ''
+      let createdById = initialData.createdById || prev.createdBy || ''
+      let createdByPhone = initialData.createdByPhone || prev.createdByPhone || ''
+
+      if (createdById) {
+        const employeeById = employees.find(e => e.id === createdById)
         if (employeeById) {
-          createdByName = employeeById.name || createdByName;
-          createdByPhone = employeeById.phone || createdByPhone;
+          createdByName = employeeById.name || createdByName
+          createdByPhone = employeeById.phone || createdByPhone
         }
-      } else {
-        // Try to find employee by name
-        const employee = employees.find(e => e.name === initialData.createdBy);
-        if (employee) {
-          createdById = employee.id;
-          createdByPhone = employee.phone || createdByPhone;
+      } else if (createdByName) {
+        const employeeByName = employees.find(e => e.name === createdByName)
+        if (employeeByName) {
+          createdById = employeeByName.id
+          createdByPhone = employeeByName.phone || createdByPhone
         }
       }
 
-      setFormData({
-        quoteNumber: initialData.quoteNumber || formData.quoteNumber,
-        clientId: initialData.clientId || '',
-        client: initialData.client || '',
-        company: initialData.company || '',
-        email: initialData.email || '',
-        phone: initialData.phone || '',
-        location: initialData.location || '',
-        date: initialData.date || new Date().toISOString().split('T')[0],
-        validUntil: initialData.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        dueDate: initialData.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        currency: initialData.currency || 'AED',
-        taxRate: initialData.taxRate || 5,
-        discount: initialData.discount || 0,
-        discountType: initialData.discountType || 'percentage',
-        template: initialData.template || 'professional',
-        status: initialData.status || 'Draft',
-        services: initialData.services || [],
-        products: initialData.products || [],
-        notes: initialData.notes || '',
-        terms: initialData.terms || '',
-        createdBy: createdById, // Store ID for dropdown
-        createdByName: createdByName, // Store name for display
-        createdByPhone: createdByPhone,
-        confirmationLetter: initialData.confirmationLetter || '',
-        insuranceSectionTitle: initialData.insuranceSectionTitle || DEFAULT_INSURANCE_SECTION_TITLE,
-        insuranceAcceptedText: initialData.insuranceAcceptedText || DEFAULT_INSURANCE_ACCEPTED_TEXT,
-        insuranceDeclinedText: initialData.insuranceDeclinedText || DEFAULT_INSURANCE_DECLINED_TEXT,
-        insuranceTextFieldLabel: initialData.insuranceTextFieldLabel || DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
-        companySealImage: initialData.companySealImage || '',
-        bankDetails: {
-          ...DEFAULT_BANK_DETAILS,
-          ...(initialData.bankDetails || {})
-        },
-        paymentMethods: initialData.paymentMethods || ['bank-transfer']
-      });
-    } else {
-      setIsEditing(false);
-      setQuotationId(null);
-    }
-  }, [initialData, employees]);
+      if (!createdById && !createdByName && !createdByPhone) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        createdBy: createdById || prev.createdBy,
+        createdByName: createdByName || prev.createdByName,
+        createdByPhone: createdByPhone || prev.createdByPhone
+      }
+    })
+  }, [initialData, employees])
 
   // Fetch real data from Firebase
   useEffect(() => {
@@ -236,10 +246,6 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           notes: quotationDefaults.notes ?? prev.notes,
           terms: quotationDefaults.terms ?? prev.terms,
           confirmationLetter: quotationDefaults.confirmationLetter ?? prev.confirmationLetter,
-          insuranceSectionTitle: quotationDefaults.insuranceSectionTitle ?? prev.insuranceSectionTitle,
-          insuranceAcceptedText: quotationDefaults.insuranceAcceptedText ?? prev.insuranceAcceptedText,
-          insuranceDeclinedText: quotationDefaults.insuranceDeclinedText ?? prev.insuranceDeclinedText,
-          insuranceTextFieldLabel: quotationDefaults.insuranceTextFieldLabel ?? prev.insuranceTextFieldLabel,
           companySealImage: quotationDefaults.companySealImage ?? prev.companySealImage,
           bankDetails: {
             ...DEFAULT_BANK_DETAILS,
@@ -502,10 +508,6 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         createdById: quotationData.createdBy || '', // Save employee ID for future edits
         createdByPhone: quotationData.createdByPhone || '',
         confirmationLetter: quotationData.confirmationLetter || '',
-        insuranceSectionTitle: quotationData.insuranceSectionTitle || DEFAULT_INSURANCE_SECTION_TITLE,
-        insuranceAcceptedText: quotationData.insuranceAcceptedText || DEFAULT_INSURANCE_ACCEPTED_TEXT,
-        insuranceDeclinedText: quotationData.insuranceDeclinedText || DEFAULT_INSURANCE_DECLINED_TEXT,
-        insuranceTextFieldLabel: quotationData.insuranceTextFieldLabel || DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
         companySealImage: quotationData.companySealImage || '',
         bankDetails: {
           ...DEFAULT_BANK_DETAILS,
@@ -568,10 +570,6 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           notes: quotationData.notes ?? '',
           terms: quotationData.terms ?? '',
           confirmationLetter: quotationData.confirmationLetter ?? '',
-          insuranceSectionTitle: quotationData.insuranceSectionTitle ?? DEFAULT_INSURANCE_SECTION_TITLE,
-          insuranceAcceptedText: quotationData.insuranceAcceptedText ?? DEFAULT_INSURANCE_ACCEPTED_TEXT,
-          insuranceDeclinedText: quotationData.insuranceDeclinedText ?? DEFAULT_INSURANCE_DECLINED_TEXT,
-          insuranceTextFieldLabel: quotationData.insuranceTextFieldLabel ?? DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
           companySealImage: quotationData.companySealImage ?? '',
           bankDetails: quotationData.bankDetails ?? {}
         }))
@@ -1247,48 +1245,6 @@ I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning 
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance Section Title</label>
-              <input
-                type="text"
-                value={formData.insuranceSectionTitle || ''}
-                onChange={(e) => setFormData({ ...formData, insuranceSectionTitle: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black"
-                placeholder="Insurance (please tick one)"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance Yes Text</label>
-              <textarea
-                rows={3}
-                value={formData.insuranceAcceptedText || ''}
-                onChange={(e) => setFormData({ ...formData, insuranceAcceptedText: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance No Text</label>
-              <textarea
-                rows={3}
-                value={formData.insuranceDeclinedText || ''}
-                onChange={(e) => setFormData({ ...formData, insuranceDeclinedText: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
-              />
-            </div>
-
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Insurance Text Field Label</label>
-              <input
-                type="text"
-                value={formData.insuranceTextFieldLabel || ''}
-                onChange={(e) => setFormData({ ...formData, insuranceTextFieldLabel: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black"
-                placeholder="Insurance Value / Notes:"
-              />
-            </div>
-
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Company Seal / Signature Image</label>
               <input

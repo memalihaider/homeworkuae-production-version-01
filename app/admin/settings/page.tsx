@@ -30,10 +30,6 @@ const DEFAULT_QUOTATION_BANK_DETAILS = {
   iban: ''
 }
 
-const DEFAULT_INSURANCE_SECTION_TITLE = 'Insurance (please tick one)'
-const DEFAULT_INSURANCE_ACCEPTED_TEXT = '[ ] Yes, I am taking all-risk insurance based on the terms and conditions of your policy.'
-const DEFAULT_INSURANCE_DECLINED_TEXT = '[ ] No, I do not need insurance.'
-const DEFAULT_INSURANCE_TEXT_FIELD_LABEL = 'Insurance Value / Notes:'
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState('profile')
@@ -87,10 +83,6 @@ export default function Settings() {
     notes: '',
     terms: '',
     confirmationLetter: '',
-    insuranceSectionTitle: DEFAULT_INSURANCE_SECTION_TITLE,
-    insuranceAcceptedText: DEFAULT_INSURANCE_ACCEPTED_TEXT,
-    insuranceDeclinedText: DEFAULT_INSURANCE_DECLINED_TEXT,
-    insuranceTextFieldLabel: DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
     companySealImage: '',
     bankDetails: DEFAULT_QUOTATION_BANK_DETAILS
   })
@@ -166,10 +158,6 @@ export default function Settings() {
               notes: data.quotationDefaults.notes || '',
               terms: data.quotationDefaults.terms || '',
               confirmationLetter: data.quotationDefaults.confirmationLetter || '',
-              insuranceSectionTitle: data.quotationDefaults.insuranceSectionTitle || DEFAULT_INSURANCE_SECTION_TITLE,
-              insuranceAcceptedText: data.quotationDefaults.insuranceAcceptedText || DEFAULT_INSURANCE_ACCEPTED_TEXT,
-              insuranceDeclinedText: data.quotationDefaults.insuranceDeclinedText || DEFAULT_INSURANCE_DECLINED_TEXT,
-              insuranceTextFieldLabel: data.quotationDefaults.insuranceTextFieldLabel || DEFAULT_INSURANCE_TEXT_FIELD_LABEL,
               companySealImage: data.quotationDefaults.companySealImage || '',
               bankDetails: {
                 ...DEFAULT_QUOTATION_BANK_DETAILS,
@@ -277,10 +265,6 @@ export default function Settings() {
       | 'notes'
       | 'terms'
       | 'confirmationLetter'
-      | 'insuranceSectionTitle'
-      | 'insuranceAcceptedText'
-      | 'insuranceDeclinedText'
-      | 'insuranceTextFieldLabel'
       | 'companySealImage',
     value: string
   ) => {
@@ -624,50 +608,6 @@ export default function Settings() {
                     onChange={(e) => handleQuotationDefaultsChange('confirmationLetter', e.target.value)}
                     className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
                     placeholder="Optional confirmation text shown in PDF after terms & conditions"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="block text-sm font-medium">Insurance Section Title</label>
-                  <input
-                    type="text"
-                    value={quotationDefaults.insuranceSectionTitle}
-                    onChange={(e) => handleQuotationDefaultsChange('insuranceSectionTitle', e.target.value)}
-                    className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    placeholder="Insurance (please tick one)"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium">Insurance Yes Text</label>
-                  <textarea
-                    rows={3}
-                    value={quotationDefaults.insuranceAcceptedText}
-                    onChange={(e) => handleQuotationDefaultsChange('insuranceAcceptedText', e.target.value)}
-                    className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                    placeholder="[ ] Yes, ..."
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium">Insurance No Text</label>
-                  <textarea
-                    rows={3}
-                    value={quotationDefaults.insuranceDeclinedText}
-                    onChange={(e) => handleQuotationDefaultsChange('insuranceDeclinedText', e.target.value)}
-                    className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                    placeholder="[ ] No, ..."
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="block text-sm font-medium">Insurance Text Field Label</label>
-                  <input
-                    type="text"
-                    value={quotationDefaults.insuranceTextFieldLabel}
-                    onChange={(e) => handleQuotationDefaultsChange('insuranceTextFieldLabel', e.target.value)}
-                    className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    placeholder="Insurance Value / Notes:"
                   />
                 </div>
 

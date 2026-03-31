@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   Search, Eye, Edit, Trash2,
   CheckCircle, Clock, XCircle, AlertCircle, RefreshCw, FileDown, Wifi
 } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, getDoc, deleteDoc, doc, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, getDocs, getDoc, deleteDoc, doc, query, where, orderBy, onSnapshot, updateDoc, deleteField } from 'firebase/firestore'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
 
 interface FirestoreTimestampLike {
@@ -20,6 +20,13 @@ interface QuotationDocPayload {
   createdById?: string
   [key: string]: unknown
 }
+
+const LEGACY_INSURANCE_FIELDS = [
+  'insuranceSectionTitle',
+  'insuranceAcceptedText',
+  'insuranceDeclinedText',
+  'insuranceTextFieldLabel',
+] as const
 
 const getErrorCode = (error: unknown): string | undefined => {
   if (typeof error === 'object' && error !== null && 'code' in error) {
@@ -112,6 +119,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const insuranceCleanupAttempted = useRef(false)
 
   const resolveCreatorPhone = useCallback(async (quotation: FirebaseQuotation): Promise<string> => {
     if (quotation.createdByPhone) {
@@ -163,6 +171,43 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
     }) as FirebaseQuotation[]
   }
 
+  const cleanupLegacyInsuranceFields = useCallback(async (snapshot: { docs: Array<{ id: string; data: () => QuotationDocPayload }> }) => {
+    if (insuranceCleanupAttempted.current) {
+      return
+    }
+
+    const updates = snapshot.docs
+      .map((docSnapshot) => {
+        const data = docSnapshot.data()
+        const fieldsToDelete = LEGACY_INSURANCE_FIELDS.filter((field) => field in data)
+
+        if (fieldsToDelete.length === 0) {
+          return null
+        }
+
+        const updatePayload = fieldsToDelete.reduce((payload, field) => {
+          payload[field] = deleteField()
+          return payload
+        }, {} as Record<string, unknown>)
+
+        return updateDoc(doc(db, 'quotations', docSnapshot.id), updatePayload)
+      })
+      .filter(Boolean) as Promise<void>[]
+
+    if (updates.length === 0) {
+      insuranceCleanupAttempted.current = true
+      return
+    }
+
+    const results = await Promise.allSettled(updates)
+    const failures = results.filter((result) => result.status === 'rejected')
+    if (failures.length > 0) {
+      console.warn('Some legacy insurance fields could not be removed from quotations.')
+    }
+
+    insuranceCleanupAttempted.current = true
+  }, [])
+
   // Fetch real quotations from Firebase
   const fetchQuotations = useCallback(async (isManual = false) => {
     if (!auth.currentUser) {
@@ -183,6 +228,8 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
 
       const q = query(collection(db, 'quotations'), orderBy('createdAt', 'desc'))
       const snapshot = await getDocs(q)
+
+      void cleanupLegacyInsuranceFields(snapshot)
 
       const quotationsData = normalizeQuotations(snapshot)
       setQuotations(quotationsData)
@@ -227,6 +274,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
         quotationsQuery,
         (snapshot) => {
           const quotationsData = normalizeQuotations(snapshot)
+          void cleanupLegacyInsuranceFields(snapshot)
           setQuotations(quotationsData)
           setLoading(false)
           setRefreshing(false)
