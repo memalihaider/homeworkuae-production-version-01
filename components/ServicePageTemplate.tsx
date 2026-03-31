@@ -55,6 +55,7 @@ export type ServicePageContent = {
   qualityDescription?: string
   qualityCardText?: string
   beforeAfterImage?: string
+  beforeAfterVideo?: string
 }
 
 export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
@@ -137,6 +138,90 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Fabric Type Assessment', 'Targeted Spot Pre-Treatment', 'High-Power Vacuum Extraction', 'Hot Steam Deep Sanitization', 'Stubborn Stain Removal', 'Premium Fabric Protection Coating'],
     ctaTitle: "Restore Your Sofa's Freshness",
     ctaSubtitle: 'Contact us today for professional sofa deep cleaning services.',
+  },
+  'curtain-cleaning': {
+    name: 'Curtain Cleaning',
+    badge: 'Normal Cleaning Services',
+    heroTitleLine1: 'PROFESSIONAL CURTAIN',
+    heroTitleLine2: 'CLEANING IN DUBAI',
+    heroSubtitle: "Dust, odors, and allergens get trapped deep in curtain fabric across Dubai homes and offices. Homework UAE provides professional curtain cleaning with fabric-safe methods, steam treatment, and careful handling for every curtain type.",
+    heroImage: 'https://i.pinimg.com/1200x/e5/35/7f/e5357fa0f0b9dc59d3b1804f2ae87f0b.jpg',
+    sectionImage: 'https://i.pinimg.com/1200x/e5/35/7f/e5357fa0f0b9dc59d3b1804f2ae87f0b.jpg',
+    specialistLabel: 'Curtain Cleaning Specialists',
+    aboutHeading1: 'Fresh, Hygienic',
+    aboutHeading2: 'Curtain Care',
+    description:
+      'Our curtain cleaning service removes built-up dust, stains, and odors from sheer, blackout, and decorative curtains. We assess fabric type first, apply safe cleaning treatment, and restore your curtains without damaging texture or color. Ideal for apartments, villas, offices, and commercial spaces in Dubai.',
+    features: [
+      'On-Site Curtain Steam Cleaning',
+      'Sheer and Blackout Curtain Cleaning',
+      'Dust, Allergen and Odor Removal',
+      'Targeted Stain Treatment',
+      'Fabric-Safe Drying Process',
+      'Curtain Rehanging Support',
+    ],
+    offerCards: [
+      { title: 'Fabric Inspection and Pre-Treatment' },
+      { title: 'Deep Steam Curtain Cleaning' },
+      { title: 'Allergen and Dust Extraction' },
+      { title: 'Stain and Odor Neutralization' },
+    ],
+    processSteps: [
+      {
+        title: 'Fabric Check',
+        detail: 'We inspect curtain type, color stability, and stain level before selecting the safest cleaning method.',
+      },
+      {
+        title: 'Deep Cleaning',
+        detail: 'Our team performs steam or low-moisture treatment to remove embedded dust, allergens, and odors.',
+      },
+      {
+        title: 'Detail Finishing',
+        detail: 'We treat spot marks and finish edges and folds for a clean, even appearance across each panel.',
+      },
+      {
+        title: 'Final Quality Check',
+        detail: 'Every curtain is reviewed before handover to confirm freshness, hygiene, and visual quality.',
+      },
+    ],
+    qualityHeading: 'Visible Curtain Results',
+    qualityDescription:
+      'From dusty, dull curtains to fresh and bright fabric, our cleaning results are clearly visible. Homework UAE follows a detail-focused process that improves hygiene and helps extend curtain life.',
+    qualityCardText:
+      'Real curtain cleaning outcomes from Dubai projects with measurable improvement in freshness and appearance.',
+    beforeAfterImage: 'https://i.pinimg.com/736x/b6/5d/be/b65dbeb3a1d9c9ec38617dcd9f87aff5.jpg',
+    beforeAfterVideo: '',
+    whyChoosePoints: [
+      'Fabric-safe cleaning methods tailored to curtain material and condition.',
+      'Experienced technicians for residential and commercial curtain cleaning.',
+      'Effective removal of dust, allergens, odors, and visible stains.',
+      'Transparent pricing with reliable scheduling across Dubai.',
+      'Consistent quality checks before service completion.',
+    ],
+    faqs: [
+      {
+        q: 'What types of curtains do you clean?',
+        a: 'We clean most curtain types including sheer, blackout, linen-blend, and decorative curtains for homes and offices.',
+      },
+      {
+        q: 'Do you offer on-site curtain cleaning in Dubai?',
+        a: 'Yes. Homework UAE provides on-site curtain cleaning for convenience and faster turnaround.',
+      },
+      {
+        q: 'Can curtain cleaning help with allergies?',
+        a: 'Yes. Professional curtain cleaning removes dust and allergen build-up that can affect indoor air quality.',
+      },
+      {
+        q: 'How often should curtains be professionally cleaned?',
+        a: 'For most properties in Dubai, professional cleaning every 6 to 12 months is recommended depending on dust exposure and usage.',
+      },
+      {
+        q: 'Will curtain cleaning damage delicate fabric?',
+        a: 'No. We inspect the fabric first and use a safe cleaning method suited to each curtain type.',
+      },
+    ],
+    ctaTitle: 'Book Curtain Cleaning Today',
+    ctaSubtitle: 'Schedule professional curtain cleaning in Dubai with Homework UAE.',
   },
   'carpets-deep-cleaning': {
     name: 'Carpets Deep Cleaning',
@@ -634,6 +719,7 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
   const heroImage = content.heroImage || heroFallbackImage
   const detailsImage = content.sectionImage || sectionFallbackImage
   const beforeAfterImage = content.beforeAfterImage || beforeAfterFallbackImage
+  const beforeAfterVideo = content.beforeAfterVideo?.trim() || ''
   const serviceName = content.name || 'Professional Cleaning Service'
 
   const trustStatIcons = [Users, Star, UserCheck, MapPin]
@@ -969,12 +1055,23 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
           <div className="mx-auto max-w-6xl">
             <article className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-primary/35 hover:bg-white/8 sm:rounded-[3rem]">
               <div className="relative aspect-video bg-slate-950/40">
-                <SkeletonImg
-                  src={beforeAfterImage}
-                  alt={`${content.name} quality results`}
-                  imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  skeletonClassName="bg-slate-800"
-                />
+                {beforeAfterVideo ? (
+                  <video
+                    src={beforeAfterVideo}
+                    poster={beforeAfterImage || undefined}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <SkeletonImg
+                    src={beforeAfterImage}
+                    alt={`${content.name} quality results`}
+                    imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    skeletonClassName="bg-slate-800"
+                  />
+                )}
               </div>
               <div className="p-6 sm:p-8">
                 <p className="text-sm font-medium leading-relaxed text-slate-300">

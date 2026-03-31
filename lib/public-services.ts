@@ -12,6 +12,7 @@ export const PUBLIC_SERVICES: PublicServiceOption[] = [
   { id: 'window-cleaning', name: 'Window Cleaning', categoryName: 'Normal Cleaning', description: 'Streak-free exterior and interior window restoration.', price: 140 },
   { id: 'balcony-deep-cleaning', name: 'Balcony Cleaning', categoryName: 'Normal Cleaning', description: 'Removing dust and sand from outdoor areas.', price: 160 },
   { id: 'sofa-deep-cleaning', name: 'Sofa Cleaning', categoryName: 'Normal Cleaning', description: 'Professional upholstery sanitization.', price: 170 },
+  { id: 'curtain-cleaning', name: 'Curtain Cleaning', categoryName: 'Normal Cleaning', description: 'Fabric-safe steam curtain cleaning with dust and odor removal.', price: 175 },
   { id: 'carpets-deep-cleaning', name: 'Carpets Cleaning', categoryName: 'Normal Cleaning', description: 'Deep extraction cleaning for carpet fibers.', price: 190 },
   { id: 'mattress-deep-cleaning', name: 'Mattress Cleaning', categoryName: 'Normal Cleaning', description: 'Allergen and dust mite removal.', price: 150 },
 

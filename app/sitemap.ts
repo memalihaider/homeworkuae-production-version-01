@@ -14,6 +14,7 @@ const staticRoutes: { url: string; priority: number; changeFrequency: MetadataRo
   { url: "/services/office-cleaning",            priority: 0.85, changeFrequency: "monthly" },
   { url: "/services/post-construction-cleaning", priority: 0.85, changeFrequency: "monthly" },
   { url: "/services/sofa-deep-cleaning",         priority: 0.8,  changeFrequency: "monthly" },
+  { url: "/services/curtain-cleaning",           priority: 0.8,  changeFrequency: "monthly" },
   { url: "/services/carpets-deep-cleaning",      priority: 0.8,  changeFrequency: "monthly" },
   { url: "/services/window-cleaning",            priority: 0.8,  changeFrequency: "monthly" },
   { url: "/services/apartment-deep-cleaning",    priority: 0.8,  changeFrequency: "monthly" },

@@ -44,6 +44,7 @@ const DUMMY_SERVICE_CATEGORIES = [
       { name: "Window cleaning", slug: "window-cleaning", icon: Maximize, desc: "Streak-free exterior and interior window restoration." },
       { name: "Balcony Cleaning", slug: "balcony-deep-cleaning", icon: Sun, desc: "Removing dust and sand from your outdoor relaxation areas." },
       { name: "Sofa Cleaning", slug: "sofa-deep-cleaning", icon: Sofa, desc: "Professional fabric and leather upholstery sanitization." },
+      { name: "Curtain Cleaning", slug: "curtain-cleaning", icon: Layers, desc: "Fabric-safe steam cleaning for fresh, dust-free curtains." },
       { name: "Carpets Cleaning", slug: "carpets-deep-cleaning", icon: Layers, desc: "Deep extraction cleaning for all types of carpet fibers." },
       { name: "Mattress Cleaning", slug: "mattress-deep-cleaning", icon: Bed, desc: "Removing allergens and dust mites for a healthier sleep." }
     ]

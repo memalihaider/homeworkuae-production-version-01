@@ -25,6 +25,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     company: 'homeware',
     address: 'Office: 201, 2nd Floor, Al Saaha Offices - B, Downtown Dubai - UAE' // Default address
   }
+  const topBarEmail = 'sales1@homeworkuae.com'
   const isLoading = false
   const cms = defaultLayoutSettings
 
@@ -89,13 +90,13 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               <span className="tracking-wide">{profileData.phone}</span>
             </a>
             <a 
-              href={`mailto:${profileData.email}`} 
+              href={`mailto:${topBarEmail}`} 
               className="flex items-center gap-2 hover:text-white/90 transition-all group"
             >
               <div className="h-6 w-6 rounded-md bg-white/15 flex items-center justify-center group-hover:bg-white/25 transition-all">
                 <Mail className="h-3 w-3" />
               </div>
-              <span className="tracking-wide">{profileData.email}</span>
+              <span className="tracking-wide">{topBarEmail}</span>
             </a>
           </div>
           <div className="flex items-center gap-2.5">
@@ -147,6 +148,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                         { name: "Window cleaning", href: "/services/window-cleaning", icon: Maximize },
                         { name: "Balcony Cleaning", href: "/services/balcony-deep-cleaning", icon: Sun },
                         { name: "Sofa Cleaning", href: "/services/sofa-deep-cleaning", icon: Sofa },
+                        { name: "Curtain Cleaning", href: "/services/curtain-cleaning", icon: Layers },
                         { name: "Carpets Cleaning", href: "/services/carpets-deep-cleaning", icon: Layers },
                         { name: "Mattress Cleaning", href: "/services/mattress-deep-cleaning", icon: Bed }
                       ].map((item) => (
@@ -295,6 +297,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                           <a href="/services/window-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Window Cleaning</a>
                           <a href="/services/balcony-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Balcony Cleaning</a>
                           <a href="/services/sofa-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Sofa Cleaning</a>
+                          <a href="/services/curtain-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Curtain Cleaning</a>
                           <a href="/services/carpets-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Carpets Cleaning</a>
                           <a href="/services/mattress-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Mattress Cleaning</a>
                         </div>
