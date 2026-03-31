@@ -19,16 +19,17 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      console.log('Attempting login with:', { email, password: '***', portal: 'admin' });
-      const authResponse = await validateCredentials('admin', email, password);
+      console.log('Attempting login with:', { email: normalizedEmail, password: '***', portal: 'admin' });
+      const authResponse = await validateCredentials('admin', normalizedEmail, password);
       console.log('Auth response:', authResponse);
       
       if (authResponse.success && authResponse.session) {
         console.log('Login successful, storing session...');
         storeSession(authResponse.session);
-        router.push('/admin/dashboard');
+        router.push(authResponse.redirectTo || '/admin/dashboard');
       } else {
         console.log('Login failed:', authResponse.message);
         setError(authResponse.message || authResponse.error || 'Login failed');
@@ -36,9 +37,9 @@ export default function AdminLogin() {
     } catch (err) {
       console.error('Login error:', err);
       setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const fillDemoCredentials = () => {

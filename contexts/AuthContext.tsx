@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 interface User {
@@ -33,24 +33,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Get additional user data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        const userData = userDoc.data();
-        
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          name: userData?.name || firebaseUser.email?.split('@')[0] || '',
-          role: userData?.role || 'employee',
-          status: userData?.status || 'active'
-        });
-      } else {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (firebaseUser) => {
+        try {
+          if (firebaseUser) {
+            // Primary role source is users-role. Fallback to legacy users doc.
+            const userRoleDoc = await getDoc(doc(db, 'users-role', firebaseUser.uid));
+            const userRoleData = userRoleDoc.data();
+
+            let userData = userRoleData;
+            if (!userData) {
+              const legacyUserDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+              userData = legacyUserDoc.data();
+            }
+
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              name: userData?.name || firebaseUser.email?.split('@')[0] || '',
+              role: userData?.portal || userData?.role || 'employee',
+              status: userData?.status || 'active'
+            });
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Auth context initialization failed:', error);
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error('Auth state listener failed:', error);
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, []);

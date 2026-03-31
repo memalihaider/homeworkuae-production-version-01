@@ -243,16 +243,22 @@ export async function deleteUserRole(uid: string) {
 }
 
 export async function validateCredentials(portal: 'admin' | 'employee', email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase()
+
   try {
-    console.log(`🔐 Validating ${portal} credentials for:`, email);
+    console.log(`🔐 Validating ${portal} credentials for:`, normalizedEmail);
     
-    const userCredential = await signInWithEmailAndPassword(auth, email, password)
+    const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password)
     console.log('✅ Firebase Auth successful:', userCredential.user.uid);
     
     const userRole = await getUserRole(userCredential.user.uid)
     
     if (!userRole) {
       console.log('❌ User role not found in Firestore');
+      await signOut(auth).catch((cleanupError) => {
+        console.warn('Auth cleanup failed after missing role:', cleanupError)
+      })
+      clearSession()
       return { 
         success: false, 
         message: 'User role not found. Please contact administrator.',
@@ -269,6 +275,10 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
     // ✅ Check if portal matches
     if (userRole.portal !== portal) {
       console.log(`❌ Portal mismatch: expected ${portal}, got ${userRole.portal}`);
+      await signOut(auth).catch((cleanupError) => {
+        console.warn('Auth cleanup failed after portal mismatch:', cleanupError)
+      })
+      clearSession()
       return { 
         success: false, 
         message: portal === 'admin' 
@@ -293,7 +303,7 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
     }
     
     // Determine redirect path based on portal
-    const redirectTo = portal === 'admin' ? '/admin/dashboard' : '/employee/chat'
+    const redirectTo = portal === 'admin' ? '/admin/dashboard' : '/employee/dashboard'
     
     return { 
       success: true, 
@@ -309,6 +319,8 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
       message = 'User not found.'
     } else if (firebaseError.code === 'auth/wrong-password') {
       message = 'Incorrect password.'
+    } else if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/invalid-login-credentials') {
+      message = 'Invalid email or password.'
     } else if (firebaseError.code === 'auth/invalid-email') {
       message = 'Invalid email format.'
     } else if (firebaseError.code === 'auth/too-many-requests') {
@@ -360,10 +372,10 @@ export async function logout() {
 }
 
 export const DEMO_CREDENTIALS: Record<string, { email: string; password: string }> = {
-  admin: { email: 'admin@homeware.com', password: 'admin123' },
+  admin: { email: 'admin@homeware.ae', password: 'Demo@123' },
   manager: { email: 'manager@homeware.com', password: 'manager123' },
   supervisor: { email: 'supervisor@homeware.com', password: 'supervisor123' },
-  employee: { email: 'employee@homeware.com', password: 'employee123' },
+  employee: { email: 'employee@homeware.ae', password: 'Demo@123' },
   client: { email: 'client@homeware.com', password: 'client123' },
   guest: { email: 'guest@homeware.com', password: 'guest123' }
 };

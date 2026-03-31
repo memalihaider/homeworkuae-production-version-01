@@ -19,12 +19,13 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      console.log('🔐 Admin login attempt:', { email, portal: 'admin' });
+      console.log('🔐 Admin login attempt:', { email: normalizedEmail, portal: 'admin' });
       
       // 🔥 IMPORTANT: portal = 'admin' pass kar rahe hain
-      const authResponse = await validateCredentials('admin', email, password);
+      const authResponse = await validateCredentials('admin', normalizedEmail, password);
       console.log('📡 Auth response:', authResponse);
       
       if (authResponse.success && authResponse.session) {
@@ -34,16 +35,11 @@ export default function AdminLogin() {
         storeSession(authResponse.session);
         
         // Redirect to admin dashboard
-        router.push('/admin/dashboard');
+        router.push(authResponse.redirectTo || '/admin/dashboard');
       } else {
         console.log('❌ Login failed:', authResponse.message);
-        
-        // Special message for employee trying to login here
-        if (authResponse.message?.includes('Employee Portal')) {
-          setError('This is an employee account. Please use Employee Login.');
-        } else {
-          setError(authResponse.message || authResponse.error || 'Invalid email or password');
-        }
+
+        setError(authResponse.message || authResponse.error || 'Invalid email or password');
       }
     } catch (err) {
       console.error('💥 Login error:', err);

@@ -107,6 +107,57 @@ export default function RootLayout({
             __html: "document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');",
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+  var g = typeof window !== 'undefined' ? window : globalThis;
+  if (!g) return;
+  var perf = g.performance;
+  if (!perf) {
+    try {
+      perf = {};
+      Object.defineProperty(g, 'performance', { value: perf, configurable: true, writable: true });
+    } catch (_) {
+      return;
+    }
+  }
+
+  var noop = function(){};
+  var emptyEntries = function(){ return []; };
+  var methods = {
+    mark: noop,
+    measure: noop,
+    clearMarks: noop,
+    clearMeasures: noop,
+    getEntriesByName: emptyEntries,
+  };
+
+  var define = function(target, name, fn) {
+    if (!target) return false;
+    try {
+      if (typeof target[name] !== 'function') {
+        Object.defineProperty(target, name, { value: fn, configurable: true, writable: true });
+      }
+      return typeof target[name] === 'function';
+    } catch (_) {
+      return false;
+    }
+  };
+
+  var proto = null;
+  try {
+    proto = Object.getPrototypeOf(perf);
+  } catch (_) {}
+
+  for (var name in methods) {
+    if (!Object.prototype.hasOwnProperty.call(methods, name)) continue;
+    if (typeof perf[name] === 'function') continue;
+    if (define(perf, name, methods[name])) continue;
+    define(proto, name, methods[name]);
+  }
+})();`,
+          }}
+        />
         {/* Google Tag Manager */}
         <Script
           id="gtm-script"

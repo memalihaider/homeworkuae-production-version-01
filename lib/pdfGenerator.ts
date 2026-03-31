@@ -102,6 +102,14 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     ? allItems[0].description.split('\n')[0]
     : 'General Cleaning Service';
 
+  const formatQuantity = (quantity: number) => {
+    const numericQuantity = Number(quantity);
+    if (!Number.isFinite(numericQuantity)) return '1';
+    return Number.isInteger(numericQuantity)
+      ? String(numericQuantity)
+      : numericQuantity.toFixed(2);
+  };
+
   const getValidityText = () => {
     if (!quotation.date || !quotation.validUntil) return formatDate(quotation.validUntil);
     const issueDate = new Date(quotation.date);
@@ -321,11 +329,11 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
 
   autoTable(doc, {
     startY: yPos,
-    head: [[chargesHeader, `Charges(${currencyCode})`]],
+    head: [[chargesHeader, 'Quantity', `Charges (${currencyCode})`]],
     body: [
-      ...tableItems.map(item => [item.description, formatCurrency(item.amount)]),
-      [`VAT ${quotation.taxRate}%`, formatCurrency(quotation.taxAmount)],
-      ['TOTAL', formatCurrency(quotation.total)],
+      ...tableItems.map(item => [item.description, formatQuantity(item.quantity), formatCurrency(item.amount)]),
+      [`VAT ${quotation.taxRate}%`, '-', formatCurrency(quotation.taxAmount)],
+      ['TOTAL', '-', formatCurrency(quotation.total)],
     ],
     theme: 'grid',
     margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
@@ -346,16 +354,20 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       halign: 'left',
     },
     columnStyles: {
-      0: { cellWidth: contentWidth - 38 },
-      1: { cellWidth: 38, halign: 'right' },
+      0: { cellWidth: contentWidth - 52 },
+      1: { cellWidth: 12, halign: 'center' },
+      2: { cellWidth: 40, halign: 'right' },
     },
     didParseCell: data => {
       if (data.section === 'body' && data.row.index === tableItems.length + 1) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.font = FONT_HEADING;
       }
-      if (data.section === 'body' && data.column.index === 1) {
+      if (data.section === 'body' && data.column.index === 2) {
         data.cell.styles.halign = 'right';
+      }
+      if (data.section === 'body' && data.column.index === 1) {
+        data.cell.styles.halign = 'center';
       }
       if (data.section === 'body' && data.column.index === 0) {
         data.cell.styles.font = FONT_BODY;
@@ -412,15 +424,15 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   const termsText = quotation.terms?.trim();
   const notesText = quotation.notes?.trim();
 
-  const liabilityText = termsText ||
+  const termsDetails = termsText ||
     'In the event of damage, Homework UAE will carry out a reasonable repair (not replacement) for the damaged goods and the cost of which will be limited to market value of similar items in the local market.';
 
   const termsRows: Array<[string, string]> = [
-    ['Payment Terms', liabilityText],
+    ['Liability', termsDetails],
   ];
 
   if (notesText) {
-    termsRows.push(['Additional Notes', notesText]);
+    termsRows.push(['Payment Terms', notesText]);
   }
 
   autoTable(doc, {
