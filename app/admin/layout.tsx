@@ -1330,15 +1330,35 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
           )}
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors border border-muted-foreground/20 hover:bg-accent ${
+              sidebarOpen ? "justify-center text-muted-foreground" : "justify-center text-muted-foreground"
+            }`}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {sidebarOpen && <span>Toggle Sidebar</span>}
+          </button>
         </div>
       </aside>
 
       {sidebarOpen && (
         <div className="fixed top-20 left-0 w-64 h-screen bg-card border-r border-slate-200 z-40 overflow-y-auto lg:hidden">
           <div className="p-4 space-y-1.5">
-            <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
-              Main Menu
-            </p>
+            <div className="flex items-center justify-between px-3 py-2 mb-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Main Menu
+              </p>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground"
+                title="Close sidebar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             {filteredMenuItems.map((menuItem) => {
               const pageConfig =
                 ALL_PAGES_CONFIG[menuItem.key as keyof typeof ALL_PAGES_CONFIG];
