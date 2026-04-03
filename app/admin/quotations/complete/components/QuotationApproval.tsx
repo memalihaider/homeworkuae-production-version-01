@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileCheck, AlertCircle, CheckCircle, XCircle, Info, MessageCircle, Calendar, Mail, Building2, FileText, DollarSign, Hash, Loader2, Download } from 'lucide-react'
+import { FileCheck, AlertCircle, CheckCircle, XCircle, Info, MessageCircle, Calendar, Mail, Building2, FileText, Banknote, Hash, Loader2, Download } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
@@ -34,6 +34,7 @@ interface FirebaseQuotation {
   email: string;
   phone: string;
   location: string;
+  currentAddress?: string;
   date: string;
   validUntil: string;
   dueDate: string;
@@ -93,6 +94,7 @@ export default function QuotationApproval() {
           email: data.email || '',
           phone: data.phone || '',
           location: data.location || '',
+          currentAddress: data.currentAddress || '',
           date: data.date || new Date().toISOString().split('T')[0],
           validUntil: data.validUntil || '',
           dueDate: data.dueDate || '',
@@ -484,7 +486,7 @@ export default function QuotationApproval() {
                   {/* Financial Summary */}
                   <div className="mb-4">
                     <p className="text-[11px] uppercase font-bold text-gray-500 mb-2 flex items-center gap-2">
-                      <DollarSign className="w-3 h-3" /> FINANCIAL SUMMARY
+                      <Banknote className="w-3 h-3" /> FINANCIAL SUMMARY
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                       <div className="bg-gray-50 p-3 rounded border border-gray-200">

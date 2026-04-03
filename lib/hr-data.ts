@@ -23,7 +23,10 @@ export interface Employee {
   dateOfBirth: string
   nationalityCountry: string
   passportNumber: string
+  passportExpiryDate?: string
   emiratesIdNumber: string
+  emiratesIdExpiryDate?: string
+  drivingLicenseExpiryDate?: string
   profileImage?: string
   bonuses: { date: string; amount: number; reason: string }[]
   documents: { name: string; url: string; uploadDate: string }[]
@@ -117,10 +120,14 @@ export const MOCK_EMPLOYEES: Employee[] = [
     dateOfBirth: '1985-05-20',
     nationalityCountry: 'India',
     passportNumber: 'P1234567',
+    passportExpiryDate: '2026-05-20',
     emiratesIdNumber: 'E123456789',
+    emiratesIdExpiryDate: '2026-01-15',
+    drivingLicenseExpiryDate: '2027-03-10',
     bonuses: [],
     documents: [],
-    emergencyContacts: [{ name: 'Jane Smith', phone: '+971-50-9876543', relationship: 'Spouse' }]
+    emergencyContacts: [{ name: 'Jane Smith', phone: '+971-50-9876543', relationship: 'Spouse' }],
+    visa: { expiryDate: '2026-04-30', type: 'Employment' }
   },
   {
     id: 'EMP002',
@@ -144,10 +151,14 @@ export const MOCK_EMPLOYEES: Employee[] = [
     dateOfBirth: '1990-08-15',
     nationalityCountry: 'Philippines',
     passportNumber: 'P9876543',
+    passportExpiryDate: '2026-08-15',
     emiratesIdNumber: 'E987654321',
+    emiratesIdExpiryDate: '2026-03-20',
+    drivingLicenseExpiryDate: '2027-06-22',
     bonuses: [],
     documents: [],
-    emergencyContacts: []
+    emergencyContacts: [],
+    visa: { expiryDate: '2026-07-10', type: 'Employment' }
   },
   {
     id: 'EMP003',
@@ -171,10 +182,14 @@ export const MOCK_EMPLOYEES: Employee[] = [
     dateOfBirth: '1988-03-22',
     nationalityCountry: 'Egypt',
     passportNumber: 'P5555555',
+    passportExpiryDate: '2026-03-22',
     emiratesIdNumber: 'E555555555',
+    emiratesIdExpiryDate: '2026-06-10',
+    drivingLicenseExpiryDate: '2027-09-01',
     bonuses: [],
     documents: [],
-    emergencyContacts: []
+    emergencyContacts: [],
+    visa: { expiryDate: '2026-11-15', type: 'Employment' }
   },
   {
     id: 'EMP004',
@@ -198,10 +213,14 @@ export const MOCK_EMPLOYEES: Employee[] = [
     dateOfBirth: '1986-11-10',
     nationalityCountry: 'Spain',
     passportNumber: 'P7777777',
+    passportExpiryDate: '2026-11-10',
     emiratesIdNumber: 'E777777777',
+    emiratesIdExpiryDate: '2026-05-05',
+    drivingLicenseExpiryDate: '2027-12-20',
     bonuses: [],
     documents: [],
-    emergencyContacts: []
+    emergencyContacts: [],
+    visa: { expiryDate: '2026-10-18', type: 'Employment' }
   }
 ]
 

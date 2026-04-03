@@ -72,7 +72,9 @@ interface Attendance {
     | "On Job"
     | "Half Day"
     | "Full Leave"
-    | "Sick Leave";
+    | "Sick Leave"
+    | "Annual Leave"
+    | "Casual Leave";
   workingHours: number;
   jobId?: string;
   jobTitle?: string;
@@ -81,6 +83,14 @@ interface Attendance {
   attendanceType: "Manual" | "Auto";
   createdAt: string;
   updatedAt: string;
+}
+
+interface LeaveApplication {
+  employeeId: string;
+  leaveType: "Annual" | "Casual" | "Sick" | "Special" | "Maternity" | "Paternity" | "Unpaid";
+  startDate: string;
+  endDate: string;
+  status: "Pending" | "Approved" | "Rejected";
 }
 
 export default function AttendancePage() {
@@ -96,6 +106,7 @@ export default function AttendancePage() {
 
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [employees, setEmployees] = useState<FirebaseEmployee[]>([]);
+  const [leaveApplications, setLeaveApplications] = useState<LeaveApplication[]>([]);
 
   const [markForm, setMarkForm] = useState({
     employeeId: "",
@@ -136,8 +147,13 @@ export default function AttendancePage() {
 
   // Firebase se employees fetch karein
   useEffect(() => {
-    fetchEmployees();
-    fetchAttendance();
+    const init = async () => {
+      await fetchEmployees();
+      const leaves = await fetchLeaveApplications();
+      await fetchAttendance(leaves);
+    };
+
+    init();
   }, []);
 
   // Jab date change ho tab attendance refresh karein
@@ -153,6 +169,51 @@ export default function AttendancePage() {
       generateMonthlyReport();
     }
   }, [selectedMonth, selectedEmployee, attendance, activeTab]);
+
+  const resolveLeaveStatus = (
+    employeeId: string,
+    date: string,
+    leaveData: LeaveApplication[],
+  ): Attendance["status"] | null => {
+    const approvedLeave = leaveData.find(
+      (leave) =>
+        leave.employeeId === employeeId &&
+        leave.status === "Approved" &&
+        date >= leave.startDate &&
+        date <= leave.endDate,
+    );
+
+    if (!approvedLeave) return null;
+
+    switch (approvedLeave.leaveType) {
+      case "Annual":
+        return "Annual Leave";
+      case "Casual":
+        return "Casual Leave";
+      case "Sick":
+        return "Sick Leave";
+      default:
+        return "Full Leave";
+    }
+  };
+
+  const applyLeaveStatusToAttendance = (
+    records: Attendance[],
+    leaveData: LeaveApplication[],
+  ) => {
+    if (!leaveData.length) return records;
+
+    return records.map((record) => {
+      const leaveStatus = resolveLeaveStatus(record.employeeId, record.date, leaveData);
+      if (!leaveStatus) return record;
+
+      return {
+        ...record,
+        status: leaveStatus,
+        notes: record.notes || `Leave: ${leaveStatus}`,
+      };
+    });
+  };
 
   // Update export dates based on type
   useEffect(() => {
@@ -215,7 +276,33 @@ export default function AttendancePage() {
     }
   };
 
-  const fetchAttendance = async () => {
+  const fetchLeaveApplications = async () => {
+    try {
+      const leavesRef = collection(db, "leave-management");
+      const snapshot = await getDocs(leavesRef);
+
+      const leavesList: LeaveApplication[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        leavesList.push({
+          employeeId: data.employeeId || "",
+          leaveType: data.leaveType || "Annual",
+          startDate: data.startDate || "",
+          endDate: data.endDate || "",
+          status: data.status || "Pending",
+        });
+      });
+
+      setLeaveApplications(leavesList);
+      return leavesList;
+    } catch (error) {
+      console.error("Error fetching leave applications:", error);
+      setLeaveApplications([]);
+      return [] as LeaveApplication[];
+    }
+  };
+
+  const fetchAttendance = async (leaveData: LeaveApplication[] = leaveApplications) => {
     try {
       const attendanceRef = collection(db, "attendance");
       const snapshot = await getDocs(attendanceRef);
@@ -250,7 +337,8 @@ export default function AttendancePage() {
         });
       });
 
-      setAttendance(attendanceList);
+      const normalizedAttendance = applyLeaveStatusToAttendance(attendanceList, leaveData);
+      setAttendance(normalizedAttendance);
     } catch (error) {
       console.error("Error fetching attendance:", error);
       setAttendance([]);
@@ -279,6 +367,7 @@ export default function AttendancePage() {
           const querySnapshot = await getDocs(q);
 
           if (querySnapshot.empty) {
+            const leaveStatus = resolveLeaveStatus(emp.id, currentDate, leaveApplications);
             const newAttendance = {
               employeeId: emp.id,
               employeeName: emp.name,
@@ -286,12 +375,12 @@ export default function AttendancePage() {
               shift: "Standard Shift",
               clockIn: "",
               clockOut: null,
-              status: "Absent",
+              status: leaveStatus || "Absent",
               workingHours: 0,
               jobId: "",
               jobTitle: "",
               overtimeHours: 0,
-              notes: "Automatically created",
+              notes: leaveStatus ? `Leave: ${leaveStatus}` : "Automatically created",
               attendanceType: "Auto",
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -361,6 +450,8 @@ export default function AttendancePage() {
       halfDay: dayData.filter((d) => d.status === "Half Day").length,
       fullLeave: dayData.filter((d) => d.status === "Full Leave").length,
       sickLeave: dayData.filter((d) => d.status === "Sick Leave").length,
+      annualLeave: dayData.filter((d) => d.status === "Annual Leave").length,
+      casualLeave: dayData.filter((d) => d.status === "Casual Leave").length,
       onJob: dayData.filter((d) => d.status === "On Job").length,
       late: dayData.filter((d) => d.status === "Late").length,
       totalWorkingHours: dayData.reduce((sum, d) => sum + d.workingHours, 0),
@@ -425,6 +516,8 @@ export default function AttendancePage() {
     csv += `Half Day:,${summary.halfDay}\n`;
     csv += `Full Leave:,${summary.fullLeave}\n`;
     csv += `Sick Leave:,${summary.sickLeave}\n`;
+    csv += `Annual Leave:,${summary.annualLeave}\n`;
+    csv += `Casual Leave:,${summary.casualLeave}\n`;
     csv += `On Job:,${summary.onJob}\n`;
     csv += `Late:,${summary.late}\n`;
     csv += `Total Working Hours:,${summary.totalWorkingHours.toFixed(1)}\n`;
@@ -522,6 +615,10 @@ export default function AttendancePage() {
         .length,
       sickLeave: todayAttendance.filter((a) => a.status === "Sick Leave")
         .length,
+      annualLeave: todayAttendance.filter((a) => a.status === "Annual Leave")
+        .length,
+      casualLeave: todayAttendance.filter((a) => a.status === "Casual Leave")
+        .length,
       onJob: todayAttendance.filter((a) => a.status === "On Job").length,
       totalOvertimeHours: attendance.reduce(
         (sum, a) => sum + (a.overtimeHours || 0),
@@ -604,6 +701,12 @@ export default function AttendancePage() {
         "Sick Leave": filteredAttendance.filter(
           (r) => r.status === "Sick Leave",
         ).length,
+        "Annual Leave": filteredAttendance.filter(
+          (r) => r.status === "Annual Leave",
+        ).length,
+        "Casual Leave": filteredAttendance.filter(
+          (r) => r.status === "Casual Leave",
+        ).length,
         "On Job": filteredAttendance.filter((r) => r.status === "On Job")
           .length,
       };
@@ -640,6 +743,8 @@ export default function AttendancePage() {
       csv += `Half Day,${statusCounts["Half Day"]}\n`;
       csv += `Full Leave,${statusCounts["Full Leave"]}\n`;
       csv += `Sick Leave,${statusCounts["Sick Leave"]}\n`;
+      csv += `Annual Leave,${statusCounts["Annual Leave"]}\n`;
+      csv += `Casual Leave,${statusCounts["Casual Leave"]}\n`;
       csv += `On Job,${statusCounts["On Job"]}\n\n`;
 
       csv += "ATTENDANCE RATE\n";
@@ -737,6 +842,8 @@ export default function AttendancePage() {
             halfDay: 0,
             fullLeave: 0,
             sickLeave: 0,
+            annualLeave: 0,
+            casualLeave: 0,
             onJob: 0,
             hours: 0,
             employees: new Set(),
@@ -762,6 +869,12 @@ export default function AttendancePage() {
           case "Sick Leave":
             dailyData[record.date].sickLeave++;
             break;
+          case "Annual Leave":
+            dailyData[record.date].annualLeave++;
+            break;
+          case "Casual Leave":
+            dailyData[record.date].casualLeave++;
+            break;
           case "On Job":
             dailyData[record.date].onJob++;
             break;
@@ -783,6 +896,8 @@ export default function AttendancePage() {
           "Half Day",
           "Full Leave",
           "Sick Leave",
+          "Annual Leave",
+          "Casual Leave",
           "On Job",
           "Total Present*",
           "Total Hours",
@@ -822,6 +937,8 @@ export default function AttendancePage() {
             d.halfDay || 0,
             d.fullLeave || 0,
             d.sickLeave || 0,
+            d.annualLeave || 0,
+            d.casualLeave || 0,
             d.onJob || 0,
             totalPresent,
             d.hours.toFixed(2),
@@ -854,6 +971,8 @@ export default function AttendancePage() {
             halfDay: 0,
             fullLeave: 0,
             sickLeave: 0,
+            annualLeave: 0,
+            casualLeave: 0,
             onJob: 0,
             hours: 0,
             days: new Set(),
@@ -879,6 +998,12 @@ export default function AttendancePage() {
           case "Sick Leave":
             employeeData[record.employeeId].sickLeave++;
             break;
+          case "Annual Leave":
+            employeeData[record.employeeId].annualLeave++;
+            break;
+          case "Casual Leave":
+            employeeData[record.employeeId].casualLeave++;
+            break;
           case "On Job":
             employeeData[record.employeeId].onJob++;
             break;
@@ -902,6 +1027,8 @@ export default function AttendancePage() {
           "Half Days",
           "Full Leaves",
           "Sick Leaves",
+          "Annual Leaves",
+          "Casual Leaves",
           "On Job Days",
           "Total Working Days*",
           "Total Hours",
@@ -942,6 +1069,8 @@ export default function AttendancePage() {
             e.halfDay || 0,
             e.fullLeave || 0,
             e.sickLeave || 0,
+            e.annualLeave || 0,
+            e.casualLeave || 0,
             e.onJob || 0,
             totalWorkingDays,
             e.hours.toFixed(2),
@@ -1309,7 +1438,14 @@ export default function AttendancePage() {
 
   // Bulk mark attendance for all employees
   const handleBulkMark = async (
-    status: "Present" | "Absent" | "Half Day" | "Full Leave" | "Sick Leave",
+    status:
+      | "Present"
+      | "Absent"
+      | "Half Day"
+      | "Full Leave"
+      | "Sick Leave"
+      | "Annual Leave"
+      | "Casual Leave",
   ) => {
     if (!confirm(`Mark all employees as ${status} for ${currentDate}?`)) return;
 
@@ -1385,6 +1521,10 @@ export default function AttendancePage() {
         return "bg-purple-100 text-purple-700";
       case "Sick Leave":
         return "bg-pink-100 text-pink-700";
+      case "Annual Leave":
+        return "bg-teal-100 text-teal-700";
+      case "Casual Leave":
+        return "bg-orange-100 text-orange-700";
       case "On Job":
         return "bg-indigo-100 text-indigo-700";
       default:
@@ -1405,6 +1545,10 @@ export default function AttendancePage() {
         return <Home className="h-4 w-4" />;
       case "Sick Leave":
         return <Coffee className="h-4 w-4" />;
+      case "Annual Leave":
+        return <CalendarRange className="h-4 w-4" />;
+      case "Casual Leave":
+        return <Calendar className="h-4 w-4" />;
       case "On Job":
         return <Briefcase className="h-4 w-4" />;
       case "Late":
@@ -1429,6 +1573,10 @@ export default function AttendancePage() {
         return "bg-purple-500 text-white";
       case "Sick Leave":
         return "bg-pink-500 text-white";
+      case "Annual Leave":
+        return "bg-teal-500 text-white";
+      case "Casual Leave":
+        return "bg-orange-500 text-white";
       case "On Job":
         return "bg-indigo-500 text-white";
       default:
@@ -1534,7 +1682,7 @@ export default function AttendancePage() {
             Leave
           </p>
           <p className="text-2xl font-black text-purple-600 mt-1">
-            {stats.fullLeave + stats.sickLeave}
+            {stats.fullLeave + stats.sickLeave + stats.annualLeave + stats.casualLeave}
           </p>
         </div>
         <div className="bg-card border rounded-2xl p-4">
@@ -1658,6 +1806,8 @@ export default function AttendancePage() {
                 <option value="Half Day">Half Day</option>
                 <option value="Full Leave">Full Leave</option>
                 <option value="Sick Leave">Sick Leave</option>
+                <option value="Annual Leave">Annual Leave</option>
+                <option value="Casual Leave">Casual Leave</option>
                 <option value="On Job">On Job</option>
               </select>
               <select
@@ -1678,7 +1828,7 @@ export default function AttendancePage() {
           </div>
 
           {/* Export Section - CLIENT REQUIREMENT */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-6">
+          <div className="bg-linear-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Download className="h-5 w-5 text-blue-600" />
@@ -1768,6 +1918,8 @@ export default function AttendancePage() {
                   <option value="Half Day">Half Day</option>
                   <option value="Full Leave">Full Leave</option>
                   <option value="Sick Leave">Sick Leave</option>
+                  <option value="Annual Leave">Annual Leave</option>
+                  <option value="Casual Leave">Casual Leave</option>
                   <option value="On Job">On Job</option>
                 </select>
               </div>
@@ -1927,6 +2079,8 @@ export default function AttendancePage() {
                                 <option value="Half Day">Half Day</option>
                                 <option value="Full Leave">Full Leave</option>
                                 <option value="Sick Leave">Sick Leave</option>
+                                <option value="Annual Leave">Annual Leave</option>
+                                <option value="Casual Leave">Casual Leave</option>
                                 <option value="On Job">On Job</option>
                               </select>
                               <button
@@ -2077,6 +2231,16 @@ export default function AttendancePage() {
                       value: "Sick Leave",
                       label: "Sick Leave",
                       color: "bg-pink-500",
+                    },
+                    {
+                      value: "Annual Leave",
+                      label: "Annual Leave",
+                      color: "bg-teal-500",
+                    },
+                    {
+                      value: "Casual Leave",
+                      label: "Casual Leave",
+                      color: "bg-orange-500",
                     },
                     {
                       value: "On Job",
@@ -2362,7 +2526,9 @@ export default function AttendancePage() {
                       </p>
                       <p className="text-xl font-black text-purple-600">
                         {monthlyReport.summary.fullLeave +
-                          monthlyReport.summary.sickLeave}
+                          monthlyReport.summary.sickLeave +
+                          monthlyReport.summary.annualLeave +
+                          monthlyReport.summary.casualLeave}
                       </p>
                     </div>
                     <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
@@ -2447,7 +2613,9 @@ export default function AttendancePage() {
 
                             {day.status !== "Absent" &&
                               day.status !== "Full Leave" &&
-                              day.status !== "Sick Leave" && (
+                              day.status !== "Sick Leave" &&
+                              day.status !== "Annual Leave" &&
+                              day.status !== "Casual Leave" && (
                                 <>
                                   <div className="text-xs text-gray-600">
                                     <span className="font-medium">
@@ -2498,7 +2666,15 @@ export default function AttendancePage() {
                       </div>
                       <div className="flex items-center gap-1 text-xs">
                         <div className="h-3 w-3 rounded-sm bg-purple-500"></div>
-                        <span>Leave</span>
+                        <span>Full Leave</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <div className="h-3 w-3 rounded-sm bg-teal-500"></div>
+                        <span>Annual Leave</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <div className="h-3 w-3 rounded-sm bg-orange-500"></div>
+                        <span>Casual Leave</span>
                       </div>
                       <div className="flex items-center gap-1 text-xs">
                         <div className="h-3 w-3 rounded-sm bg-indigo-500"></div>

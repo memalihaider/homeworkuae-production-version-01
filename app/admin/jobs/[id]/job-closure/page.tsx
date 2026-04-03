@@ -8,7 +8,7 @@ import {
   FileText,
   Save,
   User,
-  DollarSign,
+  Banknote,
   Calendar,
   AlertCircle
 } from 'lucide-react'
@@ -82,7 +82,7 @@ export default function JobClosure() {
       case 'documentation': return <FileText className="w-4 h-4" />
       case 'equipment': return <CheckCircle className="w-4 h-4" />
       case 'client': return <User className="w-4 h-4" />
-      case 'financial': return <DollarSign className="w-4 h-4" />
+      case 'financial': return <Banknote className="w-4 h-4" />
       case 'quality': return <AlertCircle className="w-4 h-4" />
       default: return <CheckCircle className="w-4 h-4" />
     }

@@ -22,7 +22,7 @@ import {
   MessageSquare,
   UserCheck,
   Ruler,
-  DollarSign,
+  Banknote,
   Eye,
   CheckCircle,
   Clock,
@@ -50,6 +50,7 @@ import {
   Bot,
   MessageCircle,
   Layout,
+  Landmark,
 } from "lucide-react";
 import { getSession, logout } from "@/lib/auth";
 import { auth, db } from "@/lib/firebase";
@@ -232,7 +233,7 @@ const ALL_PAGES_CONFIG = {
   "Employee Directory": { icon: Users, href: "/admin/hr/employee-directory" },
   Attendance: { icon: Clock, href: "/admin/hr/attendance" },
   "Leave Management": { icon: Calendar, href: "/admin/hr/leave-management" },
-  Payroll: { icon: DollarSign, href: "/admin/hr/payroll" },
+  Payroll: { icon: Banknote, href: "/admin/hr/payroll" },
   "Performance Dashboard": {
     icon: BarChart3,
     href: "/admin/hr/performance-dashboard",
@@ -260,6 +261,7 @@ const ALL_PAGES_CONFIG = {
   },
   
   Finance: { icon: Wallet, href: "/admin/finance" },
+  Tally: { icon: Landmark, href: "/admin/tally" },
   Marketing: { icon: TrendingUp, href: "/admin/marketing" },
   "Admin Management": { icon: Shield, href: "/admin/admin-management" },
   "Role Manager": {
@@ -390,6 +392,11 @@ const MENU_STRUCTURE = [
   },
   {
     type: "single",
+    label: "Tally",
+    key: "Tally",
+  },
+  {
+    type: "single",
     label: "Marketing",
     key: "Marketing",
   },
@@ -435,6 +442,7 @@ const ADMIN_PAGE_ALIASES: Record<string, string> = {
   "quotation list": "Quotation List",
   quotationlist: "Quotation List",
   "inventory & services": "Inventory & Services",
+  tally: "Tally",
 };
 
 const normalizePageKey = (page: string): string => {

@@ -9,6 +9,7 @@ interface QuotationData {
   email: string;
   phone: string;
   location: string;
+  currentAddress?: string;
   date: string;
   validUntil: string;
   dueDate: string;
@@ -233,6 +234,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   if (quotation.client?.trim() && quotation.client.trim() !== quotation.company?.trim()) {
     recipientLines.push(quotation.client.trim());
   }
+  if (quotation.currentAddress?.trim()) recipientLines.push(`Address: ${quotation.currentAddress.trim()}`);
   if (hasContactPhone) recipientLines.push(`Phone: ${quotation.phone.trim()}`);
   if (hasContactEmail) recipientLines.push(`Email: ${quotation.email.trim()}`);
   if (recipientLines.length === 0) recipientLines.push('Valued Customer');

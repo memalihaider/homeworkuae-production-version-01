@@ -14,7 +14,7 @@ import {
   Calendar,
   Wrench,
   ShieldCheck,
-  DollarSign,
+  Banknote,
   AlertTriangle,
   ArrowLeft,
   Bell,
@@ -914,7 +914,7 @@ export default function EquipmentPermitsPage() {
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <DollarSign className="w-4 h-4 text-purple-600" />
+              <Banknote className="w-4 h-4 text-purple-600" />
             </div>
             <span className="text-xs font-bold text-purple-700 uppercase">Total Value</span>
           </div>

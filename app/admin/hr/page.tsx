@@ -6,7 +6,7 @@ import {
   Users,
   Calendar,
   Clock,
-  DollarSign,
+  Banknote,
   TrendingUp,
   AlertCircle,
   CheckCircle,
@@ -145,7 +145,7 @@ export default function HRDashboard() {
               <p className="text-lg font-black text-green-700 mt-1">AED {totalPayroll.toLocaleString()}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-950/30 flex items-center justify-center shrink-0">
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <Banknote className="h-5 w-5 text-green-600" />
             </div>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function HRDashboard() {
               </Link>
               <Link href="/admin/hr/payroll">
                 <button className="w-full p-4 bg-muted/50 hover:bg-muted rounded-xl border transition-all flex flex-col items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
+                  <Banknote className="h-5 w-5" />
                   <span className="text-xs font-bold">Payroll</span>
                 </button>
               </Link>
@@ -336,7 +336,7 @@ export default function HRDashboard() {
                           <span className="text-muted-foreground">Rating: {emp.rating}/5</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <Banknote className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">AED {emp.salary.total.toLocaleString()}</span>
                         </div>
                       </div>

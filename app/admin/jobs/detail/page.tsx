@@ -12,7 +12,7 @@ import {
   Users, 
   FileText, 
   Tag, 
-  DollarSign, 
+  Banknote, 
   ArrowRight, 
   MessageSquare, 
   Star, 
@@ -112,7 +112,7 @@ function JobDetailContent() {
         {[
           { label: 'Scheduled Date', value: job.scheduledDate, sub: job.scheduledTime, icon: Calendar, color: 'text-blue-600' },
           { label: 'Duration', value: job.estimatedDuration, sub: 'Estimated', icon: Timer, color: 'text-indigo-600' },
-          { label: 'Budget', value: `AED ${job.budget.toLocaleString()}`, sub: 'Fixed Price', icon: DollarSign, color: 'text-emerald-600' },
+          { label: 'Budget', value: `AED ${job.budget.toLocaleString()}`, sub: 'Fixed Price', icon: Banknote, color: 'text-emerald-600' },
           { label: 'SLA Deadline', value: job.slaDeadline, sub: `${job.daysUntilSLA} days left`, icon: ShieldCheck, color: 'text-amber-600' },
         ].map((stat, i) => (
           <div key={i} className="bg-white border border-gray-300 p-5 rounded-2xl shadow-sm">

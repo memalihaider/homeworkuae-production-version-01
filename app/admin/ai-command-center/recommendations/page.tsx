@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Lightbulb, CheckCircle, TrendingUp, Users, DollarSign, Target, ThumbsUp, ThumbsDown, Zap, Brain, BarChart, Clock, Calendar, MapPin, User, Briefcase, AlertCircle, CheckSquare, Eye } from 'lucide-react'
+import { Lightbulb, CheckCircle, TrendingUp, Users, Banknote, Target, ThumbsUp, ThumbsDown, Zap, Brain, BarChart, Clock, Calendar, MapPin, User, Briefcase, AlertCircle, CheckSquare, Eye } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, orderBy, where, limit } from 'firebase/firestore'
 
@@ -161,7 +161,7 @@ export default function Recommendations() {
     { id: 'revenue', label: 'Revenue Growth', icon: TrendingUp },
     { id: 'demand', label: 'Demand Planning', icon: Users },
     { id: 'retention', label: 'Client Retention', icon: Target },
-    { id: 'profitability', label: 'Profitability', icon: DollarSign },
+    { id: 'profitability', label: 'Profitability', icon: Banknote },
   ]
 
   const filteredRecs = selectedCategory === 'all' 
@@ -335,7 +335,7 @@ Changes will be applied automatically.`)
         </div>
         <div className="bg-linear-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <Banknote className="h-4 w-4 text-green-600" />
             <p className="text-xs text-muted-foreground">Total Potential Impact</p>
           </div>
           <p className="text-2xl font-black text-green-700">
@@ -505,7 +505,7 @@ Changes will be applied automatically.`)
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 p-3 bg-gray-50 rounded-lg">
                 <div>
                   <div className="flex items-center gap-1 mb-1">
-                    <DollarSign className="h-3 w-3 text-green-500" />
+                    <Banknote className="h-3 w-3 text-green-500" />
                     <p className="text-xs text-muted-foreground">Financial Impact</p>
                   </div>
                   <p className="text-sm font-bold text-green-600">{rec.impact}</p>

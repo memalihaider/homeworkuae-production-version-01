@@ -7,7 +7,7 @@ import {
   Phone,
   MapPin,
   Calendar,
-  DollarSign,
+  Banknote,
   TrendingUp,
   Users,
   Edit2,
@@ -866,7 +866,7 @@ export default function ClientProfiles() {
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold text-gray-900">AED {metrics.totalRevenue.toLocaleString()}</p>
             </div>
-            <DollarSign className="h-8 w-8 text-emerald-600" />
+            <Banknote className="h-8 w-8 text-emerald-600" />
           </div>
         </div>
         <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -893,7 +893,7 @@ export default function ClientProfiles() {
               <p className="text-sm font-medium text-gray-600">Revenue + Tax</p>
               <p className="text-2xl font-bold text-purple-600">AED {metrics.totalWithTax.toLocaleString()}</p>
             </div>
-            <DollarSign className="h-8 w-8 text-purple-600" />
+            <Banknote className="h-8 w-8 text-purple-600" />
           </div>
         </div>
       </div>
@@ -1392,7 +1392,7 @@ export default function ClientProfiles() {
                     href={`/admin/finance?clientId=${selectedClient.id}`}
                     className="w-full py-3 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-orange-300"
                   >
-                    <DollarSign className="h-4 w-4" /> View Invoices
+                    <Banknote className="h-4 w-4" /> View Invoices
                   </Link>
                 </div>
               </div>

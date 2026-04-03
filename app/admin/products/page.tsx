@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Package, Archive, Zap, BarChart3, TrendingUp, DollarSign, Settings, Download } from 'lucide-react'
+import { Plus, Package, Archive, Zap, BarChart3, TrendingUp, Banknote, Settings, Download } from 'lucide-react'
 import ProductDashboard from './components/ProductDashboard'
 import ProductList from './components/ProductList'
 import ProductBuilder from './components/ProductBuilder'

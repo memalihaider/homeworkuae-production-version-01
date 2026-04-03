@@ -121,7 +121,7 @@ export function JobHoursTracker() {
             entries: updatedEntries,
             actualHours: totalActualHours,
             variance: totalActualHours - job.estimatedHours,
-            actualCost: totalActualHours * 50 // Assuming $50 per hour
+            actualCost: totalActualHours * 50 // Assuming AED 50 per hour
           }
         }
         return job

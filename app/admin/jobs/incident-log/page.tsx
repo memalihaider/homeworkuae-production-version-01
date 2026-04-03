@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { AlertTriangle, AlertCircle, CheckCircle2, TrendingUp, Clock, DollarSign, Zap, Send } from 'lucide-react'
+import { AlertTriangle, AlertCircle, CheckCircle2, TrendingUp, Clock, Banknote, Zap, Send } from 'lucide-react'
 
 export default function IncidentLog() {
   const [incidents, setIncidents] = useState<any[]>([

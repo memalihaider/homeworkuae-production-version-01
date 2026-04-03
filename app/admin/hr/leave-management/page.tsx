@@ -51,7 +51,7 @@ interface LeaveApplication {
   employeeId: string
   employeeName: string
   employeeDepartment: string
-  leaveType: 'Annual' | 'Sick' | 'Special' | 'Maternity' | 'Paternity' | 'Unpaid'
+  leaveType: 'Annual' | 'Casual' | 'Sick' | 'Special' | 'Maternity' | 'Paternity' | 'Unpaid'
   startDate: string
   endDate: string
   daysRequested: number
@@ -67,6 +67,7 @@ interface LeaveApplication {
 
 const LEAVE_TYPES = [
   { id: 'Annual', name: 'Annual Leave', color: 'bg-blue-100 text-blue-700', limit: 30 },
+  { id: 'Casual', name: 'Casual Leave', color: 'bg-teal-100 text-teal-700', limit: 7 },
   { id: 'Sick', name: 'Sick Leave', color: 'bg-red-100 text-red-700', limit: 10 },
   { id: 'Special', name: 'Special Leave', color: 'bg-purple-100 text-purple-700', limit: 5 },
   { id: 'Maternity', name: 'Maternity Leave', color: 'bg-pink-100 text-pink-700', limit: 60 },
@@ -595,7 +596,7 @@ export default function LeaveManagementPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-blue-600/10 to-purple-600/10 border-b">
               <h2 className="text-2xl font-black">
                 {modalMode === 'add' ? 'Add Leave Application' : 'Process Leave Applications'}
               </h2>
@@ -836,7 +837,7 @@ export default function LeaveManagementPage() {
       {showDetailsModal && selectedApplication && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-blue-600/10 to-purple-600/10 border-b">
               <h2 className="text-2xl font-black">Leave Application Details</h2>
               <button
                 onClick={() => setShowDetailsModal(false)}

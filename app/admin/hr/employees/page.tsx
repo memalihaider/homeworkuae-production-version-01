@@ -8,7 +8,7 @@ import {
   MapPin,
   Award,
   Calendar,
-  DollarSign,
+  Banknote,
   FileText,
   Users,
   Briefcase,
@@ -203,7 +203,7 @@ export default function EmployeesPage() {
           {filteredEmployees.map(employee => (
             <div key={employee.id} className="bg-card border rounded-2xl overflow-hidden hover:shadow-lg transition-all">
               {/* Profile Section */}
-              <div className="p-4 bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+              <div className="p-4 bg-linear-to-r from-blue-600/10 to-purple-600/10">
                 <div className="flex items-start gap-3 mb-3">
                   {employee.profileImage ? (
                     <img
@@ -360,7 +360,7 @@ export default function EmployeesPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-background rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-linear-to-r from-blue-600/10 to-purple-600/10 border-b">
               <h2 className="text-2xl font-black">Employee Details</h2>
               <button
                 onClick={() => setShowDetails(false)}
@@ -450,7 +450,7 @@ export default function EmployeesPage() {
               {/* Salary */}
               <div>
                 <h3 className="text-lg font-black mb-4 flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <Banknote className="h-5 w-5 text-green-600" />
                   Salary Package
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
@@ -514,8 +514,16 @@ export default function EmployeesPage() {
                       <p className="font-bold text-sm">{selectedEmployee.passportNumber}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Passport Expiry</p>
+                      <p className="font-bold text-sm">{selectedEmployee.passportExpiryDate || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground">Emirates ID</p>
                       <p className="font-bold text-sm">{selectedEmployee.emiratesIdNumber}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Emirates ID Expiry</p>
+                      <p className="font-bold text-sm">{selectedEmployee.emiratesIdExpiryDate || 'N/A'}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground">Visa Type</p>
@@ -524,6 +532,10 @@ export default function EmployeesPage() {
                     <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-xs text-muted-foreground">Visa Expiry</p>
                       <p className="font-bold text-sm">{selectedEmployee.visa?.expiryDate || 'N/A'}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Driving License Expiry</p>
+                      <p className="font-bold text-sm">{selectedEmployee.drivingLicenseExpiryDate || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

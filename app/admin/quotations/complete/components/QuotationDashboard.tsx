@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileText, CheckCircle, Clock, AlertTriangle, TrendingUp, DollarSign, Users, Building2, Calendar, RefreshCw, TrendingDown, Eye } from 'lucide-react'
+import { FileText, CheckCircle, Clock, AlertTriangle, TrendingUp, Banknote, Users, Building2, Calendar, RefreshCw, TrendingDown, Eye } from 'lucide-react'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
@@ -249,7 +249,7 @@ export default function QuotationDashboard() {
         <div className="bg-white border border-gray-300 rounded p-3 shadow-none">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-1.5 bg-blue-500 rounded">
-              <DollarSign className="w-3.5 h-3.5 text-white" />
+              <Banknote className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-[10px] uppercase font-bold text-gray-400">Total Value</span>
           </div>
@@ -360,7 +360,7 @@ export default function QuotationDashboard() {
         {/* Financial Overview */}
         <div className="bg-white border border-gray-300 rounded p-4 shadow-none">
           <h3 className="text-[12px] uppercase font-bold text-black mb-4 flex items-center gap-2">
-            <DollarSign className="w-4 h-4" /> Financial Overview
+            <Banknote className="w-4 h-4" /> Financial Overview
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">

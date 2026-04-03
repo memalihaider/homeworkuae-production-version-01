@@ -63,6 +63,7 @@ interface FirebaseQuotation {
   email: string;
   phone: string;
   location: string;
+  currentAddress?: string;
   date: string;
   validUntil: string;
   dueDate: string;

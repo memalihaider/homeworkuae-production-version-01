@@ -7,6 +7,7 @@ import {
   Sparkles, 
   Home, 
   Briefcase, 
+  UserCheck,
   Maximize, 
   Sun, 
   Sofa, 
@@ -41,6 +42,7 @@ const DUMMY_SERVICE_CATEGORIES = [
     services: [
       { name: "Regular Residential", slug: "residential-cleaning", icon: Home, desc: "Standard home cleaning for maintaining a fresh living space." },
       { name: "Regular Office", slug: "office-cleaning", icon: Briefcase, desc: "Professional workspace cleaning for productive environments." },
+      { name: "Maid Cleaning Service", slug: "maid-cleaning-service", icon: UserCheck, desc: "Reliable maid cleaning for apartments, villas, and busy households." },
       { name: "Window cleaning", slug: "window-cleaning", icon: Maximize, desc: "Streak-free exterior and interior window restoration." },
       { name: "Balcony Cleaning", slug: "balcony-deep-cleaning", icon: Sun, desc: "Removing dust and sand from your outdoor relaxation areas." },
       { name: "Sofa Cleaning", slug: "sofa-deep-cleaning", icon: Sofa, desc: "Professional fabric and leather upholstery sanitization." },

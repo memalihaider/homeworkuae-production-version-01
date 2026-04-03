@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { Users, Search, Filter, Download, Plus, UserPlus, Award, Briefcase, MapPin, Phone, Mail, Shield, TrendingUp, AlertCircle, X, Edit2, Trash2, FileText, DollarSign, Heart, Globe, CheckCircle, Upload, File, Building, UserCog, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Users, Search, Filter, Download, Plus, UserPlus, Award, Briefcase, MapPin, Phone, Mail, Shield, TrendingUp, AlertCircle, X, Edit2, Trash2, FileText, Banknote, Heart, Globe, CheckCircle, Upload, File, Building, UserCog, ChevronRight, ChevronLeft } from 'lucide-react'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
@@ -1787,7 +1787,7 @@ export default function EmployeeDirectory() {
               {expandedSection === 'financial' && (
                 <div className="space-y-5 animate-fadeIn">
                   <h3 className="text-lg font-bold text-black flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-blue-600" />
+                    <Banknote className="h-5 w-5 text-blue-600" />
                     Financial & Salary Information
                   </h3>
 

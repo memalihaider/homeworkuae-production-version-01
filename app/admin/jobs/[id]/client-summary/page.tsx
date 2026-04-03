@@ -9,7 +9,7 @@ import {
   Mail,
   Phone,
   Calendar,
-  DollarSign,
+  Banknote,
   Clock,
   CheckCircle,
   Star,
@@ -161,7 +161,7 @@ export default function ClientSummary() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-gray-400" />
+                  <Banknote className="w-5 h-5 text-gray-400" />
                   <div>
                     <div className="text-sm font-medium text-gray-900">Total Cost</div>
                     <div className="text-sm text-gray-600">AED {summary.totalCost.toLocaleString()}</div>

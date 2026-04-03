@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import { Search, Plus, Trash2, Download, Eye, CheckCircle2, X, Filter, Calendar, DollarSign, User, Building, MapPin, Clock, AlertTriangle, FileText, Mail, Phone, Star, Settings, Copy, Archive, Send, CheckCircle, XCircle, Edit, Save, RotateCcw, Check, Zap, Package } from 'lucide-react'
+import { Search, Plus, Trash2, Download, Eye, CheckCircle2, X, Filter, Calendar, Banknote, User, Building, MapPin, Clock, AlertTriangle, FileText, Mail, Phone, Star, Settings, Copy, Archive, Send, CheckCircle, XCircle, Edit, Save, RotateCcw, Check, Zap, Package } from 'lucide-react'
 
 // interface Client {
 //   id: number

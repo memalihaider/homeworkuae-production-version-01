@@ -10,7 +10,7 @@ import {
   X, 
   Download,
   TrendingUp,
-  DollarSign,
+  Banknote,
   Target,
   CheckCircle2,
   Activity,
@@ -56,8 +56,7 @@ import {
   PhoneCall,
   Award,
   FileCheck,
-  Handshake,
-  UsersRound
+  Handshake
 } from 'lucide-react'
 
 // Firebase imports
@@ -80,7 +79,7 @@ interface Lead {
   id: string;
   name: string;
   company: string;
-  status: 'Contacter' | 'Negotiation' | 'Contacted' | 'Qualified' | 'Won' | 'New';
+  status: 'Contacter' | 'Negotiation' | 'Contacted' | 'Qualified' | 'Won' | 'New' | 'Lost';
   value: number;
   daysInStage: number;
   priority: 'High' | 'Medium' | 'Low';
@@ -177,6 +176,12 @@ interface AIPersona {
   budgetRange: string;
   painPoints: string;
   goals: string;
+  satisfactionScore: number | null;
+  serviceHistoryRating: number | null;
+  responseTime: string;
+  contractRenewalProbability: number | null;
+  lifetimeValue: number;
+  lastContact: string;
 }
 
 const LEAD_SOURCE_OPTIONS = ['Meta Ads', 'Google Ads', 'E - Movers', 'Email', 'Others'] as const
@@ -257,7 +262,7 @@ export default function UnifiedCRMDashboard() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
 
-  const stages = ['Contacter', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'New'] as const
+  const stages = ['New', 'Contacter', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'Lost'] as const
 
   // Firebase se data fetch
   useEffect(() => {
@@ -358,6 +363,11 @@ export default function UnifiedCRMDashboard() {
       
       querySnapshot.forEach((doc) => {
         const data = doc.data()
+        const serviceHistory = Array.isArray(data.serviceHistory) ? data.serviceHistory : []
+        const serviceHistoryRating = serviceHistory.length > 0
+          ? serviceHistory.reduce((sum: number, item: { rating?: number }) => sum + (item.rating || 0), 0) / serviceHistory.length
+          : null
+
         topLeads.push({
           id: doc.id,
           name: data.name || 'Unknown',
@@ -373,7 +383,13 @@ export default function UnifiedCRMDashboard() {
           employees: data.employees || 0,
           budgetRange: data.budgetRange || 'Not specified',
           painPoints: data.painPoints || 'No data',
-          goals: data.goals || 'No data'
+          goals: data.goals || 'No data',
+          satisfactionScore: typeof data.satisfactionScore === 'number' ? data.satisfactionScore : null,
+          serviceHistoryRating,
+          responseTime: data.responseTime || 'Not tracked',
+          contractRenewalProbability: typeof data.contractRenewalProbability === 'number' ? data.contractRenewalProbability : null,
+          lifetimeValue: data.lifetimeValue || 0,
+          lastContact: data.lastContact || ''
         })
       })
       
@@ -812,9 +828,10 @@ export default function UnifiedCRMDashboard() {
     }
   }
 
-  const totalPipeline = filteredLeads.reduce((sum, l) => sum + l.value, 0)
-  const avgDealSize = filteredLeads.length > 0 ? filteredLeads.reduce((sum, l) => sum + l.value, 0) / filteredLeads.length : 0
-  const activeLead = filteredLeads.filter(l => l.status !== 'Won').length
+  const pipelineLeads = filteredLeads.filter(l => l.status !== 'Won' && l.status !== 'Lost')
+  const totalPipeline = pipelineLeads.reduce((sum, l) => sum + l.value, 0)
+  const avgDealSize = pipelineLeads.length > 0 ? pipelineLeads.reduce((sum, l) => sum + l.value, 0) / pipelineLeads.length : 0
+  const pipelineLeadsCount = pipelineLeads.length
   const wonDeals = filteredLeads.filter(l => l.status === 'Won').reduce((sum, l) => sum + l.value, 0)
 
   // Calculate counts for each status
@@ -823,7 +840,7 @@ export default function UnifiedCRMDashboard() {
   const qualifiedLeadsCount = filteredLeads.filter(l => l.status === 'Qualified').length
   const negotiationLeadsCount = filteredLeads.filter(l => l.status === 'Negotiation').length
   const wonLeadsCount = filteredLeads.filter(l => l.status === 'Won').length
-  const contacterLeadsCount = filteredLeads.filter(l => l.status === 'Contacter').length
+  const lostLeadsCount = filteredLeads.filter(l => l.status === 'Lost').length
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -832,6 +849,32 @@ export default function UnifiedCRMDashboard() {
       default: return { bg: 'bg-green-100', text: 'text-green-900', badge: 'bg-green-50 text-green-700 border-green-300' }
     }
   }
+
+  const getServiceHistoryAverage = (history: Lead['serviceHistory']): number | null => {
+    if (!history || history.length === 0) return null
+    const total = history.reduce((sum, item) => sum + (item.rating || 0), 0)
+    return total / history.length
+  }
+
+  const getPipelineStatus = (status: Lead['status']) => {
+    if (status === 'Won') return 'Won'
+    if (status === 'Lost') return 'Lost'
+    return 'Pipeline'
+  }
+
+  const getPipelineStatusBadge = (pipelineStatus: 'Pipeline' | 'Won' | 'Lost') => {
+    switch (pipelineStatus) {
+      case 'Won':
+        return 'bg-green-100 text-green-700 border-green-300'
+      case 'Lost':
+        return 'bg-red-100 text-red-700 border-red-300'
+      default:
+        return 'bg-blue-100 text-blue-700 border-blue-300'
+    }
+  }
+
+  const selectedLeadPipelineStatus = selectedLead ? getPipelineStatus(selectedLead.status) : null
+  const selectedLeadServiceHistoryRating = selectedLead ? getServiceHistoryAverage(selectedLead.serviceHistory) : null
 
   const handleLeadSelectChange = (leadId: string) => {
     const selectedLead = leads.find(l => l.id === leadId);
@@ -1055,7 +1098,7 @@ export default function UnifiedCRMDashboard() {
             </button>
               <button 
               onClick={fetchAISuggestions}
-              className="group relative flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 hover:from-purple-700 hover:via-pink-600 hover:to-orange-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-white/20"
+              className="group relative flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-purple-600 via-pink-500 to-orange-500 hover:from-purple-700 hover:via-pink-600 hover:to-orange-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-white/20"
             >
               <Sparkles className="h-4 w-4 animate-pulse" />
               <Brain className="h-4 w-4" />
@@ -1068,7 +1111,7 @@ export default function UnifiedCRMDashboard() {
       </div>
 
       {/* Stats Grid - Updated with all status counts */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {/* New Leads Card */}
         <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 transition-all">
           <div className="flex items-center justify-between gap-2">
@@ -1121,6 +1164,19 @@ export default function UnifiedCRMDashboard() {
           </div>
         </div>
 
+        {/* Pipeline Leads Card */}
+        <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 transition-all">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Pipeline</p>
+              <p className="text-lg font-black mt-0.5 text-blue-700">{pipelineLeadsCount}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
+              <Activity className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+
         {/* Won Leads Card */}
         <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-green-300 transition-all">
           <div className="flex items-center justify-between gap-2">
@@ -1133,16 +1189,15 @@ export default function UnifiedCRMDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Contacter Leads Card */}
-        <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-rose-300 transition-all">
+        {/* Lost Leads Card */}
+        <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-red-300 transition-all">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contacter</p>
-              <p className="text-lg font-black mt-0.5 text-rose-700">{contacterLeadsCount}</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lost</p>
+              <p className="text-lg font-black mt-0.5 text-red-700">{lostLeadsCount}</p>
             </div>
-            <div className="p-2 rounded-lg bg-rose-100 text-rose-700">
-              <UsersRound className="h-4 w-4" />
+            <div className="p-2 rounded-lg bg-red-100 text-red-700">
+              <X className="h-4 w-4" />
             </div>
           </div>
         </div>
@@ -1157,7 +1212,7 @@ export default function UnifiedCRMDashboard() {
             placeholder="Search leads by name or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-[750px] pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 placeholder:text-gray-500 transition-all"
+            className="w-187.5 pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 placeholder:text-gray-500 transition-all"
           />
         </div>
         
@@ -1515,6 +1570,7 @@ export default function UnifiedCRMDashboard() {
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-1 rounded text-[9px] font-bold uppercase border ${
                       lead.status === 'Won' ? 'bg-green-100 text-green-700 border-green-300' :
+                      lead.status === 'Lost' ? 'bg-red-100 text-red-700 border-red-300' :
                       lead.status === 'Negotiation' ? 'bg-blue-100 text-blue-700 border-blue-300' :
                       lead.status === 'New' ? 'bg-gray-100 text-gray-700 border-gray-300' :
                       lead.status === 'Qualified' ? 'bg-purple-100 text-purple-700 border-purple-300' :
@@ -1585,8 +1641,8 @@ export default function UnifiedCRMDashboard() {
       {/* Enhanced Lead Details Modal - WITH SCROLLBAR */}
       {showLeadModal && selectedLead && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-gray-300 rounded-xl shadow-2xl w-full max-w-4xl max-h-[100vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-300 bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
+          <div className="bg-white border border-gray-300 rounded-xl shadow-2xl w-full max-w-4xl max-h-screen overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-300 bg-linear-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <div className="h-14 w-14 rounded-xl bg-blue-100 flex items-center justify-center border-2 border-blue-300">
                   <Users className="h-7 w-7 text-blue-700" />
@@ -1616,14 +1672,14 @@ export default function UnifiedCRMDashboard() {
 
             <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                <div className="bg-linear-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
                   <div className="flex items-center gap-2 mb-2">
                    
                   </div>
                   <p className="text-xl font-black text-blue-900">AED {selectedLead.value.toLocaleString()}</p>
                 </div>
                 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+                <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
                   <div className="flex items-center gap-2 mb-2">
                     <BarChart className="h-4 w-4 text-purple-600" />
                     <p className="text-xs font-bold text-purple-700 uppercase">Lifetime Value</p>
@@ -1631,7 +1687,7 @@ export default function UnifiedCRMDashboard() {
                   <p className="text-xl font-black text-purple-900">AED {selectedLead.lifetimeValue.toLocaleString()}</p>
                 </div>
                 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                <div className="bg-linear-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
                   <div className="flex items-center gap-2 mb-2">
                     <CreditCard className="h-4 w-4 text-green-600" />
                     <p className="text-xs font-bold text-green-700 uppercase">Credit Limit</p>
@@ -1639,7 +1695,7 @@ export default function UnifiedCRMDashboard() {
                   <p className="text-xl font-black text-green-900">AED {selectedLead.creditLimit?.toLocaleString() || '0'}</p>
                 </div>
                 
-                <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200">
+                <div className="bg-linear-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-4 w-4 text-amber-600" />
                     <p className="text-xs font-bold text-amber-700 uppercase">Employees</p>
@@ -1808,12 +1864,19 @@ export default function UnifiedCRMDashboard() {
                         <span className="text-sm text-gray-600">Current Status:</span>
                         <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${
                           selectedLead.status === 'Won' ? 'bg-green-100 text-green-700' :
+                          selectedLead.status === 'Lost' ? 'bg-red-100 text-red-700' :
                           selectedLead.status === 'Negotiation' ? 'bg-blue-100 text-blue-700' :
                           selectedLead.status === 'New' ? 'bg-gray-100 text-gray-700' :
                           selectedLead.status === 'Qualified' ? 'bg-purple-100 text-purple-700' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {selectedLead.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Pipeline Status:</span>
+                        <span className={`text-xs font-bold px-2 py-1 rounded uppercase border ${getPipelineStatusBadge(selectedLeadPipelineStatus || 'Pipeline')}`}>
+                          {selectedLeadPipelineStatus || 'Pipeline'}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -1876,6 +1939,46 @@ export default function UnifiedCRMDashboard() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2 pb-2 border-b">
+                      <Star className="h-4 w-4 text-amber-600" />
+                      Customer Rating
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Survey Satisfaction:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedLead.satisfactionScore !== null && selectedLead.satisfactionScore !== undefined
+                            ? `${selectedLead.satisfactionScore}/10`
+                            : 'Not rated'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Service History Avg:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedLeadServiceHistoryRating !== null
+                            ? `${selectedLeadServiceHistoryRating.toFixed(1)}/5`
+                            : 'No history'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Response Time:</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedLead.responseTime || 'Not tracked'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Renewal Probability:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedLead.contractRenewalProbability !== null && selectedLead.contractRenewalProbability !== undefined
+                            ? `${selectedLead.contractRenewalProbability}%`
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Criteria: survey score (1-10), average service ratings (1-5), and response time trend.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1891,7 +1994,7 @@ export default function UnifiedCRMDashboard() {
                       <div className="flex flex-wrap gap-2">
                         {selectedLead.source && selectedLead.source.length > 0 ? (
                           selectedLead.source.map((src: string, index: number) => (
-                            <span key={index} className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 text-xs font-bold rounded-full border border-green-200">
+                            <span key={index} className="inline-flex items-center px-3 py-1.5 bg-linear-to-r from-green-50 to-emerald-50 text-green-800 text-xs font-bold rounded-full border border-green-200">
                               {src}
                             </span>
                           ))
@@ -1917,14 +2020,14 @@ export default function UnifiedCRMDashboard() {
             <div className="p-6 bg-gray-50 border-t border-gray-300 flex flex-wrap gap-3">
               <button 
                 onClick={() => setShowLeadModal(false)} 
-                className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-bold text-sm uppercase transition-all flex-1 min-w-[120px]"
+                className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-bold text-sm uppercase transition-all flex-1 min-w-30"
               >
                 Close
               </button>
               
               <button
                 onClick={() => handleEditLead(selectedLead)}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm uppercase transition-all flex-1 min-w-[120px] flex items-center justify-center gap-2"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm uppercase transition-all flex-1 min-w-30 flex items-center justify-center gap-2"
               >
                 <Edit2 className="h-4 w-4" />
                 Edit Lead
@@ -1937,7 +2040,7 @@ export default function UnifiedCRMDashboard() {
                     handleMoveStage(selectedLead, e.target.value)
                     setShowLeadModal(false)
                   }}
-                  className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 font-bold focus:ring-2 focus:ring-blue-500 outline-none flex-1 min-w-[120px]"
+                  className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 font-bold focus:ring-2 focus:ring-blue-500 outline-none flex-1 min-w-30"
                 >
                   <option value="">Move to Stage...</option>
                   {stages.map(s => (
@@ -1952,7 +2055,7 @@ export default function UnifiedCRMDashboard() {
                     handleDeleteLead(selectedLead.id)
                   }
                 }}
-                className="px-6 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-sm uppercase transition-all border border-red-300 flex-1 min-w-[120px] flex items-center justify-center gap-2"
+                className="px-6 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-sm uppercase transition-all border border-red-300 flex-1 min-w-30 flex items-center justify-center gap-2"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete
@@ -2642,10 +2745,10 @@ export default function UnifiedCRMDashboard() {
       {/* AI Persona Generation Modal - FANCY VERSION */}
       {showAIPersonaModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-purple-500/30 shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-purple-500/30 bg-gradient-to-r from-purple-900/50 to-pink-900/50">
+          <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-purple-500/30 shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-purple-500/30 bg-linear-to-r from-purple-900/50 to-pink-900/50">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg animate-pulse">
+                <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg animate-pulse">
                   <Bot className="h-8 w-8 text-white" />
                 </div>
                 <div>
@@ -2676,14 +2779,14 @@ export default function UnifiedCRMDashboard() {
                 aiPersonaResults.map((lead, index) => (
                   <div
                     key={lead.id}
-                    className="bg-gradient-to-r from-gray-800/80 to-gray-800 rounded-xl p-6 border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl group"
+                    className="bg-linear-to-r from-gray-800/80 to-gray-800 rounded-xl p-6 border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl group"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-2xl font-bold ${
-                          index === 0 ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white' :
-                          index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white' :
-                          'bg-gradient-to-br from-amber-700 to-amber-800 text-white'
+                          index === 0 ? 'bg-linear-to-br from-yellow-500 to-orange-500 text-white' :
+                          index === 1 ? 'bg-linear-to-br from-gray-400 to-gray-500 text-white' :
+                          'bg-linear-to-br from-amber-700 to-amber-800 text-white'
                         }`}>
                           #{index + 1}
                         </div>
@@ -2738,6 +2841,45 @@ export default function UnifiedCRMDashboard() {
                       <div className="col-span-2">
                         <p className="text-xs font-bold text-gray-500 uppercase">Budget Range</p>
                         <p className="text-sm text-gray-300">{lead.budgetRange}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Satisfaction Score</p>
+                        <p className="text-sm text-gray-300">
+                          {lead.satisfactionScore !== null && lead.satisfactionScore !== undefined
+                            ? `${lead.satisfactionScore}/10`
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Service Rating</p>
+                        <p className="text-sm text-gray-300">
+                          {lead.serviceHistoryRating !== null
+                            ? `${lead.serviceHistoryRating.toFixed(1)}/5`
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Response Time</p>
+                        <p className="text-sm text-gray-300">{lead.responseTime || 'Not tracked'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Renewal Probability</p>
+                        <p className="text-sm text-gray-300">
+                          {lead.contractRenewalProbability !== null && lead.contractRenewalProbability !== undefined
+                            ? `${lead.contractRenewalProbability}%`
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs font-bold text-gray-500 uppercase">Lifetime Value</p>
+                        <p className="text-sm text-gray-300">AED {lead.lifetimeValue?.toLocaleString?.() || '0'}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs font-bold text-gray-500 uppercase">Last Contact</p>
+                        <p className="text-sm text-gray-300">{lead.lastContact || 'Not specified'}</p>
                       </div>
                     </div>
                     

@@ -16,6 +16,7 @@ import {
   CircleCheck,
 } from 'lucide-react'
 import Image from 'next/image'
+import BookServiceForm from '@/components/BookServiceForm'
 
 export type ServiceTrustStat = { label: string; value: string }
 export type ServiceOfferCard = { title: string }
@@ -75,6 +76,98 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     ctaTitle: 'Enjoy a Spotless Home',
     ctaSubtitle: 'Contact us today for professional residential cleaning services.',
     beforeAfterImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
+  },
+  'maid-cleaning-service': {
+    name: 'Maid Cleaning Service in Dubai',
+    badge: 'Normal Cleaning Services',
+    heroTitleLine1: 'PROFESSIONAL MAID',
+    heroTitleLine2: 'CLEANING SERVICE',
+    heroSubtitle:
+      'Maid cleaning service in Dubai for apartments, villas, and offices. Homework UAE delivers reliable, trained maids, flexible schedules, and spotless results.',
+    heroImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
+    sectionImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80',
+    specialistLabel: 'Dubai Maid Cleaning Specialists',
+    aboutHeading1: 'Trusted Maid',
+    aboutHeading2: 'Cleaning in Dubai',
+    description:
+      'Need a dependable maid cleaning service in Dubai? Homework UAE provides trained maids for routine home cleaning, apartment upkeep, and villa maintenance. We follow a structured checklist, use safe cleaning products, and focus on high-touch areas, kitchens, and bathrooms so your space stays fresh and hygienic.',
+    features: [
+      'Living Room and Bedroom Dusting',
+      'Kitchen Surface Wipe-Down and Degreasing',
+      'Bathroom Sanitization and Disinfection',
+      'Floor Vacuuming and Mopping',
+      'Glass, Mirror, and Fixture Polishing',
+      'Trash Removal and Final Tidy-Up',
+    ],
+    offerCards: [
+      { title: 'Hourly or Recurring Maid Visits' },
+      { title: 'Apartment and Villa Cleaning' },
+      { title: 'Eco-Friendly Cleaning Products' },
+      { title: 'Quality Checks After Every Visit' },
+    ],
+    processSteps: [
+      {
+        title: 'Scope and Schedule',
+        detail: 'We confirm your preferred timing, frequency, and cleaning priorities before dispatching a maid.',
+      },
+      {
+        title: 'Checklist Cleaning',
+        detail: 'Our maid follows a structured room-by-room checklist for consistent cleaning quality.',
+      },
+      {
+        title: 'Hygiene Focus',
+        detail: 'We sanitize high-touch points, kitchens, and bathrooms for a healthier home.',
+      },
+      {
+        title: 'Final Review',
+        detail: 'We complete a final walkthrough to confirm all requested areas are clean and tidy.',
+      },
+    ],
+    qualityHeading: 'Reliable Maid Service, Every Visit',
+    qualityDescription:
+      'Our maid cleaning service in Dubai is built on consistency. Expect the same checklist, the same attention to detail, and the same clean finish each time.',
+    qualityCardText:
+      'Consistent quality checks and trained maids for every home cleaning visit in Dubai.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
+    whyChoosePoints: [
+      'Trusted maid cleaning service in Dubai with trained staff.',
+      'Flexible scheduling for weekly, bi-weekly, or on-demand cleaning.',
+      'Safe cleaning products for families, pets, and sensitive surfaces.',
+      'Clear communication and reliable arrival times across Dubai.',
+      'Detailed cleaning checklist for consistent results.',
+    ],
+    serviceAreas: [
+      'Downtown Dubai',
+      'Dubai Marina',
+      'Jumeirah',
+      'Business Bay',
+      'Al Barsha',
+      'JLT',
+    ],
+    faqs: [
+      {
+        q: 'What is included in your maid cleaning service in Dubai?',
+        a: 'Our maid cleaning service covers dusting, kitchen wipe-downs, bathroom sanitization, floor cleaning, and general tidying. You can also request priority areas during booking.',
+      },
+      {
+        q: 'Can I book a recurring maid cleaning schedule?',
+        a: 'Yes. Homework UAE supports weekly, bi-weekly, and custom schedules for apartments, villas, and offices in Dubai.',
+      },
+      {
+        q: 'Do I need to provide cleaning supplies?',
+        a: 'We can bring our own cleaning supplies or use yours based on your preference. Let us know during booking.',
+      },
+      {
+        q: 'Is your maid cleaning service suitable for villas?',
+        a: 'Yes. We provide maid cleaning for villas, apartments, and townhouses with flexible time slots and tailored scopes.',
+      },
+      {
+        q: 'How do I book a maid cleaning service in Dubai?',
+        a: 'You can book online or contact our team directly to confirm your preferred date, time, and service scope.',
+      },
+    ],
+    ctaTitle: 'Book Maid Cleaning Today',
+    ctaSubtitle: 'Schedule a professional maid cleaning service in Dubai with Homework UAE.',
   },
   'office-cleaning': {
     name: 'Regular Office Cleaning',
@@ -277,7 +370,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Thorough Grout Assessment', 'Eco-Friendly Solution Application', 'High-Pressure Steam Cleaning', 'Manual Hard Stain Scrubbing', 'Premium Grout Sealing', 'Grout Colour Restoration'],
     ctaTitle: 'Restore Your Grout & Tiles',
     ctaSubtitle: 'Contact us today for professional grout deep cleaning services.',
-    beforeAfterImage: 'https://images.unsplash.com/photo-1523419409543-0e1d3a6cd6b5?auto=format&fit=crop&w=1800&q=80',
+    beforeAfterImage: '',
   },
   'garage-deep-cleaning': {
     name: 'Garage Deep Cleaning',
@@ -758,13 +851,13 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=80',
   ]
   const sectionFallbackImages = [
-    'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1800&q=80',
+    '',
+    '',
+    '',
   ]
   const beforeAfterFallbackImages = [
-    'https://images.unsplash.com/photo-1585435557343-3b092031e21f?auto=format&fit=crop&w=1800&q=80',
-    'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1800&q=80',
+    '',
+    '',
     'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/Hood%20before%20and%20after%20cleaning.png?alt=media&token=48e9348b-94dc-4375-a068-0a40a981cae9',
   ]
   const slugSeed = [...slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
@@ -929,40 +1022,51 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
         </div>
 
         <div className="container relative z-10 mx-auto px-4 py-14 sm:px-6 sm:py-16 md:py-20 lg:py-24">
-          <div className="max-w-3xl">
-            <div>
-              <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/12 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur-sm sm:text-[11px]">
-                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                {content.badge}
-              </span>
-
-              <h1 className="mb-5 text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-5xl md:text-6xl xl:text-7xl">
-                <span className="block">{content.heroTitleLine1}</span>
-                <span className="block bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">
-                  {content.heroTitleLine2}
+          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+            <div className="max-w-3xl">
+              <div>
+                <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/12 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur-sm sm:text-[11px]">
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  {content.badge}
                 </span>
-              </h1>
 
-              <p className="mb-8 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg lg:text-xl">
-                {content.heroSubtitle}
-              </p>
+                <h1 className="mb-5 text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-5xl md:text-6xl xl:text-7xl">
+                  <span className="block">{content.heroTitleLine1}</span>
+                  <span className="block bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">
+                    {content.heroTitleLine2}
+                  </span>
+                </h1>
 
-              <div className="flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-4">
-                <a
-                  href="/book-service"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-linear-to-r from-[#039ED9] to-primary px-7 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_35px_rgba(236,72,153,0.32)] sm:text-sm"
-                >
-                  Book Premium Service
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </a>
-                <a
-                  href="tel:+971507177059"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/8 px-7 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/14 sm:text-sm"
-                >
-                  <PhoneCall className="h-4 w-4 text-primary" />
-                  +971 50 717 7059
-                </a>
+                <p className="mb-8 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg lg:text-xl">
+                  {content.heroSubtitle}
+                </p>
+
+                <div className="flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-4">
+                  <a
+                    href="/book-service"
+                    className="group inline-flex items-center justify-center gap-2 rounded-full bg-linear-to-r from-[#039ED9] to-primary px-7 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_35px_rgba(236,72,153,0.32)] sm:text-sm"
+                  >
+                    Book Premium Service
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </a>
+                  <a
+                    href="tel:+971507177059"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/8 px-7 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/14 sm:text-sm"
+                  >
+                    <PhoneCall className="h-4 w-4 text-primary" />
+                    +971 50 717 7059
+                  </a>
+                </div>
               </div>
+            </div>
+
+            <div className="w-full max-w-xl lg:justify-self-end">
+              <BookServiceForm
+                preselectedServiceName={serviceName}
+                title="Book This Service"
+                subtitle="Share your details and preferred location. Our team will confirm quickly."
+                headerAlignment="left"
+              />
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { 
   Plus, Trash2, Search, Eye, Download, Save, 
-  FileText, DollarSign, Calendar, User, Building2, Mail, Phone, 
+  FileText, Banknote, Calendar, User, Building2, Mail, Phone, 
   MapPin, Percent, Tag, ShoppingCart, Sparkles, Settings,
   FileCheck, AlertCircle, X, Send, Upload, Paperclip
 } from 'lucide-react'

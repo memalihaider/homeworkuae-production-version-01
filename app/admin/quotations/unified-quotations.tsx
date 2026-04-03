@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { 
   Plus, Search, Filter, Download, Send, Trash2, Edit, Eye, MoreHorizontal, 
   ChevronDown, Check, AlertCircle, CheckCircle, X, Mail, Phone, FileText, 
-  DollarSign, Calendar, User, Building2, MapPin, Percent, Tag, ShoppingCart, 
+  Banknote, Calendar, User, Building2, MapPin, Percent, Tag, ShoppingCart, 
   Sparkles, Settings, FileCheck, Clock, TrendingUp, Copy, MessageSquare, 
   MessageCircle, Save, ArrowRight
 } from 'lucide-react'
@@ -515,7 +515,7 @@ Please let me know if you have any questions!
                     <p className="text-slate-600 text-sm font-medium">Total Amount</p>
                     <p className="text-2xl font-bold text-slate-900">AED {(stats.totalAmount / 1000).toFixed(0)}K</p>
                   </div>
-                  <DollarSign className="text-green-600" size={28} />
+                  <Banknote className="text-green-600" size={28} />
                 </div>
               </div>
             </div>

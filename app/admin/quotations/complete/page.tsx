@@ -46,6 +46,7 @@ export interface LocalQuotation extends BaseQuotation {
   discount: number;
   discountType: string;
   location: string;
+  currentAddress?: string;
   amount?: number;
   version?: number;
   lastModified?: string;
@@ -110,6 +111,7 @@ export default function QuotationsPage() {
       discount: quotation.discount ?? 0,
       discountType: quotation.discountType || 'percentage',
       location: quotation.location || '',
+      currentAddress: (quotation as LocalQuotation).currentAddress || '',
       amount: quotation.amount ?? quotation.total ?? 0,
       version: quotation.version ?? 1,
       lastModified: quotation.lastModified || new Date().toISOString()
@@ -136,6 +138,7 @@ export default function QuotationsPage() {
         email: quotation.email || '',
         phone: quotation.phone || '',
         location: quotation.location || 'Dubai, UAE',
+        currentAddress: (quotation as LocalQuotation).currentAddress || '',
         quoteNumber: quotation.quoteNumber || `QUOTE-${Date.now()}`,
         date: quotation.date || new Date().toISOString().split('T')[0],
         validUntil: quotation.validUntil || new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],

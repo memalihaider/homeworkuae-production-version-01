@@ -6,7 +6,7 @@ import {
   Search,
   Trash2,
   Edit,
-  DollarSign,
+  Banknote,
   TrendingUp,
   TrendingDown,
   Calendar,
@@ -298,7 +298,7 @@ export default function ExpenseManager() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <DollarSign className="h-5 w-5" />
+              <Banknote className="h-5 w-5" />
             </div>
             <span className="text-white/80 font-bold text-sm uppercase tracking-wider">Job Management</span>
           </div>
@@ -542,7 +542,7 @@ export default function ExpenseManager() {
                   <p className="text-gray-600 text-sm font-semibold">Total Expenses</p>
                   <p className="text-3xl font-black text-emerald-600 mt-2">AED {stats.totalExpenses.toLocaleString()}</p>
                 </div>
-                <DollarSign className="h-10 w-10 text-emerald-600 opacity-20" />
+                <Banknote className="h-10 w-10 text-emerald-600 opacity-20" />
               </div>
             </div>
 

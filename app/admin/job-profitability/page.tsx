@@ -20,7 +20,7 @@ import {
   TrendingUp,
   Users,
   Clock,
-  DollarSign,
+  Banknote,
   AlertCircle,
   ArrowLeft,
   Download,
@@ -700,7 +700,7 @@ export default function JobProfitabilityAndCapacity() {
         <div className="bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <DollarSign className="w-4 h-4 text-blue-600" />
+              <Banknote className="w-4 h-4 text-blue-600" />
             </div>
             <span className="text-xs font-bold text-blue-700 uppercase">Total Revenue</span>
           </div>

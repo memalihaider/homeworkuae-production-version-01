@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { 
-  Plus, Trash2, Save, Eye, Percent, DollarSign, 
+  Plus, Trash2, Save, Eye, Percent, Banknote, 
   User, Building2, MapPin, Mail, Phone, ShoppingCart, 
   Settings, FileText, ChevronDown, Check, X, CreditCard, FileCheck, UserPlus
 } from 'lucide-react'
@@ -85,6 +85,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       email: '',
       phone: '',
       location: '',
+      currentAddress: '',
       date: new Date().toISOString().split('T')[0],
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -124,7 +125,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
     company: '',
     email: '',
     phone: '',
-    location: ''
+    location: '',
+    currentAddress: ''
   })
 
   // 👇 NEW EFFECT - Handle initialData for editing
@@ -142,6 +144,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         email: initialData.email || prev.email || '',
         phone: initialData.phone || prev.phone || '',
         location: initialData.location || prev.location || '',
+        currentAddress: initialData.currentAddress || prev.currentAddress || '',
         date: initialData.date || prev.date || new Date().toISOString().split('T')[0],
         validUntil: initialData.validUntil || prev.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         dueDate: initialData.dueDate || prev.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -481,6 +484,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         email: quotationData.email,
         phone: quotationData.phone,
         location: quotationData.location,
+        currentAddress: quotationData.currentAddress,
         
         // Dates
         date: quotationData.date,
@@ -685,7 +689,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         company: contact.company,
         email: contact.email,
         phone: contact.phone,
-        location: contact.location
+        location: contact.location,
+        currentAddress: contact.location
       })
       // Hide custom client form when selecting from dropdown
       setShowCustomClient(false)
@@ -706,7 +711,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       company: customClient.company,
       email: customClient.email,
       phone: customClient.phone,
-      location: customClient.location
+      location: customClient.location,
+      currentAddress: customClient.currentAddress || customClient.location
     })
     
     // Reset and close custom client form
@@ -715,7 +721,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       company: '',
       email: '',
       phone: '',
-      location: ''
+      location: '',
+      currentAddress: ''
     })
     setShowCustomClient(false)
     
@@ -728,7 +735,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       company: '',
       email: '',
       phone: '',
-      location: ''
+      location: '',
+      currentAddress: ''
     })
     setShowCustomClient(false)
   }
@@ -929,6 +937,17 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                       className="w-full px-3 py-2 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Current Home Address</label>
+                    <input
+                      type="text"
+                      placeholder="Apartment, building, street"
+                      value={customClient.currentAddress}
+                      onChange={(e) => setCustomClient({...customClient, currentAddress: e.target.value})}
+                      className="w-full px-3 py-2 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-3 pt-2">
@@ -1096,6 +1115,16 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                 placeholder="Dubai Marina, UAE"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="w-full bg-transparent border-none p-0 text-xs font-bold text-black focus:ring-0 placeholder:text-gray-300"
+              />
+            </div>
+            <div className="space-y-1 md:col-span-3">
+               <label className="text-[9px] uppercase font-bold text-gray-400">Current Home Address</label>
+               <input
+                type="text"
+                placeholder="Apartment, building, street"
+                value={formData.currentAddress}
+                onChange={(e) => setFormData({ ...formData, currentAddress: e.target.value })}
                 className="w-full bg-transparent border-none p-0 text-xs font-bold text-black focus:ring-0 placeholder:text-gray-300"
               />
             </div>

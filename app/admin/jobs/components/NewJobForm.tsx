@@ -10,7 +10,7 @@ import {
   Clock, 
   MapPin, 
   Users, 
-  DollarSign, 
+  Banknote, 
   Tag,
   Shield,
   Briefcase,
@@ -343,7 +343,7 @@ export default function NewJobForm({ onClose, onSave }: NewJobFormProps) {
           {/* Resources & Budget */}
           <div className="space-y-4 pb-6 border-b border-gray-200">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500 flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Resources & Budget
+              <Banknote className="h-4 w-4" /> Resources & Budget
             </h3>
             
             <div className="grid grid-cols-2 gap-4">

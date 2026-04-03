@@ -3,7 +3,7 @@
 
 // import { useState, useMemo, useEffect } from 'react'
 // import {
-//   DollarSign,
+//   Banknote,
 //   Calculator,
 //   Check,
 //   AlertCircle,
@@ -1174,7 +1174,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import {
-  DollarSign,
+  Banknote,
   Calculator,
   Check,
   AlertCircle,
@@ -1185,7 +1185,6 @@ import {
   X,
   Wallet,
   CreditCard,
-  Banknote,
   Receipt,
   CheckCircle2,
   Clock,

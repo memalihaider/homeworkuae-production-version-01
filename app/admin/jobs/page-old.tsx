@@ -18,7 +18,7 @@ import {
   X,
   User,
   Briefcase,
-  DollarSign,
+  Banknote,
   Camera,
   Play
 } from 'lucide-react'
@@ -403,7 +403,7 @@ function JobBoardContent() {
                             Team: {job.teamRequired}
                           </div>
                           <div className="flex items-center gap-1 text-muted-foreground">
-                            <DollarSign className="h-3 w-3" />
+                            <Banknote className="h-3 w-3" />
                             AED {job.budget.toLocaleString()}
                           </div>
                         </div>

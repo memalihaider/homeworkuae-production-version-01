@@ -4,7 +4,7 @@
 import { ReactNode, useState, useEffect, useRef } from 'react'
 import { 
   Phone, Mail, Facebook, Linkedin, Instagram, MessageCircle, ChevronDown,
-  Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, 
+  Home, Briefcase, Maximize, Sun, Sofa, Layers, Bed, UserCheck,
   Wind, Grid3X3, Warehouse, CookingPot, HardHat, Building, Truck, Brush,
   Fan, Pipette, Utensils, Waves, Dumbbell, PanelTop, ThermometerSnowflake,
   Star, HelpCircle, ShieldCheck, Music2, Send, MapPin, ArrowRight, X, Menu
@@ -145,6 +145,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                       {[
                         { name: "Regular Residential", href: "/services/residential-cleaning", icon: Home },
                         { name: "Regular Office", href: "/services/office-cleaning", icon: Briefcase },
+                        { name: "Maid Cleaning Service", href: "/services/maid-cleaning-service", icon: UserCheck },
                         { name: "Window cleaning", href: "/services/window-cleaning", icon: Maximize },
                         { name: "Balcony Cleaning", href: "/services/balcony-deep-cleaning", icon: Sun },
                         { name: "Sofa Cleaning", href: "/services/sofa-deep-cleaning", icon: Sofa },
@@ -294,6 +295,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                         <div className="grid gap-1 px-2 pb-2">
                           <a href="/services/residential-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Regular Residential</a>
                           <a href="/services/office-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Regular Office</a>
+                          <a href="/services/maid-cleaning-service" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Maid Cleaning Service</a>
                           <a href="/services/window-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Window Cleaning</a>
                           <a href="/services/balcony-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Balcony Cleaning</a>
                           <a href="/services/sofa-deep-cleaning" className="rounded-md px-2 py-1.5 hover:bg-slate-50">Sofa Cleaning</a>

@@ -10,7 +10,7 @@ import {
   Phone,
   Mail,
   MapPin,
-  DollarSign,
+  Banknote,
   CheckCircle,
   Clock as ClockIcon,
   AlertCircle,
@@ -938,7 +938,7 @@ export default function AdminBookings() {
               <select
                 value={selectedService}
                 onChange={(e) => setSelectedService(e.target.value)}
-                className="px-3 py-1.5 bg-muted/50 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all min-w-[180px]"
+                className="px-3 py-1.5 bg-muted/50 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all min-w-45"
               >
                 <option value="all">All Services ({services.length})</option>
                 {services.map(service => (
@@ -999,7 +999,7 @@ export default function AdminBookings() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="font-medium min-w-[120px] text-center px-2">
+                <span className="font-medium min-w-30 text-center px-2">
                   {format(selectedDate, 'MMM dd, yyyy')}
                 </span>
                 <button
@@ -1075,7 +1075,7 @@ export default function AdminBookings() {
           )}
 
           {/* Calendar Grid */}
-          <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full border rounded-lg">
+          <div className="overflow-x-auto overflow-y-auto max-h-150 w-full border rounded-lg">
             <div className="min-w-full" style={{ width: 'max-content' }}>
               {layoutMode === 'time-top' ? (
                 <>
@@ -1106,7 +1106,7 @@ export default function AdminBookings() {
                           return (
                             <div
                               key={`${slot}`}
-                              className={`p-2 border rounded cursor-pointer hover:shadow-md transition-all border-2 ${
+                              className={`p-2 rounded cursor-pointer hover:shadow-md transition-all border-2 ${
                                 startAppointment.status === 'completed' ? 'border-green-500' :
                                 startAppointment.status === 'cancelled' ? 'border-red-500' :
                                 startAppointment.status === 'rejected' ? 'border-rose-500' :
@@ -1142,7 +1142,7 @@ export default function AdminBookings() {
                       return (
                         <div
                           key={`${slot}`}
-                          className="p-2 border border-dashed border-muted-foreground/30 rounded bg-muted/5 min-h-[80px]"
+                          className="p-2 border border-dashed border-muted-foreground/30 rounded bg-muted/5 min-h-20"
                         />
                       )
                     })}
@@ -1190,7 +1190,7 @@ export default function AdminBookings() {
                           return (
                             <div
                               key={`${service.id}-${slot}`}
-                              className={`p-2 border rounded cursor-pointer hover:shadow-md transition-all border-2 ${
+                              className={`p-2 rounded cursor-pointer hover:shadow-md transition-all border-2 ${
                                 startAppointment.status === 'completed' ? 'border-green-500' :
                                 startAppointment.status === 'cancelled' ? 'border-red-500' :
                                 startAppointment.status === 'rejected' ? 'border-rose-500' :
@@ -1222,7 +1222,7 @@ export default function AdminBookings() {
                         return (
                           <div
                             key={`${service.id}-${slot}`}
-                            className="p-2 border border-dashed border-muted-foreground/30 rounded bg-muted/5 min-h-[60px]"
+                            className="p-2 border border-dashed border-muted-foreground/30 rounded bg-muted/5 min-h-15"
                           />
                         )
                       })}
@@ -1398,7 +1398,7 @@ export default function AdminBookings() {
                               <p className="text-muted-foreground">{booking.bookingTime} ({booking.duration}h)</p>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
-                              <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <Banknote className="h-4 w-4 text-muted-foreground shrink-0" />
                               <p className="text-foreground font-bold">AED {(Number.isFinite(safePrice) ? safePrice : 0).toLocaleString()}</p>
                             </div>
                             <div className="relative">
@@ -1489,7 +1489,7 @@ export default function AdminBookings() {
 
       {/* Team Member Selection Modal */}
       {showTeamDropdown && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-60">
           <div className="bg-card rounded-2xl shadow-xl max-w-md w-full">
             <div className="p-6 border-b">
               <h3 className="text-xl font-black">Select Team Member</h3>
@@ -1702,7 +1702,7 @@ export default function AdminBookings() {
 
               <div>
                 <h3 className="text-sm font-black mb-3 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
+                  <Banknote className="h-4 w-4" />
                   Pricing
                 </h3>
                 <div className="grid grid-cols-2 gap-4">

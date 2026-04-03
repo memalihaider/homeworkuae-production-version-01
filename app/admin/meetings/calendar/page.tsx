@@ -18,7 +18,7 @@ import {
   Edit2, 
   Trash2, 
   X, 
-  DollarSign, 
+  Banknote, 
   Truck,
   Briefcase
 } from 'lucide-react'
@@ -856,7 +856,7 @@ export default function MeetingCalendar() {
                   <div className="flex flex-wrap gap-2 mb-3 text-xs">
                     {meeting.cost > 0 && (
                       <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded">
-                        <DollarSign className="h-3 w-3" />
+                        <Banknote className="h-3 w-3" />
                         AED {meeting.cost}
                       </div>
                     )}

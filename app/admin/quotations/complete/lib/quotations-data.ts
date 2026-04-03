@@ -28,6 +28,7 @@ export interface Quotation {
   email: string
   phone: string
   location: string
+  currentAddress?: string
   amount: number
   amountOriginal?: number
   discount?: number

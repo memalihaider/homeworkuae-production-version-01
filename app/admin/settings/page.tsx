@@ -17,7 +17,8 @@ import {
   Monitor,
   MapPin,
   MessageCircle,
-  Percent
+  Percent,
+  Landmark
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
@@ -69,6 +70,15 @@ export default function Settings() {
     paymentMethod: 'Bank Transfer',
     invoiceFrequency: 'Monthly',
     autoRenewal: true
+  })
+
+  const [tallySettings, setTallySettings] = useState({
+    enabled: false,
+    serverUrl: '',
+    port: '9000',
+    companyName: '',
+    syncMode: 'manual',
+    voucherType: 'Sales'
   })
   
   // General Settings
@@ -142,6 +152,17 @@ export default function Settings() {
               autoRenewal: data.billing.autoRenewal !== undefined ? data.billing.autoRenewal : true
             })
           }
+
+          if (data.tally) {
+            setTallySettings({
+              enabled: data.tally.enabled || false,
+              serverUrl: data.tally.serverUrl || '',
+              port: data.tally.port || '9000',
+              companyName: data.tally.companyName || '',
+              syncMode: data.tally.syncMode || 'manual',
+              voucherType: data.tally.voucherType || 'Sales'
+            })
+          }
           
           // Set general settings
           if (data.general) {
@@ -187,6 +208,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'billing', label: 'Billing & Plans', icon: CreditCard },
+    { id: 'tally', label: 'Tally Configuration', icon: Landmark },
     { id: 'quotation', label: 'Quotation Defaults', icon: FileText },
     { id: 'tax', label: 'Tax Settings', icon: Percent }, // 👈 Tax Section
     { id: 'general', label: 'General', icon: Globe },
@@ -201,6 +223,7 @@ export default function Settings() {
         notifications: notificationSettings,
         security: securitySettings,
         billing: billingSettings,
+        tally: tallySettings,
         general: generalSettings,
         quotationDefaults: quotationDefaults,
         taxPercentage: taxPercentage, // 👈 SIMPLE FIELD - Sirf tax percentage save
@@ -246,6 +269,11 @@ export default function Settings() {
 
   const handleBillingChange = (field: string, value: string | boolean) => {
     setBillingSettings({ ...billingSettings, [field]: value })
+    setShowSave(true)
+  }
+
+  const handleTallyChange = (field: string, value: string | boolean) => {
+    setTallySettings({ ...tallySettings, [field]: value })
     setShowSave(true)
   }
 
@@ -587,6 +615,109 @@ export default function Settings() {
                       }`}
                     />
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'tally' && (
+            <div className="bg-card rounded-xl border shadow-sm p-6 space-y-6">
+              <div className="flex items-center gap-3 border-b pb-4 mb-2">
+                <Landmark className="h-6 w-6 text-pink-600" />
+                <div>
+                  <h2 className="text-xl font-bold">Tally Configuration</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Connect your Tally instance and control accounting sync.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Enable Tally Sync</p>
+                    <p className="text-sm text-muted-foreground">
+                      Export invoices and receipts to Tally when enabled.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleTallyChange('enabled', !tallySettings.enabled)}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      tallySettings.enabled ? 'bg-green-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                        tallySettings.enabled ? 'translate-x-6' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Tally Server URL</label>
+                    <input
+                      type="text"
+                      value={tallySettings.serverUrl}
+                      onChange={(e) => handleTallyChange('serverUrl', e.target.value)}
+                      className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      placeholder="http://localhost"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Port</label>
+                    <input
+                      type="text"
+                      value={tallySettings.port}
+                      onChange={(e) => handleTallyChange('port', e.target.value)}
+                      className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      placeholder="9000"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Company Name (Tally)</label>
+                    <input
+                      type="text"
+                      value={tallySettings.companyName}
+                      onChange={(e) => handleTallyChange('companyName', e.target.value)}
+                      className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      placeholder="HOMEWORK CLEANING SERVICES LLC"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Sync Mode</label>
+                    <select
+                      value={tallySettings.syncMode}
+                      onChange={(e) => handleTallyChange('syncMode', e.target.value)}
+                      className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    >
+                      <option value="manual">Manual Only</option>
+                      <option value="hourly">Every Hour</option>
+                      <option value="daily">Daily</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Default Voucher Type</label>
+                    <select
+                      value={tallySettings.voucherType}
+                      onChange={(e) => handleTallyChange('voucherType', e.target.value)}
+                      className="w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    >
+                      <option value="Sales">Sales</option>
+                      <option value="Receipt">Receipt</option>
+                      <option value="Journal">Journal</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-muted/40 border rounded-lg p-4 text-xs text-muted-foreground">
+                  Tally must be reachable from the server environment. If Tally runs locally,
+                  use a secure tunnel or a hosted connector.
                 </div>
               </div>
             </div>

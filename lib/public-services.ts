@@ -9,6 +9,7 @@ export type PublicServiceOption = {
 export const PUBLIC_SERVICES: PublicServiceOption[] = [
   { id: 'residential-cleaning', name: 'Regular Residential', categoryName: 'Normal Cleaning', description: 'Standard home cleaning for maintaining a fresh living space.', price: 150 },
   { id: 'office-cleaning', name: 'Regular Office', categoryName: 'Normal Cleaning', description: 'Professional workspace cleaning for productive environments.', price: 180 },
+  { id: 'maid-cleaning-service', name: 'Maid Cleaning Service', categoryName: 'Normal Cleaning', description: 'Reliable maid cleaning for apartments and villas across Dubai.', price: 170 },
   { id: 'window-cleaning', name: 'Window Cleaning', categoryName: 'Normal Cleaning', description: 'Streak-free exterior and interior window restoration.', price: 140 },
   { id: 'balcony-deep-cleaning', name: 'Balcony Cleaning', categoryName: 'Normal Cleaning', description: 'Removing dust and sand from outdoor areas.', price: 160 },
   { id: 'sofa-deep-cleaning', name: 'Sofa Cleaning', categoryName: 'Normal Cleaning', description: 'Professional upholstery sanitization.', price: 170 },

@@ -12,7 +12,7 @@ import {
   Clock,
   X,
   Briefcase,
-  DollarSign,
+  Banknote,
   Camera,
   Play,
   Eye,
@@ -1819,7 +1819,7 @@ export default function JobsPage() {
               </p>
             </div>
             <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="h-6 w-6 text-orange-600" />
+              <Banknote className="h-6 w-6 text-orange-600" />
             </div>
           </div>
         </div>
@@ -1968,7 +1968,7 @@ export default function JobsPage() {
 
             <Link href="/admin/jobs/expense-manager">
               <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors">
-                <DollarSign className="w-4 h-4" />
+                <Banknote className="w-4 h-4" />
                 Expense Manager
               </button>
             </Link>
@@ -2033,7 +2033,7 @@ export default function JobsPage() {
                         <span>{job.teamRequired} members</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 shrink-0" />
+                        <Banknote className="h-4 w-4 shrink-0" />
                         <span>AED {job.budget.toLocaleString()}</span>
                       </div>
                     </div>
@@ -2771,7 +2771,7 @@ export default function JobsPage() {
               {/* Resources & Budget */}
               <div className="space-y-4 border-b pb-6">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-blue-600" />
+                  <Banknote className="h-5 w-5 text-blue-600" />
                   Resources & Budget
                 </h3>
 

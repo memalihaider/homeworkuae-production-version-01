@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Search, Filter, Check, X, AlertCircle, TrendingUp, DollarSign, BarChart3, Clock, Star, Shield, Eye, CheckCircle, XCircle, FileText, User, Building, MapPin } from 'lucide-react'
+import { Search, Filter, Check, X, AlertCircle, TrendingUp, Banknote, BarChart3, Clock, Star, Shield, Eye, CheckCircle, XCircle, FileText, User, Building, MapPin } from 'lucide-react'
 
 // Shared client data (same as used throughout the app)
 const sharedClients = [
@@ -880,7 +880,7 @@ export default function SurveyReviewAndPricing() {
                     <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                     <p className="text-2xl font-bold text-pink-600">AED {(stats.pricing.totalRevenue / 1000).toFixed(0)}K</p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-pink-500" />
+                  <Banknote className="h-8 w-8 text-pink-500" />
                 </div>
               </div>
             </>

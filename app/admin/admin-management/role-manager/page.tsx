@@ -55,6 +55,7 @@ const ALL_PAGES = [
   'Notes & Decisions',
   'Follow-Up Tracker',
   'Finance',
+  'Tally',
   'Marketing',
   'Role Manager',
   'Permission Matrix',

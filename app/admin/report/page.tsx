@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, type ComponentType, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import {
-  DollarSign,
+  Banknote,
   TrendingUp,
   Calendar,
   Download,
@@ -1550,6 +1550,21 @@ export default function FinanceReportPage() {
     setShowExportModal(false)
   }
 
+  const exportRangeLabel =
+    dateRange === 'today'
+      ? 'Today'
+      : dateRange === 'week'
+        ? 'This Week'
+        : dateRange === 'month'
+          ? 'This Month'
+          : dateRange === 'quarter'
+            ? 'This Quarter'
+            : dateRange === 'year'
+              ? `Year ${selectedYear}`
+              : dateRange === 'custom'
+                ? `${format(parseISO(customStartDate), 'MMM d')} - ${format(parseISO(customEndDate), 'MMM d')}`
+                : 'All Time'
+
   // ============= MAIN RENDER =============
 
   return (
@@ -1811,6 +1826,49 @@ export default function FinanceReportPage() {
               </div>
             )}
           </div>
+
+          {/* Export Center */}
+          <div className="mt-6">
+            <TableCard title="Report Export" icon={DownloadCloud}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-xl border-2 border-slate-200 p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date Range</p>
+                  <p className="text-sm font-black text-slate-900 mt-1">{exportRangeLabel}</p>
+                </div>
+                <div className="rounded-xl border-2 border-slate-200 p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Jobs</p>
+                  <p className="text-sm font-black text-slate-900 mt-1">{formatNumber(metrics.totalJobs)}</p>
+                </div>
+                <div className="rounded-xl border-2 border-slate-200 p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Paid Jobs</p>
+                  <p className="text-sm font-black text-slate-900 mt-1">{formatNumber(metrics.paidJobs)}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={() => {
+                    setExportFormat('csv')
+                    handleExportReport()
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm"
+                >
+                  <Download className="h-4 w-4" />
+                  Quick CSV Export
+                </button>
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-200 rounded-xl hover:border-primary transition-colors font-bold text-sm"
+                >
+                  <DownloadCloud className="h-4 w-4" />
+                  Open Export Builder
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Exports generate detailed jobs and payments in CSV for the selected date range.
+              </p>
+            </TableCard>
+          </div>
         </div>
 
         {/* OVERVIEW TAB */}
@@ -1821,7 +1879,7 @@ export default function FinanceReportPage() {
               <MetricCard
                 title="Total Revenue"
                 value={formatCurrency(metrics.totalRevenue)}
-                icon={DollarSign}
+                icon={Banknote}
                 trend={12}
                 trendLabel="vs last month"
                 color="green"
@@ -2166,7 +2224,7 @@ export default function FinanceReportPage() {
               <MetricCard
                 title="Total Revenue"
                 value={formatCurrency(metrics.totalRevenue)}
-                icon={DollarSign}
+                icon={Banknote}
                 color="green"
               />
               <MetricCard
@@ -2558,7 +2616,7 @@ export default function FinanceReportPage() {
               <MetricCard
                 title="Client LTV"
                 value={formatCurrency(metrics.clientLTV)}
-                icon={DollarSign}
+                icon={Banknote}
                 color="purple"
               />
               <MetricCard
@@ -2695,7 +2753,7 @@ export default function FinanceReportPage() {
               <MetricCard
                 title="Service Revenue"
                 value={formatCurrency(metrics.serviceRevenue)}
-                icon={DollarSign}
+                icon={Banknote}
                 color="purple"
               />
             </div>

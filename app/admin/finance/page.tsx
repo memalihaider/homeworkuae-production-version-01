@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import {
-  DollarSign,
+  Banknote,
   Plus,
   Search,
   Filter,
@@ -942,7 +942,7 @@ export default function UnifiedFinancePage() {
           onClick={() => setShowExpenseModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-orange-600 text-white rounded-lg font-bold text-sm hover:bg-orange-700"
         >
-          <DollarSign className="h-4 w-4" />
+          <Banknote className="h-4 w-4" />
           Add Expense
         </button>
         <button
@@ -1212,7 +1212,7 @@ export default function UnifiedFinancePage() {
             ))
           ) : (
             <div className="bg-card border rounded-2xl p-12 text-center">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <Banknote className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
               <p className="text-muted-foreground">No expenses found</p>
             </div>
           )}

@@ -8,7 +8,7 @@ import {
   X, 
   TrendingUp, 
   Users, 
-  DollarSign,
+  Banknote,
   ArrowUpRight,
   Activity,
   Target,
@@ -35,6 +35,7 @@ export default function PipelineView() {
     { id: 4, name: 'Hassan Khan', company: 'Khan Consulting', status: 'New', value: 50000, daysInStage: 1, priority: 'Medium' },
     { id: 5, name: 'Sara Ali', company: 'Ali Trading', status: 'Negotiation', value: 95000, daysInStage: 8, priority: 'High' },
     { id: 6, name: 'Mohammed Hassan', company: 'Hassan Group', status: 'Won', value: 180000, daysInStage: 0, priority: 'High' },
+    { id: 7, name: 'Nadia Farouk', company: 'Farouk Interiors', status: 'Lost', value: 62000, daysInStage: 6, priority: 'Medium' },
   ])
 
   const [selectedLead, setSelectedLead] = useState<any>(null)
@@ -43,7 +44,7 @@ export default function PipelineView() {
   const [showNewForm, setShowNewForm] = useState(false)
   const [formData, setFormData] = useState({ name: '', company: '', value: '', priority: 'Medium' })
 
-  const stages = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won']
+  const stages = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
   
   const leadsByStage = useMemo(() => {
     return stages.map(stage => ({
@@ -144,8 +145,9 @@ export default function PipelineView() {
     }
   }
 
-  const totalPipeline = leads.reduce((sum, l) => sum + l.value, 0)
-  const avgDealSize = leads.length > 0 ? leads.reduce((sum, l) => sum + l.value, 0) / leads.length : 0
+  const pipelineLeads = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost')
+  const totalPipeline = pipelineLeads.reduce((sum, l) => sum + l.value, 0)
+  const avgDealSize = pipelineLeads.length > 0 ? pipelineLeads.reduce((sum, l) => sum + l.value, 0) / pipelineLeads.length : 0
 
   return (
     <div className="space-y-4 pb-10">
@@ -174,20 +176,21 @@ export default function PipelineView() {
       {/* Compact Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {[
-          { label: 'Pipeline', value: `AED ${(totalPipeline / 1000).toFixed(0)}K`, icon: DollarSign, color: 'blue' },
-          { label: 'Active', value: leads.length, icon: Target, color: 'purple' },
+          { label: 'Pipeline', value: `AED ${(totalPipeline / 1000).toFixed(0)}K`, icon: Banknote, color: 'blue' },
+          { label: 'Active', value: pipelineLeads.length, icon: Target, color: 'purple' },
           { label: 'Avg Deal', value: `AED ${(avgDealSize / 1000).toFixed(0)}K`, icon: TrendingUp, color: 'green' },
-          { label: 'Won', value: leads.filter(l => l.status === 'Won').length, icon: CheckCircle2, color: 'emerald' }
+          { label: 'Won', value: leads.filter(l => l.status === 'Won').length, icon: CheckCircle2, color: 'emerald' },
+          { label: 'Lost', value: leads.filter(l => l.status === 'Lost').length, icon: AlertCircle, color: 'red' }
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 transition-all">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{stat.label}</p>
-                <p className={`text-lg font-black mt-0.5 ${stat.color === 'blue' ? 'text-blue-700' : stat.color === 'purple' ? 'text-purple-700' : stat.color === 'green' ? 'text-green-700' : 'text-emerald-700'}`}>
+                <p className={`text-lg font-black mt-0.5 ${stat.color === 'blue' ? 'text-blue-700' : stat.color === 'purple' ? 'text-purple-700' : stat.color === 'green' ? 'text-green-700' : stat.color === 'red' ? 'text-red-700' : 'text-emerald-700'}`}>
                   {stat.value}
                 </p>
               </div>
-              <div className={`p-2 rounded-lg ${stat.color === 'blue' ? 'bg-blue-100 text-blue-700' : stat.color === 'purple' ? 'bg-purple-100 text-purple-700' : stat.color === 'green' ? 'bg-green-100 text-green-700' : 'bg-emerald-100 text-emerald-700'}`}>
+              <div className={`p-2 rounded-lg ${stat.color === 'blue' ? 'bg-blue-100 text-blue-700' : stat.color === 'purple' ? 'bg-purple-100 text-purple-700' : stat.color === 'green' ? 'bg-green-100 text-green-700' : stat.color === 'red' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
                 <stat.icon className="h-4 w-4" />
               </div>
             </div>
@@ -217,7 +220,7 @@ export default function PipelineView() {
             <div 
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, stageData)}
-              className="space-y-2 min-h-[400px] rounded-lg bg-gray-50 border-2 border-dashed border-gray-300 p-3 transition-all hover:border-blue-400 hover:bg-blue-50"
+              className="space-y-2 min-h-100 rounded-lg bg-gray-50 border-2 border-dashed border-gray-300 p-3 transition-all hover:border-blue-400 hover:bg-blue-50"
             >
               {stageData.leads.map((lead) => (
                 <div

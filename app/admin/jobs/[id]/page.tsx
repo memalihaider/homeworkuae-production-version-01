@@ -12,7 +12,7 @@ import {
   MapPin,
   Users,
   Tag,
-  DollarSign,
+  Banknote,
   ArrowRight,
   MessageSquare,
   Star,
@@ -2762,7 +2762,7 @@ const downloadJobPDF = () => {
             label: 'Budget', 
             value: `AED ${job.budget ? job.budget.toLocaleString() : '0'}`, 
             sub: 'Total Budget', 
-            icon: DollarSign, 
+            icon: Banknote, 
             color: 'text-emerald-600' 
           },
           { 
@@ -2989,7 +2989,7 @@ const downloadJobPDF = () => {
           { id: 'notes', label: 'Notes & Reminders', icon: MessageSquare },
           { id: 'tasks', label: 'Task Assignment', icon: CheckCircle },
           { id: 'team', label: 'Team Management', icon: Users },
-          { id: 'compensation', label: 'Compensation', icon: DollarSign },
+          { id: 'compensation', label: 'Compensation', icon: Banknote },
           { id: 'feedback', label: 'Employee Feedback', icon: Star },
           { id: 'reports', label: 'Employee Reports', icon: FileText },
           { id: 'completion', label: 'Completion', icon: CheckSquare },
@@ -4160,7 +4160,7 @@ const downloadJobPDF = () => {
     {/* Header with Add Milestone Button */}
     <div className="flex items-center justify-between mb-8">
       <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-        <DollarSign className="w-6 h-6 text-green-600" />
+        <Banknote className="w-6 h-6 text-green-600" />
         Team Compensation Analysis
       </h3>
       
@@ -4260,7 +4260,7 @@ const downloadJobPDF = () => {
                   milestone.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                   'bg-red-100 text-red-700'
                 }`}>
-                  {milestone.status === 'Paid' && <DollarSign className="h-4 w-4" />}
+                  {milestone.status === 'Paid' && <Banknote className="h-4 w-4" />}
                   {milestone.status === 'Completed' && <CheckCircle className="h-4 w-4" />}
                   {milestone.status === 'Pending' && <Clock className="h-4 w-4" />}
                   {milestone.status === 'Rejected' && <X className="h-4 w-4" />}
@@ -4771,7 +4771,7 @@ const downloadJobPDF = () => {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         <div className="flex-1">
           <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-emerald-700" />
+            <Banknote className="w-5 h-5 text-emerald-700" />
             Payment Status
           </h4>
           <p className="text-sm text-gray-700 mb-3">
@@ -5173,7 +5173,7 @@ const downloadJobPDF = () => {
         {/* Financial Summary */}
         <div className="bg-linear-to-r from-emerald-50 to-green-50 p-6 rounded-2xl border border-emerald-300 mb-8">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-600" />
+            <Banknote className="w-4 h-4 text-emerald-600" />
             Financial Summary
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

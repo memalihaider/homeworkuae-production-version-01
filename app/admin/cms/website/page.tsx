@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import {
-  Home, Globe, FileText, Phone, DollarSign, HelpCircle, Layers, Settings,
+  Home, Globe, FileText, Phone, Banknote, HelpCircle, Layers, Settings,
   Save, RotateCcw, Eye, Upload, Plus, Trash2, GripVertical, Check, X,
   Image as ImageIcon, Type, Link as LinkIcon, Video, Star, ArrowRight,
   ChevronDown, ChevronUp, Loader2, AlertCircle, CheckCircle2, Edit3,
@@ -796,7 +796,7 @@ const pages = [
   { id: 'about', label: 'About Page', icon: Users, color: 'text-violet-600 bg-violet-50' },
   { id: 'services', label: 'Services Page', icon: Briefcase, color: 'text-emerald-600 bg-emerald-50' },
   { id: 'contact', label: 'Contact Page', icon: Phone, color: 'text-sky-600 bg-sky-50' },
-  { id: 'pricing', label: 'Pricing Page', icon: DollarSign, color: 'text-amber-600 bg-amber-50' },
+  { id: 'pricing', label: 'Pricing Page', icon: Banknote, color: 'text-amber-600 bg-amber-50' },
   { id: 'faq', label: 'FAQ Page', icon: HelpCircle, color: 'text-rose-600 bg-rose-50' },
   { id: 'layout', label: 'Navbar & Footer', icon: Layout, color: 'text-slate-600 bg-slate-100' },
 ]
