@@ -14,6 +14,7 @@ import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
 import { defaultHomePage } from '@/lib/cms-data'
 import { db } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
+import BookServiceForm from '@/components/BookServiceForm'
 
 // Reusable CTA Button Component
 interface CTAButtonProps {
@@ -55,9 +56,6 @@ export default function HomePage() {
   }
 
   const [blogSliderIndex, setBlogSliderIndex] = useState(0)
-  const [airQuality, setAirQuality] = useState(72)
-  const [airQualityStatus, setAirQualityStatus] = useState("Moderate")
-  const [airQualityColor, setAirQualityColor] = useState("text-amber-500")
   const [heroWhatsapp, setHeroWhatsapp] = useState('+971 50 717 7059')
   const cmsData = defaultHomePage
   const whatsappDigits = heroWhatsapp.replace(/\D/g, '')
@@ -65,7 +63,6 @@ export default function HomePage() {
 
   const heroTexts = cmsData.hero.headings
   const activeHeroText = heroTexts[0] ?? 'PREMIUM\nCLEANING'
-  const activeHeroImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80'
   const trustBannerGradient = 'linear-gradient(135deg, #039ED9 0%, var(--primary) 100%)'
   const trustBannerStats: Array<{ label: string; value: string; icon: React.ComponentType<{ className?: string }> }> = [
     { label: 'Satisfied Clients', value: '20,000+', icon: Users },
@@ -116,56 +113,6 @@ export default function HomePage() {
     text: testimonial.text,
     rating: testimonial.rating
   }))
-
-  const getAirQualityStatus = (aqi: number) => {
-    if (aqi <= 50) return { status: "Good", color: "text-green-500" }
-    if (aqi <= 100) return { status: "Moderate", color: "text-yellow-500" }
-    if (aqi <= 150) return { status: "Unhealthy for Sensitive Groups", color: "text-orange-500" }
-    if (aqi <= 200) return { status: "Unhealthy", color: "text-red-500" }
-    if (aqi <= 300) return { status: "Very Unhealthy", color: "text-red-700" }
-    return { status: "Hazardous", color: "text-red-900" }
-  }
-
-  useEffect(() => {
-    let isMounted = true
-
-    const fetchAirQualityData = async () => {
-      if (!isMounted) return
-      try {
-        const response = await fetch(
-          'https://air-quality-api.open-meteo.com/v1/air_quality?latitude=25.2048&longitude=55.2708&current=us_aqi'
-        )
-
-        if (!isMounted) return
-
-        const data = await response.json()
-
-        if (!isMounted) return
-
-        const aqi = Math.round(data.current?.us_aqi || 72)
-        const { status, color } = getAirQualityStatus(aqi)
-
-        setAirQuality(Math.min(aqi, 100))
-        setAirQualityStatus(status)
-        setAirQualityColor(color)
-      } catch (error) {
-        if (!isMounted) return
-        console.error('Error fetching air quality:', error)
-      }
-    }
-
-    fetchAirQualityData()
-
-    // Fetch real-time air quality every 10 minutes
-    const airQualityInterval = setInterval(() => {
-      if (isMounted) fetchAirQualityData()
-    }, 10 * 60 * 1000)
-
-    return () => {
-      isMounted = false
-      clearInterval(airQualityInterval)
-    }
-  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -353,126 +300,19 @@ export default function HomePage() {
               </div>
             </motion.div>
 
-            {/* Right Content: Video Card & Widgets */}
+            {/* Right Content: Booking Form */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.35, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="w-full lg:w-2/5 relative"
             >
-              {/* Floating glow ring */}
-              <motion.div
-                animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.7, 0.4] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] rounded-full border border-primary/20 blur-[2px] z-0"
-              />
-
-              <div className="relative aspect-square max-w-115 mx-auto">
-
-                {/* Main Image Card — subtle float wraps outer only */}
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute inset-0 z-20"
-                >
-                  <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl shadow-slate-900/30">
-                    <img
-                      src={activeHeroImage}
-                      alt="Professional cleaning service"
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                    />
-
-                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
-
-                    <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex gap-0.5">
-                          {[1, 2, 3, 4, 5].map((s) => <Star key={s} className="h-3 w-3 fill-primary text-primary" />)}
-                        </div>
-                        <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wider">Premium Rated</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Air Quality Widget */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.7, type: "spring", stiffness: 260, damping: 20 }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="absolute -top-8 -right-8 w-44 h-44 bg-white/95 backdrop-blur-sm rounded-2xl p-5 shadow-xl z-30 border border-slate-100/80 cursor-default"
-                >
-                  <div className="flex flex-col justify-between h-full">
-                    <div className="flex justify-between items-start">
-                      <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      >
-                        <Wind className="h-5 w-5 text-[#039ED9]" />
-                      </motion.div>
-                      <motion.div
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="h-2 w-2 rounded-full bg-green-500"
-                      />
-                    </div>
-                    <div>
-                      <motion.div
-                        key={airQuality}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4 }}
-                        className="text-3xl font-black text-slate-900 leading-none"
-                      >
-                        {airQuality}
-                      </motion.div>
-                      <div className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Air Quality Index</div>
-                      <div className={`text-[9px] font-bold mt-0.5 ${airQualityColor}`}>{airQualityStatus}</div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Verified Badge Widget */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.9, type: "spring", stiffness: 260, damping: 20 }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl z-30 border border-slate-100/80 cursor-default"
-                >
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      animate={{ boxShadow: ["0 0 0 0 rgba(236,72,153,0.3)", "0 0 0 8px rgba(236,72,153,0)", "0 0 0 0 rgba(236,72,153,0)"] }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
-                      className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"
-                    >
-                      <ShieldCheck className="h-5 w-5" />
-                    </motion.div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900">Verified Pros</div>
-                      <div className="text-[10px] text-slate-500">Background Checked</div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Live tag widget */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 1.1, type: "spring", stiffness: 260, damping: 20 }}
-                  className="absolute top-1/2 -right-10 -translate-y-1/2 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-xl z-30 border border-slate-100/80 flex items-center gap-2"
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.5, 1] }}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                    className="h-2 w-2 rounded-full bg-rose-500"
-                  />
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Live Support</span>
-                </motion.div>
-
-                {/* Subtle Background Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/10 rounded-full blur-[100px] z-0" />
+              <div className="relative z-10">
+                <BookServiceForm
+                  title="Book a Cleaning Service"
+                  subtitle="Share your details and preferred location. Our team will confirm quickly."
+                  headerAlignment="left"
+                />
               </div>
             </motion.div>
           </div>
