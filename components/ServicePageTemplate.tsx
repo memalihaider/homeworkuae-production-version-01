@@ -1066,6 +1066,7 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
                 title="Book This Service"
                 subtitle="Share your details and preferred location. Our team will confirm quickly."
                 headerAlignment="left"
+                className="bg-white/80 backdrop-blur-xl border-white/40 shadow-2xl"
               />
             </div>
           </div>
@@ -1142,35 +1143,6 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Included Services */}
-      <section className="relative overflow-hidden bg-white py-14 sm:py-16 md:py-20 xl:py-24">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="mb-4 inline-block text-[10px] font-black uppercase tracking-[0.22em] text-primary sm:text-[11px]">
-              What Is Included
-            </span>
-            <h3 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
-              Service Deliverables
-            </h3>
-            <div className="mx-auto mt-6 h-1 w-20 rounded-full bg-linear-to-r from-[#039ED9] to-primary" />
-          </div>
-
-          <div className="mx-auto mt-12 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-            {content.features.map((feature, idx) => (
-              <article
-                key={`${feature}-${idx}`}
-                className="group rounded-3xl border border-slate-200 bg-slate-50/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-white hover:shadow-[0_20px_40px_-25px_rgba(236,72,153,0.4)]"
-              >
-                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-linear-to-br group-hover:from-[#039ED9] group-hover:to-primary group-hover:text-white">
-                  <span className="text-xs font-black">{`${idx + 1}`.padStart(2, '0')}</span>
-                </div>
-                <p className="text-sm font-bold leading-relaxed text-slate-800">{feature}</p>
-              </article>
-            ))}
           </div>
         </div>
       </section>

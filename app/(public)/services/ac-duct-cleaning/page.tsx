@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import ServiceStructuredData from '@/components/ServiceStructuredData'
+import BookServiceForm from '@/components/BookServiceForm'
 import { buildServiceMetadata } from '@/lib/service-seo'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -182,22 +183,34 @@ export default function ACDuctCleaning() {
           </div>
 
           <div className="container relative z-10 mx-auto px-4 py-14 sm:px-6 sm:py-16 md:py-20 lg:py-24">
-            <div className="max-w-3xl">
-              <h1 className="mb-4 text-3xl font-black leading-[1.1] tracking-tight text-white sm:mb-6 sm:text-5xl md:text-6xl xl:text-7xl">
-                Professional <span className="bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">AC Duct Cleaning</span> Services in Dubai
-              </h1>
-              <p className="mb-8 max-w-2xl text-base leading-relaxed text-white/80 sm:mb-10 sm:text-lg md:text-lg lg:text-xl">
-                As a top-rated AC duct cleaning company in Dubai, our AC duct cleaning Dubai team removes contaminants, allergens, dust, and hidden debris from HVAC ducts. This air duct cleaning service is designed for homes, villas, and commercial spaces, improving indoor air quality and cooling performance.
-              </p>
-              <div className="flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-5">
-                <Link href="/book-service" className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-linear-to-r from-[#039ED9] to-primary px-6 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_35px_rgba(236,72,153,0.35)] sm:px-8 sm:py-4 sm:text-sm sm:tracking-widest">
-                  <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">Book Premium Service</span>
-                  <ArrowRight className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-2" />
-                </Link>
-                <a href="tel:+971507177059" className="flex items-center justify-center gap-3 rounded-full border border-white/30 bg-white/8 px-6 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white backdrop-blur-md transition-all duration-300 hover:border-white/50 hover:bg-white/14 sm:px-8 sm:py-4 sm:text-sm sm:tracking-widest">
-                  <PhoneCall className="h-4 w-4 text-primary" />
-                  +971 50 717 7059
-                </a>
+            <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+              <div className="max-w-3xl">
+                <h1 className="mb-4 text-3xl font-black leading-[1.1] tracking-tight text-white sm:mb-6 sm:text-5xl md:text-6xl xl:text-7xl">
+                  Professional <span className="bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">AC Duct Cleaning</span> Services in Dubai
+                </h1>
+                <p className="mb-8 max-w-2xl text-base leading-relaxed text-white/80 sm:mb-10 sm:text-lg md:text-lg lg:text-xl">
+                  As a top-rated AC duct cleaning company in Dubai, our AC duct cleaning Dubai team removes contaminants, allergens, dust, and hidden debris from HVAC ducts. This air duct cleaning service is designed for homes, villas, and commercial spaces, improving indoor air quality and cooling performance.
+                </p>
+                <div className="flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-5">
+                  <Link href="/book-service" className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-linear-to-r from-[#039ED9] to-primary px-6 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_35px_rgba(236,72,153,0.35)] sm:px-8 sm:py-4 sm:text-sm sm:tracking-widest">
+                    <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">Book Premium Service</span>
+                    <ArrowRight className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-2" />
+                  </Link>
+                  <a href="tel:+971507177059" className="flex items-center justify-center gap-3 rounded-full border border-white/30 bg-white/8 px-6 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white backdrop-blur-md transition-all duration-300 hover:border-white/50 hover:bg-white/14 sm:px-8 sm:py-4 sm:text-sm sm:tracking-widest">
+                    <PhoneCall className="h-4 w-4 text-primary" />
+                    +971 50 717 7059
+                  </a>
+                </div>
+              </div>
+
+              <div className="w-full max-w-xl lg:justify-self-end">
+                <BookServiceForm
+                  preselectedServiceName="AC Duct Cleaning"
+                  title="Book This Service"
+                  subtitle="Share your details and preferred location. Our team will confirm quickly."
+                  headerAlignment="left"
+                  className="bg-white/80 backdrop-blur-xl border-white/40 shadow-2xl"
+                />
               </div>
             </div>
           </div>
