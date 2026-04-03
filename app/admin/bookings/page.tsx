@@ -329,7 +329,7 @@ export default function AdminBookings() {
       return {
         id: serviceId || '',
         name: serviceValue || 'N/A',
-        price: 200,
+        price: 0,
         duration: 2
       }
     }

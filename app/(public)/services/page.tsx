@@ -77,7 +77,7 @@ const DUMMY_SERVICE_CATEGORIES = [
     services: [
       { name: "AC Duct Cleaning", slug: "ac-duct-cleaning", icon: Wind, desc: "Improving indoor air quality by removing duct contaminants." },
       { name: "AC Coil Cleaning", slug: "ac-coil-cleaning", icon: ThermometerSnowflake, desc: "Deep cleaning coils for better energy efficiency and cooling." },
-      { name: "Kitchen Hood Clean", slug: "kitchen-hood-cleaning", icon: Fan, desc: "Commercial-grade degreasing for restaurant and home hoods." },
+      { name: "Kitchen Hood Cleaning", slug: "kitchen-hood-cleaning", icon: Fan, desc: "Commercial-grade degreasing for restaurant and home hoods." },
       { name: "Grease Trap Clean", slug: "grease-trap-cleaning", icon: Pipette, desc: "Maintenance of grease interceptors for hygiene compliance." },
       { name: "Restaurant Clean", slug: "restaurant-cleaning", icon: Utensils, desc: "Sector-specific hygiene for hospitality food prep areas." },
       { name: "Water Tank Clean", slug: "water-tank-cleaning", icon: Waves, desc: "DM-approved sanitization of residential water storage." },

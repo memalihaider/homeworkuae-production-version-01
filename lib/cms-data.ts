@@ -281,6 +281,7 @@ export const defaultServicesPage: CMSServicesPage = {
       name: "Technical Services",
       services: [
         { title: "AC Duct Cleaning", description: "Air duct sterilization", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&q=80&w=800", href: "/services/ac-duct-cleaning" },
+        { title: "Kitchen Hood Cleaning", description: "Exhaust hood degreasing", image: "https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e", href: "/services/kitchen-hood-cleaning" },
         { title: "Water Tank Cleaning", description: "Water tank sanitization", image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=800", href: "/services/water-tank-cleaning" }
       ]
     }

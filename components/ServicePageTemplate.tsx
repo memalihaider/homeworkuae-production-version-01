@@ -74,6 +74,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Full Surface Dusting & Wiping', 'Carpet Vacuuming & Floor Mopping', 'Window & Mirror Cleaning', 'Bathroom Deep Sanitization', 'Shower, Tub & Toilet Cleaning', 'Bed Making & Bedroom Tidying'],
     ctaTitle: 'Enjoy a Spotless Home',
     ctaSubtitle: 'Contact us today for professional residential cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=80',
   },
   'office-cleaning': {
     name: 'Regular Office Cleaning',
@@ -90,6 +91,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Reception & Lobby Cleaning', 'Workstation & Desk Wiping', 'Electronics & Screen Dusting', 'Restroom Deep Sanitization', 'Floor Vacuuming & Mopping', 'Breakroom & Pantry Cleaning'],
     ctaTitle: 'Maintain a Clean Workspace',
     ctaSubtitle: 'Contact us today for professional office cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80',
   },
   'window-cleaning': {
     name: 'Window Cleaning',
@@ -106,6 +108,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Interior & Exterior Glass Cleaning', 'Window Frame & Sill Cleaning', 'Fly Screen Cleaning & Inspection', 'Commercial Office Building Windows', 'High-Rise Window Access Solutions', 'Hard Water Stain Removal Treatment'],
     ctaTitle: 'Enjoy Crystal Clear Windows',
     ctaSubtitle: 'Contact us today for professional window cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1596204976717-1a9ff47f74ef?auto=format&fit=crop&w=1800&q=80',
   },
   'balcony-deep-cleaning': {
     name: 'Balcony Deep Cleaning',
@@ -122,6 +125,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Thorough Sweeping & Vacuuming', 'Deep Mopping & Scrubbing', 'Railing & Handrail Polishing', 'Outdoor Furniture Cleaning', 'Window Glass & Frame Cleaning', 'High-Pressure Surface Washing'],
     ctaTitle: 'Revitalize Your Outdoor Space',
     ctaSubtitle: 'Contact us today for professional balcony deep cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1502005097973-6a7082348e28?auto=format&fit=crop&w=1800&q=80',
   },
   'sofa-deep-cleaning': {
     name: 'Sofa Deep Cleaning',
@@ -138,6 +142,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Fabric Type Assessment', 'Targeted Spot Pre-Treatment', 'High-Power Vacuum Extraction', 'Hot Steam Deep Sanitization', 'Stubborn Stain Removal', 'Premium Fabric Protection Coating'],
     ctaTitle: "Restore Your Sofa's Freshness",
     ctaSubtitle: 'Contact us today for professional sofa deep cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1800&q=80',
   },
   'curtain-cleaning': {
     name: 'Curtain Cleaning',
@@ -238,6 +243,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Detailed Carpet Inspection', 'Pre-Treatment Application', 'Hot Water Steam Extraction', 'Dry Foam Cleaning Option', 'Stubborn Stain Treatment', 'Odour Neutralisation'],
     ctaTitle: 'Restore Your Carpets',
     ctaSubtitle: 'Contact us today for professional carpet deep cleaning services.',
+    beforeAfterImage: 'https://plus.unsplash.com/premium_photo-1677234146637-99562eb0ac54?auto=format&fit=crop&w=1800&q=80',
   },
   'mattress-deep-cleaning': {
     name: 'Mattress Deep Cleaning',
@@ -254,6 +260,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Full Mattress Assessment', 'Targeted Spot Pre-Treatment', 'High-Power Vacuum Extraction', 'Hot Steam Deep Sanitization', 'Tough Stain Removal Treatment', 'Odour Neutralisation & Freshening'],
     ctaTitle: 'Sleep in a Cleaner, Healthier Bed',
     ctaSubtitle: 'Contact us today for professional mattress deep cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1800&q=80',
   },
   'grout-deep-cleaning': {
     name: 'Grout Deep Cleaning',
@@ -270,6 +277,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Thorough Grout Assessment', 'Eco-Friendly Solution Application', 'High-Pressure Steam Cleaning', 'Manual Hard Stain Scrubbing', 'Premium Grout Sealing', 'Grout Colour Restoration'],
     ctaTitle: 'Restore Your Grout & Tiles',
     ctaSubtitle: 'Contact us today for professional grout deep cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1523419409543-0e1d3a6cd6b5?auto=format&fit=crop&w=1800&q=80',
   },
   'garage-deep-cleaning': {
     name: 'Garage Deep Cleaning',
@@ -286,53 +294,50 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Walls, Ceilings & Cobwebs', 'Oil & Grease Stain Removal', 'Floor Mopping & Pressure Washing', 'Shelves & Cabinet Cleaning', 'Tool & Equipment Organization', 'Pet Area Sanitization'],
     ctaTitle: 'Transform Your Garage',
     ctaSubtitle: 'Contact us today for professional garage deep cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1503389152951-9f343605f61b?auto=format&fit=crop&w=1800&q=80',
   },
   'kitchen-deep-cleaning': {
     name: 'Kitchen Deep Cleaning',
     badge: 'Dubai Kitchen Cleaning Services',
     heroTitleLine1: 'Professional Kitchen',
     heroTitleLine2: 'Cleaning Services in Dubai',
-    heroSubtitle: "Dubai's kitchens work hard, and grease, grime, and residue build up fast in the heat and humidity. Homework UAE's certified kitchen cleaning specialists serve apartments, villas, and commercial kitchens across Dubai, delivering deep cleans that go far beyond the surface. From hood and duct maintenance to appliance deep-cleaning, every session leaves your kitchen hygienic, safe, and genuinely spotless.",
+    heroSubtitle: "Kitchen deep cleaning Dubai for homes and commercial kitchens. Homework UAE delivers professional kitchen cleaning service in Dubai to remove grease, grime, and bacteria from cabinets, appliances, tiles, and floors.",
     heroImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
     sectionImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
     specialistLabel: 'Dubai Kitchen Cleaning Services',
     aboutHeading1: 'Dubai Kitchen',
     aboutHeading2: 'Cleaning Services',
-    description: "Need expert Kitchen Cleaning? Dubai's cooking environment, rich in spices, oils, and high-frequency use, creates grease layers and bacteria buildup that regular wiping simply cannot address. Homework UAE sends trained professionals who assess your kitchen first, then work through every surface, appliance, duct, and hood using eco-friendly disinfectants proven safe for food-prep spaces. Whether you live in an apartment, villa, or run a commercial kitchen, the result is the same: a fully sanitized, fresh kitchen that meets hygiene standards and feels as clean as it looks.",
+    description: "Need expert kitchen deep cleaning in Dubai? Our professional kitchen cleaning service targets built-up grease, food residue, and bacteria across countertops, cabinets, appliances, tiles, and floors. We serve apartments, villas, and commercial kitchens with food-safe disinfectants and a detail-first process that leaves your kitchen hygienic and visibly refreshed.",
     features: [
-      'Standard Kitchen Cleaning',
-      'Deep Kitchen Cleaning',
-      'Kitchen Duct Cleaning',
-      'Hood Cleaning',
-      'Appliance Deep Cleaning',
-      'Eco-Friendly Surface Sanitization',
-      'Final Quality Inspection',
+      'Cabinet & Drawer Degreasing',
+      'Stovetop, Oven & Hob Deep Cleaning',
+      'Backsplash & Tile Descaling',
+      'Sink, Drain & Faucet Sanitization',
+      'Countertop & Prep Surface Disinfection',
+      'Floor Scrub & Edge Detailing',
     ],
     offerCards: [
-      { title: 'Standard Kitchen Cleaning' },
-      { title: 'Deep Kitchen Cleaning' },
-      { title: 'Kitchen Duct Cleaning' },
-      { title: 'Hood Cleaning' },
-      { title: 'Appliance Deep Cleaning' },
-      { title: 'Eco-Friendly Surface Sanitization' },
-      { title: 'Final Quality Inspection' },
+      { title: 'Deep Degreasing & Sanitization' },
+      { title: 'Appliance Interior Cleaning' },
+      { title: 'Cabinet & Drawer Detailing' },
+      { title: 'Tile & Backsplash Descaling' },
     ],
     processSteps: [
       {
         title: 'Assessment',
-        detail: 'We inspect your kitchen first, identify grease buildup zones, and map a cleaning plan based on usage and property type.',
+        detail: 'We inspect grease buildup, appliance condition, and high-touch zones to plan the kitchen deep cleaning scope.',
       },
       {
-        title: 'Surface Cleaning',
-        detail: 'We clean and sanitize countertops, cabinets, tiles, and high-touch zones using eco-friendly food-safe disinfectants.',
+        title: 'Degreasing',
+        detail: 'We degrease cabinets, tiles, and splashbacks using food-safe, eco-friendly solutions.',
       },
       {
         title: 'Appliance Cleaning',
-        detail: 'We deep-clean key appliances and remove built-up grease from ovens, stovetops, and surrounding preparation areas.',
+        detail: 'We deep-clean ovens, hobs, and appliance surfaces to remove baked-on residue and grime.',
       },
       {
-        title: 'Duct & Hood Maintenance',
-        detail: 'We clean kitchen hoods and duct-access points to reduce grease residue and support safer kitchen operation.',
+        title: 'Sanitize & Detail',
+        detail: 'We disinfect sinks, faucets, prep surfaces, and handles to reduce bacteria and odors.',
       },
       {
         title: 'Final Inspection',
@@ -341,26 +346,25 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     ],
     qualityHeading: 'Quality You Can See',
     qualityDescription:
-      'Every Homework UAE kitchen clean is documented so you can see the difference before and after our team is done. From grease-coated hood filters restored to clean metal, to stovetops and cabinet surfaces stripped of built-up residue, the transformations are visible and lasting. Real projects across Dubai homes and commercial kitchens show consistent results that clients come back for again and again.',
+      'Every Homework UAE kitchen deep cleaning in Dubai is documented so you can see the difference before and after. From greasy cooktops restored to clean metal, to cabinets and tiles stripped of built-up residue, the transformations are visible and lasting across homes and commercial kitchens.',
     qualityCardText:
-      'Documented kitchen cleaning outcomes from real Dubai projects, before-and-after quality you can clearly verify.',
+      'Documented kitchen deep cleaning outcomes from real Dubai projects you can clearly verify.',
     beforeAfterImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/Hood%20before%20and%20after%20cleaning.png?alt=media&token=48e9348b-94dc-4375-a068-0a40a981cae9',
     whyChoosePoints: [
-      "Homework UAE uses professional-grade, eco-friendly disinfectants that are certified safe for kitchen environments, including food-prep and cooking surfaces.",
-      'Every clean follows a structured five-step process: assessment, surface cleaning, appliance cleaning, duct and hood maintenance, and a final inspection before the team leaves.',
-      "All products are selected to protect your family's health and the environment, with no harsh chemicals that linger near food or cookware.",
-      "Homework UAE's kitchen cleaning professionals are trained, background-checked, and experienced across Dubai's diverse property types, from compact apartments to large villas and commercial setups.",
-      "Pricing is fully transparent, calculated by number of professionals and time required, so you know exactly what you're paying for with no hidden fees.",
-      "Choose Homework UAE for a kitchen that's hygienically clean, safe for your family, and consistently maintained to the highest standard.",
+      'Kitchen deep cleaning Dubai specialists using food-safe, eco-friendly disinfectants.',
+      'Detailed degreasing for cabinets, appliances, tiles, and floors.',
+      'Flexible scheduling for apartments, villas, and commercial kitchens.',
+      'Clear scope, transparent pricing, and reliable turnaround.',
+      'Final inspection to confirm spotless, sanitized results.',
     ],
     faqs: [
       {
-        q: "What is included in Homework UAE's kitchen cleaning service in Dubai?",
-        a: "Homework UAE's kitchen cleaning covers full surface wiping, appliance deep-cleaning, cabinet interiors and exteriors, floor cleaning, hood cleaning, and duct maintenance. Every session also includes a final inspection to confirm everything meets hygiene standards before the team leaves.",
+        q: 'What does kitchen deep cleaning in Dubai include?',
+        a: 'Our kitchen deep cleaning in Dubai includes degreasing cabinets and tiles, deep-cleaning ovens and hobs, disinfecting sinks and prep surfaces, and scrubbing floors and edges for a spotless finish.',
       },
       {
-        q: 'How is deep kitchen cleaning different from standard kitchen cleaning?',
-        a: 'Standard cleaning handles everyday surfaces, appliances, and floors. Deep cleaning goes further, targeting hard-to-reach areas behind and beneath appliances, stubborn grease layers inside ovens and hoods, built-up residue inside ducts, and any surface that regular cleaning typically skips.',
+        q: 'Do you offer kitchen cleaning service in Dubai for restaurants and cafes?',
+        a: 'Yes. We provide professional kitchen cleaning service in Dubai for homes, cafes, restaurants, and commercial kitchens with tailored scopes based on usage and hygiene requirements.',
       },
       {
         q: 'How long does a kitchen cleaning session take?',
@@ -371,32 +375,12 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
         a: 'Yes. Homework UAE uses eco-friendly, food-safe disinfectants that are certified safe for kitchen environments. No harsh chemicals are left behind on surfaces that come into contact with food or cookware.',
       },
       {
-        q: 'How is the pricing calculated?',
-        a: 'Homework UAE prices kitchen cleaning based on the number of professionals required and the time needed to complete the job, not on kitchen size alone. This ensures you pay for exactly what your kitchen needs, nothing more.',
-      },
-      {
-        q: 'Do I need to be home during the cleaning?',
-        a: 'It is recommended that someone is present, at least for the initial assessment and final inspection. However, Homework UAE\'s team can coordinate access arrangements based on your schedule and comfort level.',
-      },
-      {
-        q: 'How often should I book a professional kitchen cleaning in Dubai?',
-        a: "For most Dubai households, a deep kitchen clean every one to three months is ideal, given the high cooking frequency and the city's dusty, humid environment. Standard cleaning can be scheduled more regularly depending on usage.",
-      },
-      {
-        q: 'Does Homework UAE clean commercial kitchens as well?',
-        a: 'Yes. Homework UAE serves apartments, villas, and commercial kitchens across Dubai. Commercial environments are assessed individually to ensure the cleaning plan matches the scale and hygiene requirements of the space.',
-      },
-      {
-        q: 'What areas in Dubai does Homework UAE cover?',
-        a: 'Homework UAE operates across Dubai and also serves Abu Dhabi, Sharjah, and Ajman. You can check specific service coverage on the Homework UAE website when booking.',
-      },
-      {
-        q: 'How do I book a kitchen cleaning service with Homework UAE?',
-        a: 'Booking is fully online. Visit the Homework UAE website, select your kitchen cleaning service, choose a date and time that works for you, and the team handles the rest.',
+        q: 'How often should I book kitchen deep cleaning in Dubai?',
+        a: 'For most Dubai households, a deep kitchen clean every one to three months is ideal. High-traffic or commercial kitchens may need more frequent service.',
       },
     ],
     ctaTitle: 'Book Your Kitchen Clean Today',
-    ctaSubtitle: 'Schedule your clean today with Homework UAE and enjoy a hygienic, spotless kitchen.',
+    ctaSubtitle: 'Schedule kitchen deep cleaning in Dubai with Homework UAE.',
   },
   'post-construction-cleaning': {
     name: 'Post Construction Cleaning',
@@ -413,6 +397,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Full Construction Dust Removal', 'Floor Cleaning & Polishing', 'Bathroom Fixture Deep Clean', 'Cabinet & Drawer Interior Wipe', 'Debris & Waste Removal', 'Final Detail & Snagging Clean'],
     ctaTitle: 'Turn Your Build Into Your Home',
     ctaSubtitle: 'Contact us today for professional post-construction cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1800&q=80',
   },
   'office-deep-cleaning': {
     name: 'Office Deep Cleaning',
@@ -429,6 +414,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Server Room & Electronics Dusting', 'Upholstered Chair & Carpet Extraction', 'Restroom Deep Sanitization (Hospital Grade)', 'Pantry & Breakroom Degreasing', 'Air Vent & Grille Cleaning', 'Touch-Point Antimicrobial Coating'],
     ctaTitle: 'Transform Your Workspace',
     ctaSubtitle: 'Contact us today for a professional office deep cleaning experience.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1800&q=80',
   },
   'apartment-deep-cleaning': {
     name: 'Apartment Deep Cleaning',
@@ -436,8 +422,8 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     heroTitleLine1: 'APARTMENT',
     heroTitleLine2: 'DEEP CLEANING',
     heroSubtitle: "Top Apartment Deep Cleaning in UAE – Sparkling Results Every Time",
-    heroImage: '',
-    sectionImage: '',
+    heroImage: 'https://images.pexels.com/photos/3867613/pexels-photo-3867613.jpeg',
+    sectionImage: 'https://images.pexels.com/photos/3867613/pexels-photo-3867613.jpeg',
     specialistLabel: 'Apartment Specialists',
     aboutHeading1: 'Complete Apartment',
     aboutHeading2: 'Deep Sanitization',
@@ -445,6 +431,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Full Dusting of All Surfaces', 'Floor Vacuuming & Mopping', 'Windows & Mirror Cleaning', 'Bathroom Deep Sanitization', 'Kitchen Appliance Cleaning', 'Balcony & Outdoor Areas'],
     ctaTitle: 'Transform Your Apartment',
     ctaSubtitle: 'Contact us today for a professional apartment deep cleaning experience.',
+    beforeAfterImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/apartment%20before%20and%20after.png?alt=media&token=eb1044fc-bcd8-45a4-bf25-13126d4ac9b6',
   },
   'move-in-out-cleaning': {
     name: 'Move In/Out Cleaning',
@@ -461,6 +448,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Walls, Ceilings & Skirting Boards', 'Full Floor Cleaning & Polishing', 'Bathroom Deep Sanitization', 'Kitchen Appliance Cleaning', 'Cabinets & Drawers Interior Clean', 'Final Inspection & Sign-Off'],
     ctaTitle: 'Start Fresh in Your New Space',
     ctaSubtitle: 'Contact us today for professional move in/out cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1800&q=80',
   },
   'villa-deep-cleaning': {
     name: 'Villa Deep Cleaning',
@@ -477,6 +465,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Walls, Skirting & Sills Cleaning', 'Furniture & Upholstery Deep Clean', 'Shower Areas & Bathtub Scrubbing', 'Full Kitchen Appliance Cleaning', 'Countertops & Backsplash Sanitization', 'High-Touch Point Antimicrobial Treatment'],
     ctaTitle: 'Transform Your Villa',
     ctaSubtitle: 'Contact us today for a professional villa deep cleaning experience.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=80',
   },
   'floor-deep-cleaning': {
     name: 'Floor Deep Cleaning',
@@ -493,6 +482,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Rotary Machine Scrubbing with Pad Selection', 'pH-Balanced Stone Cleaning Solutions', 'High-Pressure Grout Line Extraction', 'Stain Removal from Porous Surfaces', 'Buffing and Polishing for High Shine', 'Protective Flooring Sealant Application'],
     ctaTitle: 'Ready to Restore Your Floors?',
     ctaSubtitle: 'Contact us today for a professional floor deep cleaning experience.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=1800&q=80',
   },
   'ac-duct-cleaning': {
     name: 'AC Duct Cleaning',
@@ -509,6 +499,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Hidden Pollutant Removal', 'Allergy & Asthma Relief', 'Energy Efficiency Restoration', 'Advanced Air Scrubbing', 'Annual Maintenance Schedule', 'Filter Replacement Guidance'],
     ctaTitle: 'Breathe Cleaner Air Today',
     ctaSubtitle: 'Contact us today for professional AC duct cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=1800&q=80',
   },
   'ac-coil-cleaning': {
     name: 'AC Coil Cleaning',
@@ -525,22 +516,85 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Energy Waste Diagnosis', 'Health Concerns Assessment', 'Evaporator Coil Cleaning', 'Chemical Deep Scrubbing', 'Regular Maintenance Schedule', 'Energy Savings Verification'],
     ctaTitle: 'Keep Your AC Running at Peak Efficiency',
     ctaSubtitle: 'Contact us today for professional AC coil cleaning in the UAE.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1800&q=80',
   },
   'kitchen-hood-cleaning': {
     name: 'Kitchen Hood Cleaning',
     badge: 'Safety & Compliance',
     heroTitleLine1: 'KITCHEN HOOD',
     heroTitleLine2: 'HYGIENE EXPERTS',
-    heroSubtitle: "Expert Kitchen Hood Cleaning in UAE – Safe and Hygienic Kitchens",
-    heroImage: '',
-    sectionImage: '',
+    heroSubtitle: 'Kitchen hood cleaning Dubai for restaurants, cafes, and commercial kitchens. Remove grease, smoke, and odors from exhaust hoods, filters, and duct entry points.',
+    heroImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
+    sectionImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
     specialistLabel: 'Hood Cleaning Specialists',
     aboutHeading1: 'Safety & Compliance:',
     aboutHeading2: 'Kitchen Exhaust Maintenance',
-    description: "When you think of a restaurant's kitchen, the focus usually goes to the food being prepared. Yet, one crucial component often overlooked is the kitchen hood. Regular cleaning of this system is not just good practice — it's essential for safety and compliance. Cooking equipment is the leading cause of restaurant fires, accounting for over 50% of all incidents.",
-    features: ['Fire Hazard Risk Assessment', 'Regulatory Compliance Check', 'Full System Dismantling & Prep', 'Heavy-Duty Chemical Degreasing', 'Baffle Filter Deep Cleaning', 'NFPA 96 Compliance Certification'],
+    description: 'Our kitchen hood cleaning service in Dubai focuses on exhaust hoods, baffle filters, fan housings, and accessible duct entry points. We remove grease buildup to reduce fire risk, improve airflow, and keep commercial kitchens cleaner and safer.',
+    features: [
+      'Hood Canopy Degreasing',
+      'Baffle Filter Soak & Rinse',
+      'Exhaust Fan & Housing Cleaning',
+      'Duct Entry Point Cleaning',
+      'Grease Containment Check',
+      'Compliance-Ready Service Report',
+    ],
+    beforeAfterImage: 'https://firebasestorage.googleapis.com/v0/b/homework-a36e3.firebasestorage.app/o/kitchen%20hood%20cleaning.png?alt=media&token=86d9d694-0a46-4a76-b51e-865efc8cb92e',
+    offerCards: [
+      { title: 'Exhaust Hood Degreasing' },
+      { title: 'Filter Cleaning & Drying' },
+      { title: 'Duct Entry Detailing' },
+      { title: 'Final Safety Inspection' },
+    ],
+    processSteps: [
+      {
+        title: 'Assessment & Prep',
+        detail: 'We inspect the hood system, protect surrounding areas, and plan the safest cleaning approach.',
+      },
+      {
+        title: 'Degreasing',
+        detail: 'We apply food-safe degreasers to the hood canopy and exposed surfaces to break down buildup.',
+      },
+      {
+        title: 'Filter & Duct Entry Cleaning',
+        detail: 'We clean baffle filters and accessible duct entry points to restore airflow and reduce odors.',
+      },
+      {
+        title: 'Final Inspection',
+        detail: 'We complete a final wipe-down, verify results, and share post-service care guidance.',
+      },
+    ],
+    qualityHeading: 'Safer Exhaust Systems',
+    qualityDescription:
+      'Kitchen hood cleaning Dubai results are visible immediately, from grease-free hood canopies to restored airflow. Our process supports safer, cleaner commercial kitchens.',
+    qualityCardText:
+      'Before-and-after results from real kitchen hood cleaning projects in Dubai.',
+    whyChoosePoints: [
+      'Trusted kitchen hood cleaning Dubai specialists for restaurants and cafes.',
+      'Heavy-duty degreasing for hoods, filters, and fan housings.',
+      'Clear scope, fast scheduling, and minimal downtime for kitchens.',
+      'Safe, food-area compatible products with controlled application.',
+      'Compliance-focused service reports for operational readiness.',
+    ],
+    faqs: [
+      {
+        q: 'How often should commercial kitchen hood cleaning be done in Dubai?',
+        a: 'Frequency depends on kitchen volume. High-usage kitchens may need monthly or quarterly service, while lower-volume sites often schedule every 3 to 6 months.',
+      },
+      {
+        q: 'Do you clean kitchen exhaust ducts as well?',
+        a: 'We clean accessible duct entry points as part of the hood service. Full duct cleaning can be scheduled as a separate, deeper service when required.',
+      },
+      {
+        q: 'Is kitchen hood cleaning required for compliance?',
+        a: 'Regular cleaning helps meet hygiene and safety expectations and reduces fire risk in commercial kitchens.',
+      },
+      {
+        q: 'Can you service small cafes and cloud kitchens?',
+        a: 'Yes. We service restaurants, cafes, cloud kitchens, and food courts across Dubai with tailored scopes.',
+      },
+    ],
     ctaTitle: 'Keep Your Kitchen Hood Clean',
-    ctaSubtitle: 'Contact us today for professional kitchen hood cleaning services.',
+    ctaSubtitle: 'Book kitchen hood cleaning Dubai for safer, compliant kitchens.',
   },
   'grease-trap-cleaning': {
     name: 'Grease Trap Cleaning',
@@ -557,6 +611,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Slow Drain Identification', 'Foul Odour Elimination', 'Full Waste Vacuum Pumping', 'High-Pressure Internal Washing', 'Regular Maintenance Schedule', 'Regulatory Compliance Assurance'],
     ctaTitle: 'Keep Your Grease Traps Clean & Compliant',
     ctaSubtitle: 'Contact us today for professional grease trap cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?auto=format&fit=crop&w=1800&q=80',
   },
   'restaurant-cleaning': {
     name: 'Restaurant Cleaning',
@@ -573,6 +628,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Dining Floor Deep Cleaning', 'Furniture & Table Sanitization', 'Kitchen Equipment Degreasing', 'Prep Station Hygiene Protocol', 'Restroom Fixture Sterilization', 'Bar & Counter Sanitization'],
     ctaTitle: 'Keep Your Restaurant Pristine',
     ctaSubtitle: 'Contact us today for professional restaurant cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1800&q=80',
   },
   'water-tank-cleaning': {
     name: 'Water Tank Cleaning',
@@ -589,6 +645,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Water Pathogen Risk Assessment', 'Discolouration & Contamination Check', 'Full Tank Evacuation & Draining', 'Food-Grade Chemical Sanitizing', 'Quarterly Inspection Programme', 'Filtration Upgrade Consultation'],
     ctaTitle: 'Ensure Clean, Safe Water',
     ctaSubtitle: 'Contact us today for professional water tank cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1800&q=80',
   },
   'swimming-pool-cleaning': {
     name: 'Swimming Pool Cleaning',
@@ -605,6 +662,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Surface Skimming & Debris Removal', 'Precision Vacuum Cleaning', 'Advanced Water Chemistry Testing', 'Chemical Balancing & Treatment', 'Targeted Algae Killing & Brushing', 'Pump & Filter Circulation Check'],
     ctaTitle: 'Dive Into a Crystal Clear Pool',
     ctaSubtitle: 'Contact us today for professional swimming pool cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1800&q=80',
   },
   'gym-deep-cleaning': {
     name: 'Gym Deep Cleaning',
@@ -621,6 +679,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['Gym Equipment Sanitization', 'Rubber Floor Deep Scrubbing', 'Fixture & Locker Sterilization', 'Restroom & Shower Deep Clean', 'Studio Floor Machine Cleaning', 'Reception & Front Desk Detailing'],
     ctaTitle: 'Maintain a Hygienic Gym',
     ctaSubtitle: 'Contact us today for professional gym deep cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1800&q=80',
   },
   'facade-cleaning': {
     name: 'Facade Cleaning',
@@ -637,6 +696,7 @@ export const SERVICE_DEFAULTS: Record<string, ServicePageContent> = {
     features: ['High-Pressure Water Jet Washing', 'Graffiti Eradication', 'Streak-Free Window Cleaning', 'Regular Maintenance Plans', 'Rope Access Mastery', 'Structural Condition Inspection'],
     ctaTitle: "Restore Your Building's Facade",
     ctaSubtitle: 'Contact us today for professional facade cleaning services.',
+    beforeAfterImage: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1800&q=80',
   },
 }
 
@@ -718,7 +778,11 @@ export default function ServicePageTemplate({ slug }: { slug: string }) {
   const fallbackAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'
   const heroImage = content.heroImage || heroFallbackImage
   const detailsImage = content.sectionImage || sectionFallbackImage
-  const beforeAfterImage = content.beforeAfterImage || beforeAfterFallbackImage
+  const beforeAfterImage =
+    content.beforeAfterImage ||
+    content.sectionImage ||
+    content.heroImage ||
+    beforeAfterFallbackImage
   const beforeAfterVideo = content.beforeAfterVideo?.trim() || ''
   const serviceName = content.name || 'Professional Cleaning Service'
 

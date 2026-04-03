@@ -9,18 +9,18 @@ export const metadata: Metadata = {
   ...baseMetadata,
   title: '#1 Kitchen Cleaning Service in Dubai | Homework UAE',
   description:
-    "Homework UAE delivers expert kitchen cleaning in Dubai for homes and businesses. We clean grease, grime, hoods, ducts, and appliances using eco-friendly products and certified professionals.",
+    'Homework UAE delivers expert kitchen deep cleaning in Dubai for homes and businesses. We remove grease, grime, and bacteria from cabinets, appliances, tiles, and floors using eco-friendly products and certified professionals.',
   openGraph: {
     ...baseMetadata.openGraph,
     title: '#1 Kitchen Cleaning Service in Dubai | Homework UAE',
     description:
-      "Homework UAE delivers expert kitchen cleaning in Dubai for homes and businesses. We clean grease, grime, hoods, ducts, and appliances using eco-friendly products and certified professionals.",
+      'Homework UAE delivers expert kitchen deep cleaning in Dubai for homes and businesses. We remove grease, grime, and bacteria from cabinets, appliances, tiles, and floors using eco-friendly products and certified professionals.',
   },
   twitter: {
     ...baseMetadata.twitter,
     title: '#1 Kitchen Cleaning Service in Dubai | Homework UAE',
     description:
-      "Homework UAE delivers expert kitchen cleaning in Dubai for homes and businesses. We clean grease, grime, hoods, ducts, and appliances using eco-friendly products and certified professionals.",
+      'Homework UAE delivers expert kitchen deep cleaning in Dubai for homes and businesses. We remove grease, grime, and bacteria from cabinets, appliances, tiles, and floors using eco-friendly products and certified professionals.',
   },
 }
 

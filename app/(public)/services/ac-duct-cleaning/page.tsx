@@ -187,7 +187,7 @@ export default function ACDuctCleaning() {
                 Professional <span className="bg-linear-to-r from-[#7BD7FF] via-[#3FB5F4] to-primary bg-clip-text text-transparent">AC Duct Cleaning</span> Services in Dubai
               </h1>
               <p className="mb-8 max-w-2xl text-base leading-relaxed text-white/80 sm:mb-10 sm:text-lg md:text-lg lg:text-xl">
-                As a top-rated air duct cleaning company in Dubai, we specialize in removing contaminants, allergens, dust, and hidden debris from your AC duct system. Our professional services are designed for homes, villas, and commercial spaces, helping improve indoor air quality and cooling performance.
+                As a top-rated AC duct cleaning company in Dubai, our AC duct cleaning Dubai team removes contaminants, allergens, dust, and hidden debris from HVAC ducts. This air duct cleaning service is designed for homes, villas, and commercial spaces, improving indoor air quality and cooling performance.
               </p>
               <div className="flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-5">
                 <Link href="/book-service" className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-linear-to-r from-[#039ED9] to-primary px-6 py-3.5 text-xs font-black uppercase tracking-[0.14em] text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_35px_rgba(236,72,153,0.35)] sm:px-8 sm:py-4 sm:text-sm sm:tracking-widest">
@@ -313,7 +313,7 @@ export default function ACDuctCleaning() {
                       <Icon className="h-7 w-7 sm:h-8 sm:w-8" />
                     </div>
                     <h3 className="relative z-10 text-lg font-black text-slate-900 sm:text-xl">{card.title}</h3>
-                    <p className="mt-3 text-sm font-medium leading-relaxed text-slate-500 group-hover:text-slate-600">Premium hygiene for your industrial or residential airflow channels.</p>
+                    <p className="mt-3 text-sm font-medium leading-relaxed text-slate-500 group-hover:text-slate-600">Premium AC duct cleaning Dubai for residential and commercial airflow channels.</p>
                   </article>
                 )
               })}
@@ -474,7 +474,7 @@ export default function ACDuctCleaning() {
               </ul>
 
               <p className="mt-7 max-w-3xl text-lg font-semibold leading-relaxed text-white/95 sm:text-xl lg:text-2xl xl:text-3xl">
-                Choose Dubai Air Duct Cleaning for cleaner air, better health, and peace of mind.
+                Choose Homework UAE for AC duct cleaning Dubai, cleaner air, better health, and peace of mind.
               </p>
 
               <div className="mt-8 flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-4">

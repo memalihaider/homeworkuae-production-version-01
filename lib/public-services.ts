@@ -28,7 +28,7 @@ export const PUBLIC_SERVICES: PublicServiceOption[] = [
 
   { id: 'ac-duct-cleaning', name: 'AC Duct Cleaning', categoryName: 'Technical Services', description: 'Indoor air quality improvement through duct cleaning.', price: 350 },
   { id: 'ac-coil-cleaning', name: 'AC Coil Cleaning', categoryName: 'Technical Services', description: 'Coil cleaning for improved AC performance.', price: 280 },
-  { id: 'kitchen-hood-cleaning', name: 'Kitchen Hood Clean', categoryName: 'Technical Services', description: 'Grease and residue removal from hood systems.', price: 320 },
+  { id: 'kitchen-hood-cleaning', name: 'Kitchen Hood Cleaning', categoryName: 'Technical Services', description: 'Grease and residue removal from hood systems.', price: 320 },
   { id: 'grease-trap-cleaning', name: 'Grease Trap Clean', categoryName: 'Technical Services', description: 'Grease trap maintenance and cleaning.', price: 260 },
   { id: 'restaurant-cleaning', name: 'Restaurant Clean', categoryName: 'Technical Services', description: 'Commercial hospitality cleaning.', price: 380 },
   { id: 'water-tank-cleaning', name: 'Water Tank Clean', categoryName: 'Technical Services', description: 'Safe water tank sanitization.', price: 340 },
