@@ -11,6 +11,7 @@ export default function BookService() {
   return (
     <div className="min-h-screen bg-slate-50 py-12 md:py-24">
       <div className="container mx-auto px-4">
+        <h1 className="sr-only">Book Cleaning Service in Dubai</h1>
         <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
           <BookServiceForm />
 

@@ -49,9 +49,9 @@ const jsonLd = {
 };
 
 export const metadata: Metadata = {
-  title: "FAQs | Cleaning Services Dubai – Common Questions Answered",
+  title: "FAQs: Cleaning Services in Dubai | Homework UAE",
   description:
-    "Frequently asked questions about Homework UAE's cleaning services in Dubai. Villa deep cleaning, AC duct cleaning, home cleaning & more. Find your answers here.",
+    "Frequently asked questions about Homework UAE cleaning services in Dubai, including villa cleaning, AC duct cleaning, and home cleaning.",
   keywords: [
     "cleaning company FAQ Dubai",
     "villa deep cleaning questions",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "FAQs | Homework UAE – Cleaning Services Dubai",
     description:
-      "Frequently asked questions about villa deep cleaning, AC duct cleaning, home cleaning & more in Dubai.",
+      "Common questions about villa, AC duct, and home cleaning services in Dubai.",
     url: "https://www.homeworkuae.com/faqs",
     type: "website",
   },

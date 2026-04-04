@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Contact Us | Book a Cleaning Service in Dubai",
   description:
-    "Contact Homework UAE to book a professional cleaning service in Dubai. Call, WhatsApp or email us. Serving Dubai, Sharjah, Abu Dhabi & all UAE. Quick response guaranteed.",
+    "Contact Homework UAE to book cleaning services in Dubai. Call, WhatsApp, or email for quick support and scheduling.",
   keywords: [
     "contact cleaning company Dubai",
     "book cleaning service Dubai",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Contact Homework UAE | Book a Cleaning Service in Dubai",
     description:
-      "Book a professional cleaning service in Dubai. Call, WhatsApp or email Homework UAE. Quick response guaranteed.",
+      "Book cleaning services in Dubai. Call, WhatsApp, or email Homework UAE for a quick response.",
     url: "https://www.homeworkuae.com/contact",
     type: "website",
   },

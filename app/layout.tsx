@@ -20,15 +20,16 @@ const playfair = Playfair_Display({
 });
 
 const SITE_URL = "https://www.homeworkuae.com";
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Homework UAE | Premium Cleaning Company in Dubai | Maid & Deep Cleaning Services",
+    default: "Homework UAE | Cleaning Services in Dubai",
     template: "%s | Homework UAE",
   },
   description:
-    "Premium cleaning company in Dubai for maid services, deep cleaning services, villa cleaning, office cleaning, and AC duct cleaning. Dubai Municipality approved. Trusted by 20,000+ clients since 2004.",
+    "Dubai cleaning company for maid, deep, villa, office, and AC duct cleaning. Municipality approved and trusted by 20,000+ clients since 2004.",
   keywords: [
     "premium cleaning company in Dubai",
     "maid services Dubai",
@@ -60,9 +61,6 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  alternates: {
-    canonical: SITE_URL,
-  },
   openGraph: {
     title: "Homework UAE | Premium Cleaning Company in Dubai",
     description:
@@ -88,7 +86,7 @@ export const metadata: Metadata = {
     images: ["/logo.jpeg"],
   },
   verification: {
-    google: "", // add your Google Search Console token here
+    google: googleSiteVerification,
   },
 };
 
@@ -273,7 +271,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             }),
           }}
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="prefetch" href="/" />
         <link rel="prefetch" href="/services" />
         <link rel="prefetch" href="/about" />

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Premium Cleaning & Maid Services in Dubai",
   description:
-    "Premium maid services and deep cleaning services in Dubai. Explore villa, office, residential, kitchen, AC duct, and post-construction cleaning from a trusted Dubai cleaning company.",
+    "Explore maid and deep cleaning services in Dubai for villas, offices, and homes. Trusted teams with transparent pricing and reliable scheduling.",
   keywords: [
     "maid services Dubai",
     "maid service Dubai",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Premium Cleaning & Maid Services in Dubai | Homework UAE",
     description:
-      "Premium maid services and deep cleaning services in Dubai for homes, villas, and offices. Municipality approved.",
+      "Maid and deep cleaning services in Dubai for homes, villas, and offices. Municipality approved.",
     url: "https://www.homeworkuae.com/services",
     type: "website",
   },

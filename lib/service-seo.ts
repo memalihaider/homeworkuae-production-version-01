@@ -57,7 +57,7 @@ function buildKeywords(serviceName: string): string[] {
 }
 
 function buildServiceDescription(serviceName: string): string {
-  return `Get professional ${serviceName.toLowerCase()} in Dubai with Homework UAE. Certified technicians, same-day booking options, transparent pricing, and reliable residential and commercial service across Dubai.`
+  return `Book ${serviceName.toLowerCase()} in Dubai with Homework UAE. Certified teams, transparent pricing, and reliable residential and commercial cleaning service.`
 }
 
 export function buildServiceMetadata(slug: string): Metadata {
@@ -66,7 +66,7 @@ export function buildServiceMetadata(slug: string): Metadata {
   const canonicalPath = `/services/${safeSlug}`
   const canonicalUrl = `${SITE_URL}${canonicalPath}`
 
-  const title = `${serviceName} Dubai | Professional ${serviceName} Services | Homework UAE`
+  const title = `${serviceName} Dubai | Homework UAE`
   const description = buildServiceDescription(serviceName)
 
   return {

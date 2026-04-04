@@ -26,20 +26,20 @@ const baseMetadata = buildServiceMetadata('ac-duct-cleaning')
 
 export const metadata: Metadata = {
   ...baseMetadata,
-  title: '#1 AC Duct Cleaning Dubai | Certified & Affordable Service',
+  title: 'AC Duct Cleaning Dubai | Certified Service | Homework UAE',
   description:
-    'Top-rated AC duct cleaning in Dubai. Our trained technicians deep clean your ducts, filters & coils for better air quality & lower energy bills. Get a free quote today!',
+    'Top-rated AC duct cleaning in Dubai by trained technicians. Improve indoor air quality and cooling efficiency with a free quote today.',
   openGraph: {
     ...baseMetadata.openGraph,
-    title: '#1 AC Duct Cleaning Dubai | Certified & Affordable Service',
+    title: 'AC Duct Cleaning Dubai | Certified Service | Homework UAE',
     description:
-      'Top-rated AC duct cleaning in Dubai. Our trained technicians deep clean your ducts, filters & coils for better air quality & lower energy bills. Get a free quote today!',
+      'Top-rated AC duct cleaning in Dubai by trained technicians. Improve indoor air quality and cooling efficiency with a free quote today.',
   },
   twitter: {
     ...baseMetadata.twitter,
-    title: '#1 AC Duct Cleaning Dubai | Certified & Affordable Service',
+    title: 'AC Duct Cleaning Dubai | Certified Service | Homework UAE',
     description:
-      'Top-rated AC duct cleaning in Dubai. Our trained technicians deep clean your ducts, filters & coils for better air quality & lower energy bills. Get a free quote today!',
+      'Top-rated AC duct cleaning in Dubai by trained technicians. Improve indoor air quality and cooling efficiency with a free quote today.',
   },
 }
 

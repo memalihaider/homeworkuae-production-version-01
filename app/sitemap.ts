@@ -40,11 +40,8 @@ const staticRoutes: { url: string; priority: number; changeFrequency: MetadataRo
   { url: "/blog",                                priority: 0.7,  changeFrequency: "weekly" },
   { url: "/book-service",                        priority: 0.75, changeFrequency: "monthly" },
   { url: "/quote",                               priority: 0.75, changeFrequency: "monthly" },
-  { url: "/booking",                             priority: 0.75, changeFrequency: "monthly" },
   { url: "/careers",                             priority: 0.5,  changeFrequency: "monthly" },
   { url: "/privacy-policy",                      priority: 0.3,  changeFrequency: "yearly" },
-  { url: "/booking-thank-you",                   priority: 0.2,  changeFrequency: "yearly" },
-  { url: "/thank-you",                           priority: 0.2,  changeFrequency: "yearly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

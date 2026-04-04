@@ -53,7 +53,8 @@ const nextConfig: NextConfig = {
       { source: '/category-sitemap.xml', destination: '/sitemap.xml', permanent: true },
 
       // Page redirects
-      { source: '/booking-form', destination: '/booking', permanent: true },
+      { source: '/booking', destination: '/book-service', permanent: true },
+      { source: '/booking-form', destination: '/book-service', permanent: true },
       { source: '/faq', destination: '/faqs', permanent: true },
       { source: '/faqs/:slug', destination: '/faqs', permanent: true },
       { source: '/404', destination: '/', permanent: true },
