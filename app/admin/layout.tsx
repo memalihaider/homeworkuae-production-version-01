@@ -214,6 +214,7 @@ const ALL_PAGES_CONFIG = {
   Dashboard: { icon: LayoutDashboard, href: "/admin/dashboard" },
   CRM: { icon: Users, href: "/admin/crm" },
   "Lead Dashboard": { icon: Users, href: "/admin/crm" },
+  "CRM Leads Report": { icon: BarChart3, href: "/admin/crm/leads-report" },
   Communications: { icon: MessageSquare, href: "/admin/crm/communications" },
   Clients: { icon: UserCheck, href: "/admin/crm/clients" },
   Surveys: { icon: Ruler, href: "/admin/surveys" },
@@ -300,6 +301,7 @@ const MENU_STRUCTURE = [
     key: "CRM",
     submenu: [
       { label: "Lead Dashboard", key: "Lead Dashboard" },
+      { label: "CRM Leads Report", key: "CRM Leads Report" },
       { label: "Employee Chat", key: "Employee Chat" },
       { label: "Clients", key: "Clients" },
     ],
@@ -488,6 +490,7 @@ const PAGE_MODULE_ACCESS: Partial<Record<keyof typeof ALL_PAGES_CONFIG, string>>
   "Inventory & Services": "/admin/products",
   CRM: "/admin/crm",
   "Lead Dashboard": "/admin/crm",
+  "CRM Leads Report": "/admin/crm/leads-report",
   "Process Inquiry": "/admin/process-inquiry",
 };
 

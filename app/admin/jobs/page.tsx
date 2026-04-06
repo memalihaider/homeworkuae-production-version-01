@@ -68,6 +68,7 @@ interface Job {
   reminderDate?: string
   reminderSent?: boolean
   services?: JobService[]
+  upsales?: Array<{ name: string; quantity: number; unitPrice: number; total: number; note?: string }>
   overtimeRequired?: boolean
   overtimeHours?: number
   overtimeReason?: string
@@ -193,6 +194,7 @@ interface NewJobForm {
   selectedEmployees: string[]
   jobCreatedBy: string // 👈 NEW FIELD ADDED
   services?: JobService[]
+  upsales?: Array<{ name: string; quantity: number; unitPrice: number; total: number; note?: string }>
   tasks?: JobTask[]
   selectedEquipment: string[]
   selectedPermits: string[]
@@ -226,6 +228,7 @@ export default function JobsPage() {
   const [userAvailability, setUserAvailability] = useState<Record<string, UserWeeklyAvailability>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [showSearchBar, setShowSearchBar] = useState(false)
+  const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [creatorFilter, setCreatorFilter] = useState<string>('all')
@@ -282,7 +285,8 @@ export default function JobsPage() {
     paymentMethod: 'N/A',
     paymentReference: '',
     paymentLinkGeneratedBy: '',
-    allowValidationOverride: false
+    allowValidationOverride: false,
+    upsales: []
   })
 
   // Fetch jobs, employees, clients, equipment, permits and services from Firebase
@@ -564,6 +568,7 @@ export default function JobsPage() {
           selectedEmployees: jobData.assignedEmployees?.map((emp: { id: string }) => emp.id) || [],
           jobCreatedBy: jobData.jobCreatedBy || '', // 👈 NEW FIELD ADDED TO EDIT
           services: jobData.services || [],
+          upsales: jobData.upsales || [],
           tasks: jobData.tasks || [],
           selectedEquipment: selectedEquipment,
           selectedPermits: selectedPermits,
@@ -1109,6 +1114,7 @@ export default function JobsPage() {
         specialInstructions: newJobForm.specialInstructions,
         recurring: newJobForm.recurring,
         services: newJobForm.services || [],
+        upsales: newJobForm.upsales || [],
         tasks: newJobForm.tasks || [],
         updatedAt: new Date().toISOString(),
         assignedTo: selectedEmployeesDetails.map(emp => emp.name),
@@ -1494,8 +1500,10 @@ export default function JobsPage() {
       paymentMethod: 'N/A',
       paymentReference: '',
       paymentLinkGeneratedBy: '',
-      allowValidationOverride: false
+      allowValidationOverride: false,
+      upsales: []
     })
+    setClientSearchTerm('')
     setShowNewJobModal(true)
   }
 
@@ -2196,6 +2204,7 @@ export default function JobsPage() {
             className="absolute inset-0 backdrop-blur-sm bg-black/10" 
             onClick={() => { 
               setShowNewJobModal(false); 
+              setClientSearchTerm('');
               setEditingJobId(null); 
             }}
           ></div>
@@ -2206,7 +2215,7 @@ export default function JobsPage() {
                 <h2 className="text-2xl font-bold">{editingJobId ? 'Edit Job' : 'Create New Job'}</h2>
                 <p className="text-blue-100 text-sm mt-1">Complete all job details</p>
               </div>
-              <button onClick={() => { setShowNewJobModal(false); setEditingJobId(null) }} className="text-blue-100 hover:text-white transition-colors">
+              <button onClick={() => { setShowNewJobModal(false); setClientSearchTerm(''); setEditingJobId(null) }} className="text-blue-100 hover:text-white transition-colors">
                 <X className="h-6 w-6" />
               </button>
             </div>
@@ -2233,6 +2242,13 @@ export default function JobsPage() {
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Client *</label>
+                    <input
+                      type="text"
+                      value={clientSearchTerm}
+                      onChange={(e) => setClientSearchTerm(e.target.value)}
+                      placeholder="Search client or lead by name/company/email/phone..."
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
                     <select
                       value={newJobForm.clientId || ''}
                       onChange={(e) => {
@@ -2248,7 +2264,16 @@ export default function JobsPage() {
                       <option value="">Select a client or lead...</option>
                       
                       <optgroup label="━━━━ Clients ━━━━" className="font-bold text-gray-700">
-                        {clients.filter(c => c.type === 'client').map((client) => (
+                        {clients
+                          .filter(c => c.type === 'client')
+                          .filter((client) => {
+                            const q = clientSearchTerm.trim().toLowerCase()
+                            if (!q) return true
+                            return [client.name, client.company, client.email, client.phone]
+                              .filter(Boolean)
+                              .some((field) => String(field).toLowerCase().includes(q))
+                          })
+                          .map((client) => (
                           <option key={`client-${client.id}`} value={client.id}>
                             {client.name} - {client.company} (Client)
                           </option>
@@ -2256,7 +2281,16 @@ export default function JobsPage() {
                       </optgroup>
                       
                       <optgroup label="━━━━ Won/Qualified Leads ━━━━" className="font-bold text-gray-700">
-                        {clients.filter(c => c.type === 'lead').map((lead) => (
+                        {clients
+                          .filter(c => c.type === 'lead')
+                          .filter((lead) => {
+                            const q = clientSearchTerm.trim().toLowerCase()
+                            if (!q) return true
+                            return [lead.name, lead.company, lead.email, lead.phone, lead.status]
+                              .filter(Boolean)
+                              .some((field) => String(field).toLowerCase().includes(q))
+                          })
+                          .map((lead) => (
                           <option key={`lead-${lead.id}`} value={lead.id}>
                             {lead.name} - {lead.company} ({lead.status} Lead)
                           </option>

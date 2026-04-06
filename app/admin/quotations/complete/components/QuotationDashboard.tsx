@@ -46,10 +46,12 @@ export default function QuotationDashboard() {
     accepted: 0,
     approved: 0,
     sent: 0,
-    draft: 0,
+    won: 0,
+    lost: 0,
     rejected: 0,
     totalValue: 0,
     conversionRate: 0,
+    wonLossRatio: 0,
     averageValue: 0
   })
 
@@ -97,10 +99,12 @@ export default function QuotationDashboard() {
     const accepted = data.filter(q => q.status === 'Accepted').length
     const approved = data.filter(q => q.status === 'Approved').length
     const sent = data.filter(q => q.status === 'Sent').length
-    const draft = data.filter(q => q.status === 'Draft').length
+    const won = data.filter(q => q.status === 'Won').length
+    const lost = data.filter(q => q.status === 'Lost').length
     const rejected = data.filter(q => q.status === 'Rejected').length
     const totalValue = data.reduce((sum, q) => sum + (q.total || 0), 0)
     const conversionRate = total > 0 ? ((accepted + approved) / total) * 100 : 0
+    const wonLossRatio = lost > 0 ? won / lost : won > 0 ? won : 0
     const averageValue = total > 0 ? totalValue / total : 0
 
     setTotalValue(totalValue)
@@ -109,10 +113,12 @@ export default function QuotationDashboard() {
       accepted,
       approved,
       sent,
-      draft,
+      won,
+      lost,
       rejected,
       totalValue,
       conversionRate,
+      wonLossRatio,
       averageValue
     })
   }
@@ -142,8 +148,10 @@ export default function QuotationDashboard() {
         return { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' }
       case 'sent':
         return { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' }
-      case 'draft':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' }
+      case 'won':
+        return { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' }
+      case 'lost':
+        return { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' }
       case 'rejected':
         return { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' }
       default:
@@ -159,8 +167,10 @@ export default function QuotationDashboard() {
         return <CheckCircle className="w-3 h-3" />
       case 'sent':
         return <Clock className="w-3 h-3" />
-      case 'draft':
-        return <FileText className="w-3 h-3" />
+      case 'won':
+        return <CheckCircle className="w-3 h-3" />
+      case 'lost':
+        return <AlertTriangle className="w-3 h-3" />
       case 'rejected':
         return <AlertTriangle className="w-3 h-3" />
       default:
@@ -233,16 +243,16 @@ export default function QuotationDashboard() {
           <p className="text-[10px] text-gray-400 mt-1">Ready for client</p>
         </div>
 
-        {/* Draft */}
+        {/* Won / Loss Ratio */}
         <div className="bg-white border border-gray-300 rounded p-3 shadow-none">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-yellow-500 rounded">
-              <Clock className="w-3.5 h-3.5 text-white" />
+            <div className="p-1.5 bg-emerald-600 rounded">
+              <TrendingUp className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="text-[10px] uppercase font-bold text-gray-400">Draft</span>
+            <span className="text-[10px] uppercase font-bold text-gray-400">Won/Loss Ratio</span>
           </div>
-          <p className="text-xl font-bold text-yellow-600">{stats.draft}</p>
-          <p className="text-[10px] text-gray-400 mt-1">Awaiting approval</p>
+          <p className="text-xl font-bold text-emerald-700">{stats.wonLossRatio.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-400 mt-1">Won: {stats.won} • Lost: {stats.lost}</p>
         </div>
 
         {/* Total Value */}
@@ -253,9 +263,9 @@ export default function QuotationDashboard() {
             </div>
             <span className="text-[10px] uppercase font-bold text-gray-400">Total Value</span>
           </div>
-          <p className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalValue)} AED</p>
+          <p className="text-xl font-bold text-blue-600">{formatCurrency(stats.totalValue)}</p>
           <p className="text-[10px] text-gray-400 mt-1">
-            Avg: {formatCurrency(stats.averageValue)} AED
+            Avg: {formatCurrency(stats.averageValue)}
           </p>
         </div>
 
@@ -286,7 +296,8 @@ export default function QuotationDashboard() {
               { label: 'Approved', value: stats.approved, color: 'bg-green-500' },
               { label: 'Accepted', value: stats.accepted, color: 'bg-green-400' },
               { label: 'Sent', value: stats.sent, color: 'bg-blue-500' },
-              { label: 'Draft', value: stats.draft, color: 'bg-yellow-500' },
+              { label: 'Won', value: stats.won, color: 'bg-emerald-500' },
+              { label: 'Lost', value: stats.lost, color: 'bg-orange-500' },
               { label: 'Rejected', value: stats.rejected, color: 'bg-red-500' }
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between">
@@ -337,7 +348,7 @@ export default function QuotationDashboard() {
                       <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${statusColor.bg} ${statusColor.text}`}>
                         {q.status}
                       </span>
-                      <p className="text-[9px] text-gray-400 mt-1 truncate max-w-[100px]">
+                      <p className="text-[9px] text-gray-400 mt-1 truncate max-w-25">
                         ID: {q.id.substring(0, 8)}...
                       </p>
                     </div>
@@ -365,18 +376,18 @@ export default function QuotationDashboard() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-gray-600">Total Quotation Value</span>
-              <span className="text-[13px] font-bold text-black">{formatCurrency(stats.totalValue)} AED</span>
+              <span className="text-[13px] font-bold text-black">{formatCurrency(stats.totalValue)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-gray-600">Average Quotation Value</span>
-              <span className="text-[13px] font-bold text-black">{formatCurrency(stats.averageValue)} AED</span>
+              <span className="text-[13px] font-bold text-black">{formatCurrency(stats.averageValue)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-gray-600">Highest Single Quotation</span>
               <span className="text-[13px] font-bold text-black">
                 {quotations.length > 0 
                   ? formatCurrency(Math.max(...quotations.map(q => q.total || 0))) 
-                  : 0} AED
+                  : 0}
               </span>
             </div>
             <div className="flex justify-between items-center">

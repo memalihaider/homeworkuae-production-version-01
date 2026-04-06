@@ -447,7 +447,7 @@ export default function QuotationReminders() {
           </div>
           <div className="bg-white border border-gray-200 rounded p-2">
             <p className="text-[9px] uppercase font-bold text-gray-400">Total Value</p>
-            <p className="text-lg font-black text-black">{formatCurrency(stats.totalValue)} AED</p>
+            <p className="text-lg font-black text-black">{formatCurrency(stats.totalValue)}</p>
           </div>
         </div>
 
@@ -602,7 +602,7 @@ export default function QuotationReminders() {
                             <File className="w-3 h-3 text-gray-400" />
                             <div>
                               <p className="text-[10px] uppercase font-bold text-gray-400">Total Amount</p>
-                              <p className="text-[11px] font-bold text-gray-700">{formatCurrency(q.total)} {q.currency}</p>
+                              <p className="text-[11px] font-bold text-gray-700">{formatCurrency(q.total)}</p>
                             </div>
                           </div>
                         </div>
@@ -612,7 +612,7 @@ export default function QuotationReminders() {
                     {/* Right Section - Communication Buttons */}
                     <div className="md:text-right">
                       <div className="mb-4">
-                        <p className="text-2xl font-bold text-black">{formatCurrency(q.total)} {q.currency}</p>
+                        <p className="text-2xl font-bold text-black">{formatCurrency(q.total)}</p>
                         <p className="text-[11px] text-gray-500">Total Amount</p>
                       </div>
                       

@@ -63,6 +63,17 @@ const DEFAULT_BANK_DETAILS = {
   iban: ''
 }
 
+const QUOTATION_STATUS_OPTIONS = [
+  'Sent',
+  'Approved',
+  'Rejected',
+  'Lost',
+  'Won',
+  'Reject due to High Price',
+  'Reject due to Other Reason',
+  'Expired',
+] as const
+
 
 export default function QuotationBuilder({ initialData, onSave, onCancel }: Props) {
   // 👇 NEW STATES FOR EDIT MODE
@@ -94,7 +105,9 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       discount: 0,
       discountType: 'percentage',
       template: 'professional',
-      status: 'Draft',
+      status: 'Sent',
+      outcomeRemarks: '',
+      upsales: [],
       services: [],
       products: [],
       notes: saved.notes ?? '',
@@ -153,7 +166,9 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         discount: typeof initialData.discount === 'number' ? initialData.discount : prev.discount,
         discountType: initialData.discountType || prev.discountType || 'percentage',
         template: initialData.template || prev.template || 'professional',
-        status: initialData.status || prev.status || 'Draft',
+        status: initialData.status || prev.status || 'Sent',
+        outcomeRemarks: initialData.outcomeRemarks ?? prev.outcomeRemarks ?? '',
+        upsales: initialData.upsales || prev.upsales || [],
         services: initialData.services || prev.services || [],
         products: initialData.products || prev.products || [],
         notes: initialData.notes ?? prev.notes ?? '',
@@ -506,6 +521,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         // Other
         template: quotationData.template,
         status: quotationData.status,
+        outcomeRemarks: quotationData.outcomeRemarks || '',
+        upsales: quotationData.upsales || [],
         notes: quotationData.notes,
         terms: quotationData.terms,
         createdBy: quotationData.createdByName || '', // Save employee name
@@ -608,6 +625,12 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
 
     if (formData.services.length === 0 && formData.products.length === 0) {
       alert('⚠️ Please add at least one service or product before saving.')
+      return
+    }
+
+    const statusNeedsRemarks = ['Won', 'Lost', 'Reject due to High Price', 'Reject due to Other Reason'].includes(formData.status)
+    if (statusNeedsRemarks && !(formData.outcomeRemarks || '').trim()) {
+      alert('⚠️ Please add outcome remarks for this quotation status.')
       return
     }
 
@@ -1065,7 +1088,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           </div>
 
           {/* Date Selection */}
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Issue Date</label>
               <input
@@ -1084,7 +1107,34 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
               />
             </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Quotation Status</label>
+              <select
+                value={formData.status || 'Sent'}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black bg-white"
+              >
+                {QUOTATION_STATUS_OPTIONS.map((statusOption) => (
+                  <option key={statusOption} value={statusOption}>
+                    {statusOption}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          {(formData.status === 'Won' || formData.status === 'Lost' || formData.status === 'Reject due to High Price' || formData.status === 'Reject due to Other Reason') && (
+            <div className="mt-3 space-y-1">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Outcome Remarks</label>
+              <textarea
+                rows={3}
+                value={formData.outcomeRemarks || ''}
+                onChange={(e) => setFormData({ ...formData, outcomeRemarks: e.target.value })}
+                placeholder="Add reason/remarks for won or lost quotation..."
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
+              />
+            </div>
+          )}
 
           {/* Client Details Inputs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50/50 p-3 rounded border border-gray-100 italic">
@@ -1182,7 +1232,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                     <option value="">Choose Service...</option>
                     {services.map(svc => (
                       <option key={svc.id} value={svc.id}>
-                        {svc.name} ({svc.type || 'SERVICE'}) - AED {svc.price}
+                        {svc.name} ({svc.type || 'SERVICE'}) - {Number(svc.price || 0).toLocaleString()}
                       </option>
                     ))}
                    </select>
@@ -1206,11 +1256,10 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                 </div>
                 <div className="col-span-3">
                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">AED</span>
                       <input 
                         type="number" 
                         placeholder="Price" 
-                        className="w-full text-xs font-bold text-right border-none p-2 pl-9 bg-gray-50 rounded focus:ring-0"
+                        className="w-full text-xs font-bold text-right border-none p-2 bg-gray-50 rounded focus:ring-0"
                         value={service.unitPrice}
                         onChange={(e) => handleUpdateService(service.id, 'unitPrice', Number(e.target.value) || 0)}
                         min="0"
@@ -1263,7 +1312,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
               placeholder="Enter confirmation letter details here... (Optional)
               
 Example:
-I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning Services. I agree to the terms and conditions and confirm the quotation amount of [Total Amount] AED."
+I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning Services. I agree to the terms and conditions and confirm the quotation amount of [Total Amount]."
               className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
               value={formData.confirmationLetter || ''}
               onChange={(e) => setFormData({ ...formData, confirmationLetter: e.target.value })}
@@ -1332,7 +1381,7 @@ I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning 
           <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
             <CreditCard className="w-4 h-4 text-green-600" />
             <h3 className="text-sm font-bold uppercase tracking-tight text-black">
-              Bank Account Details (AED)
+              Bank Account Details
             </h3>
           </div>
           
@@ -1422,7 +1471,7 @@ I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning 
           <div className="bg-white border border-black rounded p-4 space-y-4">
             <div className="flex justify-between items-center border-b border-gray-50 pb-3">
                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Pricing Summary</span>
-               <span className="text-[10px] font-medium text-black bg-gray-100 px-2 py-0.5 rounded uppercase">AED</span>
+               <span className="text-[10px] font-medium text-black bg-gray-100 px-2 py-0.5 rounded uppercase">{formData.currency || ''}</span>
             </div>
 
             <div className="space-y-2.5">
@@ -1484,7 +1533,7 @@ I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning 
                           {calculations.total.toLocaleString()}
                         </p>
                      </div>
-                     <p className="text-[10px] font-bold text-gray-400">AED</p>
+                     <p className="text-[10px] font-bold text-gray-400">{formData.currency || ''}</p>
                   </div>
                </div>
             </div>

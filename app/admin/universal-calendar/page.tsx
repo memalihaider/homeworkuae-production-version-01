@@ -223,6 +223,7 @@ const getDayKeyForDate = (date: Date): DayKey => {
 
 export default function UniversalCalendarPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'availability' | 'calendar'>('calendar')
+  const [showAdvancedControls, setShowAdvancedControls] = useState(false)
   const [users, setUsers] = useState<UserProfile[]>([])
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityDoc>>({})
   const [jobs, setJobs] = useState<Record<string, any>[]>([])
@@ -446,7 +447,7 @@ export default function UniversalCalendarPage() {
     <div className="space-y-6 pb-10">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Universal Calendar</h1>
-        <p className="text-gray-600">Manage weekly availability and view busy job slots across admins and employees.</p>
+        <p className="text-gray-600">Simple team schedule view with busy slots from assigned jobs.</p>
         <p className="text-xs text-gray-500 mt-1">Timezone: {TIMEZONE}</p>
       </div>
 
@@ -454,15 +455,22 @@ export default function UniversalCalendarPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setShowAdvancedControls((prev) => !prev)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            {showAdvancedControls ? 'Hide Advanced' : 'Show Advanced'}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} ${showAdvancedControls ? '' : 'hidden'}`}
           >
             Users
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('availability')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'availability' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === 'availability' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} ${showAdvancedControls ? '' : 'hidden'}`}
           >
             Availability
           </button>

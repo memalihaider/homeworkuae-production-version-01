@@ -74,7 +74,7 @@ interface Invoice {
   clientEmail?: string;
   invoiceDate: string;
   dueDate: string;
-  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Won' | 'Lost';
   lineItems: Array<{
     id: string;
     description: string;
@@ -331,7 +331,7 @@ export default function UnifiedFinancePage() {
   const summary = useMemo(() => {
     const totalIncome = payments.reduce((sum, p) => sum + p.amount, 0)
     const totalPending = invoices
-      .filter(inv => inv.status === 'Sent')
+      .filter(inv => inv.status === 'Sent' || inv.status === 'Won')
       .reduce((sum, inv) => sum + inv.total, 0)
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0)
     const profit = totalIncome - totalExpenses
@@ -345,7 +345,9 @@ export default function UnifiedFinancePage() {
       profitMargin,
       paidInvoices: invoices.filter(inv => inv.status === 'Paid').length,
       pendingInvoices: invoices.filter(inv => inv.status === 'Sent').length,
-      overdueInvoices: invoices.filter(inv => inv.status === 'Overdue').length
+      overdueInvoices: invoices.filter(inv => inv.status === 'Overdue').length,
+      wonInvoices: invoices.filter(inv => inv.status === 'Won').length,
+      lostInvoices: invoices.filter(inv => inv.status === 'Lost').length
     }
   }, [invoices, payments, expenses])
 
@@ -778,6 +780,26 @@ export default function UnifiedFinancePage() {
     }
   }
 
+  const handleInvoiceStatusUpdate = async (invoiceId: string, status: Invoice['status']) => {
+    try {
+      await updateDoc(doc(db, 'invoices', invoiceId), {
+        status,
+        updatedAt: new Date().toISOString().split('T')[0]
+      })
+
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === invoiceId
+            ? { ...inv, status, updatedAt: new Date().toISOString().split('T')[0] }
+            : inv
+        )
+      )
+    } catch (error) {
+      console.error('Error updating invoice status:', error)
+      alert('Failed to update invoice status')
+    }
+  }
+
   const handleDeleteExpense = async (id: string) => {
     if (confirm('Delete this expense?')) {
       try {
@@ -806,6 +828,8 @@ export default function UnifiedFinancePage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Paid': return 'bg-green-100 text-green-700'
+      case 'Won': return 'bg-emerald-100 text-emerald-700'
+      case 'Lost': return 'bg-rose-100 text-rose-700'
       case 'Sent': return 'bg-blue-100 text-blue-700'
       case 'Overdue': return 'bg-red-100 text-red-700'
       case 'Draft': return 'bg-gray-100 text-gray-700'
@@ -976,6 +1000,8 @@ export default function UnifiedFinancePage() {
               <option value="all">All Status</option>
               <option value="Draft">Draft</option>
               <option value="Sent">Sent</option>
+              <option value="Won">Won</option>
+              <option value="Lost">Lost</option>
               <option value="Paid">Paid</option>
               <option value="Overdue">Overdue</option>
             </select>
@@ -1055,6 +1081,14 @@ export default function UnifiedFinancePage() {
                 <p className="text-sm">Overdue</p>
                 <p className="font-bold text-red-600">{summary.overdueInvoices}</p>
               </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm">Won</p>
+                <p className="font-bold text-emerald-600">{summary.wonInvoices}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm">Lost</p>
+                <p className="font-bold text-rose-600">{summary.lostInvoices}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1100,6 +1134,18 @@ export default function UnifiedFinancePage() {
                         <span className={`text-xs font-bold px-2 py-1 rounded ${getStatusColor(inv.status)}`}>
                           {inv.status}
                         </span>
+                        <select
+                          value={inv.status}
+                          onChange={(e) => handleInvoiceStatusUpdate(inv.id, e.target.value as Invoice['status'])}
+                          className="mt-1 block text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+                        >
+                          <option value="Draft">Draft</option>
+                          <option value="Sent">Sent</option>
+                          <option value="Won">Won</option>
+                          <option value="Lost">Lost</option>
+                          <option value="Paid">Paid</option>
+                          <option value="Overdue">Overdue</option>
+                        </select>
                       </div>
                     </div>
                   </div>

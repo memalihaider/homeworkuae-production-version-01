@@ -366,17 +366,17 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <footer className="bg-slate-950 text-white pt-16 pb-8">
+      <footer className="bg-slate-50 text-slate-900 pt-16 pb-8 border-t border-slate-200">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
             <div className="space-y-5">
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80 mb-5">Contact Us</h4>
-              <ul className="space-y-4 text-sm text-slate-400">
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-700 mb-5">Contact Us</h4>
+              <ul className="space-y-4 text-sm text-slate-600">
                 <li className="flex items-start gap-3 group cursor-pointer">
                   <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center text-[#039ED9] shrink-0">
                     <MapPin className="h-3.5 w-3.5" />
                   </div>
-                  <span className="group-hover:text-white transition-colors text-[12px] leading-relaxed">
+                  <span className="group-hover:text-slate-900 transition-colors text-[12px] leading-relaxed">
                     {isLoading ? (
                       <span className="animate-pulse bg-slate-800 rounded w-48 h-4 block"></span>
                     ) : (
@@ -388,7 +388,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                   <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center text-[#039ED9] shrink-0">
                     <Phone className="h-3.5 w-3.5" />
                   </div>
-                  <a href={`tel:${profileData.phone}`} className="group-hover:text-white transition-colors">
+                  <a href={`tel:${profileData.phone}`} className="group-hover:text-slate-900 transition-colors">
                     {isLoading ? (
                       <span className="animate-pulse bg-slate-800 rounded w-32 h-4 block"></span>
                     ) : (
@@ -400,7 +400,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                   <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center text-[#039ED9] shrink-0">
                     <Mail className="h-3.5 w-3.5" />
                   </div>
-                  <a href={`mailto:${profileData.email}`} className="group-hover:text-white transition-colors">
+                  <a href={`mailto:${profileData.email}`} className="group-hover:text-slate-900 transition-colors">
                     {isLoading ? (
                       <span className="animate-pulse bg-slate-800 rounded w-40 h-4 block"></span>
                     ) : (
@@ -412,34 +412,34 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div>
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80 mb-5">Cleaning Services</h4>
-              <ul className="space-y-3 text-[13px] text-slate-400">
-                <li><a href="/services/residential-cleaning" className="hover:text-white transition-colors flex items-center gap-2"><ArrowRight className="h-3 w-3 text-[#039ED9]" /> Normal Cleaning</a></li>
-                <li><a href="/services/villa-deep-cleaning" className="hover:text-white transition-colors flex items-center gap-2"><ArrowRight className="h-3 w-3 text-[#039ED9]" /> Deep Cleaning</a></li>
-                <li><a href="/services/ac-duct-cleaning" className="hover:text-white transition-colors flex items-center gap-2"><ArrowRight className="h-3 w-3 text-[#039ED9]" /> Technical Cleaning</a></li>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-700 mb-5">Cleaning Services</h4>
+              <ul className="space-y-3 text-[13px] text-slate-600">
+                <li><a href="/services/residential-cleaning" className="hover:text-slate-900 transition-colors flex items-center gap-2"><ArrowRight className="h-3 w-3 text-[#039ED9]" /> Normal Cleaning</a></li>
+                <li><a href="/services/villa-deep-cleaning" className="hover:text-slate-900 transition-colors flex items-center gap-2"><ArrowRight className="h-3 w-3 text-[#039ED9]" /> Deep Cleaning</a></li>
+                <li><a href="/services/ac-duct-cleaning" className="hover:text-slate-900 transition-colors flex items-center gap-2"><ArrowRight className="h-3 w-3 text-[#039ED9]" /> Technical Cleaning</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80 mb-5">Quick Links</h4>
-              <ul className="space-y-3 text-[13px] text-slate-400">
-                <li><a href="/" className="hover:text-white transition-colors">Home</a></li>
-                <li><a href="/about" className="hover:text-white transition-colors">About us</a></li>
-                <li><a href="/testimonials" className="hover:text-white transition-colors">Testimonials</a></li>
-                <li><a href="/faqs" className="hover:text-white transition-colors">FAQs</a></li>
-                <li><a href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="/contact" className="hover:text-white transition-colors">Contact us</a></li>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-700 mb-5">Quick Links</h4>
+              <ul className="space-y-3 text-[13px] text-slate-600">
+                <li><a href="/" className="hover:text-slate-900 transition-colors">Home</a></li>
+                <li><a href="/about" className="hover:text-slate-900 transition-colors">About us</a></li>
+                <li><a href="/testimonials" className="hover:text-slate-900 transition-colors">Testimonials</a></li>
+                <li><a href="/faqs" className="hover:text-slate-900 transition-colors">FAQs</a></li>
+                <li><a href="/privacy-policy" className="hover:text-slate-900 transition-colors">Privacy Policy</a></li>
+                <li><a href="/contact" className="hover:text-slate-900 transition-colors">Contact us</a></li>
               </ul>
             </div>
 
             <div className="space-y-5">
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/80">{cms.footer.newsletterTitle}</h4>
-              <p className="text-slate-500 text-[13px]">{cms.footer.newsletterSubtitle}</p>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-700">{cms.footer.newsletterTitle}</h4>
+              <p className="text-slate-600 text-[13px]">{cms.footer.newsletterSubtitle}</p>
               <div className="relative">
                 <input 
                   type="email" 
                   placeholder="Your email address…" 
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-xs focus:ring-1 focus:ring-[#039ED9] outline-none placeholder:text-slate-600"
+                  className="w-full bg-white border border-slate-200 rounded-lg py-3 px-4 text-xs focus:ring-1 focus:ring-[#039ED9] outline-none placeholder:text-slate-400"
                 />
                 <button className="absolute right-1.5 top-1.5 h-8 w-8 bg-[#039ED9] rounded-md flex items-center justify-center hover:bg-[#0388be] transition-colors">
                   <Send className="h-3.5 w-3.5" />
@@ -448,7 +448,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-[11px] text-slate-500 tracking-wide">{cms.footer.copyrightText}</p>
             <div className="flex items-center gap-3">
               {[Facebook, Instagram, Music2].map((Icon, i) => (

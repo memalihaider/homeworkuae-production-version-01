@@ -141,14 +141,14 @@ export default function About() {
 
             <motion.div 
               whileHover={{ y: -10 }}
-              className="group p-12 bg-slate-900 rounded-[3rem] border border-slate-800 shadow-2xl flex flex-col md:flex-row gap-8 items-start text-white"
+              className="group p-12 bg-slate-50 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-8 items-start text-slate-900"
             >
               <div className="h-20 w-20 rounded-3xl bg-primary flex items-center justify-center text-white group-hover:scale-110 transition-all duration-500 shrink-0 shadow-lg shadow-primary/30">
                 <Target className="h-10 w-10" />
               </div>
               <div>
-                <h3 className="text-3xl font-black text-white mb-4 tracking-tight uppercase">Our Mission</h3>
-                <p className="text-slate-400 text-lg leading-relaxed font-medium">
+                <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight uppercase">Our Mission</h3>
+                <p className="text-slate-600 text-lg leading-relaxed font-medium">
                   {cms.missionText}
                 </p>
               </div>

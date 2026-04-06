@@ -28,6 +28,17 @@ const LEGACY_INSURANCE_FIELDS = [
   'insuranceTextFieldLabel',
 ] as const
 
+const QUOTATION_STATUS_OPTIONS = [
+  'Sent',
+  'Approved',
+  'Rejected',
+  'Won',
+  'Lost',
+  'Reject due to High Price',
+  'Reject due to Other Reason',
+  'Expired',
+] as const
+
 const getErrorCode = (error: unknown): string | undefined => {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = (error as { code?: unknown }).code
@@ -52,6 +63,12 @@ const toDateValue = (value: string | Date | FirestoreTimestampLike | undefined):
     }
   }
   return null
+}
+
+const normalizeQuotationStatus = (status: unknown): string => {
+  if (!status || typeof status !== 'string') return 'Sent'
+  if (status.toLowerCase() === 'draft') return 'Sent'
+  return status
 }
 
 interface FirebaseQuotation {
@@ -120,6 +137,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null)
   const insuranceCleanupAttempted = useRef(false)
 
   const resolveCreatorPhone = useCallback(async (quotation: FirebaseQuotation): Promise<string> => {
@@ -166,6 +184,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
       return {
         id: docSnapshot.id,
         ...data,
+        status: normalizeQuotationStatus(data.status),
         createdBy: data.createdBy || '',
         createdById: data.createdById || '',
       }
@@ -390,9 +409,69 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
     onEdit(quotation);
   }
 
+  const handleStatusChange = async (quotation: FirebaseQuotation, nextStatus: string) => {
+    if (!auth.currentUser) {
+      alert('Please login again to continue.')
+      return
+    }
+
+    if (!nextStatus || quotation.status === nextStatus) {
+      return
+    }
+
+    const needsRemarks = ['Won', 'Lost', 'Reject due to High Price', 'Reject due to Other Reason'].includes(nextStatus)
+    let outcomeRemarks: string | undefined
+
+    if (needsRemarks) {
+      const existingRemarks = (quotation as FirebaseQuotation & { outcomeRemarks?: string }).outcomeRemarks || ''
+      const promptText = nextStatus === 'Won'
+        ? 'Please enter the reason/remarks for WON status:'
+        : 'Please enter the reason/remarks for this outcome:'
+      const entered = window.prompt(promptText, existingRemarks)
+      if (entered === null) return
+      if (!entered.trim()) {
+        alert('Remarks are required for this status.')
+        return
+      }
+      outcomeRemarks = entered.trim()
+    }
+
+    try {
+      setUpdatingStatusId(quotation.id)
+      const updatePayload: Record<string, unknown> = {
+        status: nextStatus,
+        updatedAt: new Date(),
+      }
+      if (needsRemarks) {
+        updatePayload.outcomeRemarks = outcomeRemarks || ''
+      }
+
+      await updateDoc(doc(db, 'quotations', quotation.id), updatePayload)
+
+      setQuotations((prev) =>
+        prev.map((item) =>
+          item.id === quotation.id
+            ? { ...item, status: nextStatus, ...(needsRemarks ? { outcomeRemarks } : {}), updatedAt: new Date() }
+            : item,
+        ),
+      )
+    } catch (error) {
+      console.error('Error updating quotation status:', error)
+      alert('❌ Error updating quotation status. Please try again.')
+    } finally {
+      setUpdatingStatusId(null)
+    }
+  }
+
   // Get status badge style
   const getStatusBadgeStyle = (status: string) => {
     switch (status?.toLowerCase()) {
+      case 'won':
+        return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+      case 'lost':
+        return 'bg-orange-100 text-orange-700 border border-orange-200'
+      case 'reject due to high price':
+      case 'reject due to other reason':
       case 'approved':
         return 'bg-green-100 text-green-700 border border-green-200'
       case 'sent':
@@ -411,6 +490,12 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
   // Get status icon
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
+      case 'won':
+        return <CheckCircle className="w-2.5 h-2.5" />
+      case 'lost':
+      case 'reject due to high price':
+      case 'reject due to other reason':
+        return <XCircle className="w-2.5 h-2.5" />
       case 'approved':
         return <CheckCircle className="w-2.5 h-2.5" />
       case 'sent':
@@ -465,10 +550,10 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
   // Calculate statistics
   const stats = {
     total: quotations.length,
-    draft: quotations.filter(q => q.status === 'Draft').length,
     sent: quotations.filter(q => q.status === 'Sent').length,
     approved: quotations.filter(q => q.status === 'Approved').length,
     rejected: quotations.filter(q => q.status === 'Rejected').length,
+    won: quotations.filter(q => q.status === 'Won').length,
   }
 
   if (loading) {
@@ -537,10 +622,13 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
             className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 appearance-none bg-white font-medium"
           >
             <option value="All">All Statuses</option>
-            <option value="Draft">Draft</option>
             <option value="Sent">Sent</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
+            <option value="Won">Won</option>
+            <option value="Lost">Lost</option>
+            <option value="Reject due to High Price">Reject due to High Price</option>
+            <option value="Reject due to Other Reason">Reject due to Other Reason</option>
             <option value="Expired">Expired</option>
           </select>
         </div>
@@ -554,16 +642,16 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
           <p className="text-2xl font-black text-black">{stats.total}</p>
         </div>
         <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
-          <p className="text-[10px] uppercase font-bold text-gray-400">Drafts</p>
-          <p className="text-2xl font-black text-gray-700">{stats.draft}</p>
-        </div>
-        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Sent</p>
           <p className="text-2xl font-black text-blue-700">{stats.sent}</p>
         </div>
         <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Approved</p>
           <p className="text-2xl font-black text-green-700">{stats.approved}</p>
+        </div>
+        <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
+          <p className="text-[10px] uppercase font-bold text-gray-400">Won</p>
+          <p className="text-2xl font-black text-emerald-700">{stats.won}</p>
         </div>
         <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm">
           <p className="text-[10px] uppercase font-bold text-gray-400">Rejected</p>
@@ -619,13 +707,8 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <p className="font-bold text-[13px] text-black mb-0.5">
-                        {q.total?.toLocaleString()} {q.currency || 'AED'}
+                        {q.total?.toLocaleString()}
                       </p>
-                      {q.discount && q.discount > 0 && (
-                        <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight">
-                          -{q.discount}{q.discountType === 'percentage' ? '%' : ' ' + (q.currency || 'AED')} Off
-                        </p>
-                      )}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <p className="text-[11px] font-bold text-gray-700">{formatDate(q.date)}</p>
@@ -636,8 +719,20 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
                         {getStatusIcon(q.status)}
-                        {q.status || 'Draft'}
+                        {q.status || 'Sent'}
                       </span>
+                      <select
+                        value={q.status || 'Sent'}
+                        onChange={(e) => handleStatusChange(q, e.target.value)}
+                        disabled={updatingStatusId === q.id}
+                        className="mt-2 w-full px-2 py-1 border border-gray-200 rounded text-[10px] font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                      >
+                        {QUOTATION_STATUS_OPTIONS.map((statusOption) => (
+                          <option key={statusOption} value={statusOption}>
+                            {statusOption}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <span className="text-xs font-medium text-gray-700">
@@ -737,17 +832,33 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                 </div>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
                   {getStatusIcon(q.status)}
-                  {q.status || 'Draft'}
+                  {q.status || 'Sent'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <p className="text-gray-500">Amount</p>
-                <p className="text-right font-bold text-black">{q.total?.toLocaleString()} {q.currency || 'AED'}</p>
+                <p className="text-right font-bold text-black">{q.total?.toLocaleString()}</p>
                 <p className="text-gray-500">Date</p>
                 <p className="text-right font-bold text-gray-700">{formatDate(q.date)}</p>
                 <p className="text-gray-500">Created By</p>
                 <p className="text-right font-bold text-gray-700">{q.createdBy || 'N/A'}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase font-bold text-gray-500">Change Status</p>
+                <select
+                  value={q.status || 'Sent'}
+                  onChange={(e) => handleStatusChange(q, e.target.value)}
+                  disabled={updatingStatusId === q.id}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  {QUOTATION_STATUS_OPTIONS.map((statusOption) => (
+                    <option key={statusOption} value={statusOption}>
+                      {statusOption}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-3 gap-2 pt-1">

@@ -344,7 +344,7 @@ export default function QuotationApproval() {
         <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
           <p className="text-[10px] uppercase font-bold text-gray-400">Total Value</p>
           <p className="text-2xl font-black text-green-600">
-            {quotations.reduce((sum, q) => sum + (q.total || 0), 0).toLocaleString()} AED
+            {quotations.reduce((sum, q) => sum + (q.total || 0), 0).toLocaleString()}
           </p>
         </div>
         <div className="bg-white p-3 border border-gray-300 rounded shadow-none">
@@ -390,7 +390,7 @@ export default function QuotationApproval() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black text-black">{q.total?.toLocaleString()} {q.currency}</p>
+                      <p className="text-2xl font-black text-black">{q.total?.toLocaleString()}</p>
                       <p className="text-[11px] text-gray-500">Total Amount</p>
                     </div>
                   </div>
@@ -460,8 +460,8 @@ export default function QuotationApproval() {
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-center text-[11px] font-bold">{service.quantity}</td>
-                                <td className="px-3 py-2 text-right text-[11px] font-bold">{service.unitPrice?.toLocaleString()} AED</td>
-                                <td className="px-3 py-2 text-right text-[11px] font-bold text-black">{service.total?.toLocaleString()} AED</td>
+                                <td className="px-3 py-2 text-right text-[11px] font-bold">{service.unitPrice?.toLocaleString()}</td>
+                                <td className="px-3 py-2 text-right text-[11px] font-bold text-black">{service.total?.toLocaleString()}</td>
                               </tr>
                             ))}
                             {q.products?.map((product, index) => (
@@ -473,8 +473,8 @@ export default function QuotationApproval() {
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-center text-[11px] font-bold">{product.quantity}</td>
-                                <td className="px-3 py-2 text-right text-[11px] font-bold">{product.unitPrice?.toLocaleString()} AED</td>
-                                <td className="px-3 py-2 text-right text-[11px] font-bold text-black">{product.total?.toLocaleString()} AED</td>
+                                <td className="px-3 py-2 text-right text-[11px] font-bold">{product.unitPrice?.toLocaleString()}</td>
+                                <td className="px-3 py-2 text-right text-[11px] font-bold text-black">{product.total?.toLocaleString()}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -491,21 +491,21 @@ export default function QuotationApproval() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                       <div className="bg-gray-50 p-3 rounded border border-gray-200">
                         <p className="text-[10px] uppercase font-bold text-gray-400">Subtotal</p>
-                        <p className="text-lg font-bold text-gray-700">{q.subtotal?.toLocaleString()} AED</p>
+                        <p className="text-lg font-bold text-gray-700">{q.subtotal?.toLocaleString()}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded border border-gray-200">
                         <p className="text-[10px] uppercase font-bold text-gray-400">
                           Discount {q.discountType === 'percentage' ? `(${q.discount}%)` : ''}
                         </p>
-                        <p className="text-lg font-bold text-red-600">-{q.discountAmount?.toLocaleString()} AED</p>
+                        <p className="text-lg font-bold text-red-600">-{q.discountAmount?.toLocaleString()}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded border border-gray-200">
                         <p className="text-[10px] uppercase font-bold text-gray-400">Tax ({q.taxRate}%)</p>
-                        <p className="text-lg font-bold text-gray-700">+{q.taxAmount?.toLocaleString()} AED</p>
+                        <p className="text-lg font-bold text-gray-700">+{q.taxAmount?.toLocaleString()}</p>
                       </div>
                       <div className="bg-black p-3 rounded">
                         <p className="text-[10px] uppercase font-bold text-white">Total Amount</p>
-                        <p className="text-lg font-bold text-white">{q.total?.toLocaleString()} AED</p>
+                        <p className="text-lg font-bold text-white">{q.total?.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
