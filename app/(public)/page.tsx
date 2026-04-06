@@ -7,13 +7,13 @@ import {
   Sofa, Layout, Waves, Dumbbell, Calendar, BookOpen, ArrowUpRight, MessageCircle
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import NextImage from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
 import { INITIAL_TESTIMONIALS } from '@/lib/testimonials-data'
 import { defaultHomePage } from '@/lib/cms-data'
 import { db } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore'
 import BookServiceForm from '@/components/BookServiceForm'
 
 // Reusable CTA Button Component
@@ -23,6 +23,16 @@ interface CTAButtonProps {
   variant?: "primary" | "secondary" | "dark"
   icon?: React.ComponentType<{ className?: string }> | null
   className?: string
+}
+
+type HomeBlogCard = {
+  title: string
+  excerpt: string
+  image: string
+  category: string
+  date: string
+  readTime: string
+  href: string
 }
 
 const CTAButton = ({ text, href, variant = "primary", icon: Icon = null, className = "" }: CTAButtonProps) => {
@@ -93,16 +103,18 @@ export default function HomePage() {
     icon: serviceIcons[s.title] || <Sparkles className="h-7 w-7" />,
   }))
 
-  // Blog posts data - using actual blog posts from database
-  const blogs = INITIAL_BLOG_POSTS.slice(0, 6).map(post => ({
-    title: post.title,
-    excerpt: post.excerpt,
-    image: post.image,
-    category: post.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    date: new Date(post.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    readTime: `${post.readTime} min read`,
-    href: `/blog/${post.slug}`
-  }))
+  const fallbackBlogs: HomeBlogCard[] = useMemo(() => (
+    INITIAL_BLOG_POSTS.slice(0, 6).map(post => ({
+      title: post.title,
+      excerpt: post.excerpt,
+      image: post.image,
+      category: post.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      date: new Date(post.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      readTime: `${post.readTime} min read`,
+      href: `/blog/${post.slug}`
+    }))
+  ), [])
+  const [blogs, setBlogs] = useState<HomeBlogCard[]>(fallbackBlogs)
 
   // Testimonials data from database
   const testimonials = INITIAL_TESTIMONIALS.slice(0, 8).map(testimonial => ({
@@ -145,6 +157,76 @@ export default function HomePage() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    const blogCollection = collection(db, 'blog-post')
+
+    const unsubscribeBlogs = onSnapshot(
+      blogCollection,
+      (snapshot) => {
+        const realtimeBlogs = snapshot.docs
+          .map((docSnap) => {
+            const data = docSnap.data() as {
+              title?: string
+              description?: string
+              imageURL?: string
+              tags?: string[]
+              readTime?: number
+              createdAt?: { toDate?: () => Date } | Date | string
+              slug?: string
+            }
+
+            const primaryTag = data.tags?.[0] || 'general'
+            const publishedDate =
+              typeof data.createdAt === 'string'
+                ? new Date(data.createdAt)
+                : data.createdAt instanceof Date
+                  ? data.createdAt
+                  : data.createdAt?.toDate?.() || new Date()
+            const slug = data.slug?.trim()
+            const safeSlug = slug || data.title?.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-')
+
+            return {
+              title: data.title || 'Untitled Post',
+              excerpt: data.description || 'Read our latest cleaning insights and expert tips.',
+              image: data.imageURL || '/images/default-blog.jpg',
+              category: primaryTag.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+              date: publishedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+              readTime: `${data.readTime || 5} min read`,
+              href: safeSlug ? `/blog/${safeSlug}` : '/blog',
+              sortDate: publishedDate.getTime(),
+            }
+          })
+          .sort((a, b) => b.sortDate - a.sortDate)
+          .slice(0, 6)
+
+        if (realtimeBlogs.length > 0) {
+          setBlogs(realtimeBlogs.map(({ sortDate, ...blog }) => blog))
+          return
+        }
+
+        setBlogs(fallbackBlogs)
+      },
+      (error) => {
+        console.warn('Could not subscribe to real-time blog posts:', error)
+        setBlogs(fallbackBlogs)
+      }
+    )
+
+    return () => {
+      unsubscribeBlogs()
+    }
+  }, [fallbackBlogs])
+
+  useEffect(() => {
+    const maxIndex = Math.max(0, blogs.length - 3)
+    if (blogSliderIndex > maxIndex) {
+      setBlogSliderIndex(maxIndex)
+    }
+  }, [blogSliderIndex, blogs.length])
+
+  const maxBlogSlideIndex = Math.max(0, blogs.length - 3)
+  const blogPageCount = Math.max(1, Math.ceil(blogs.length / 3))
 
   return (
     <div className="flex flex-col overflow-hidden selection:bg-primary selection:text-white">
@@ -711,8 +793,8 @@ export default function HomePage() {
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={() => setBlogSliderIndex(Math.min(blogs.length - 3, blogSliderIndex + 1))}
-                disabled={blogSliderIndex >= blogs.length - 3}
+                onClick={() => setBlogSliderIndex(Math.min(maxBlogSlideIndex, blogSliderIndex + 1))}
+                disabled={blogSliderIndex >= maxBlogSlideIndex}
                 className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white hover:bg-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -766,7 +848,7 @@ export default function HomePage() {
 
           {/* Slider Indicators */}
           <div className="flex items-center justify-center gap-1.5 mt-6">
-            {Array.from({ length: Math.ceil(blogs.length / 3) }).map((_, i) => (
+            {Array.from({ length: blogPageCount }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => setBlogSliderIndex(i)}
