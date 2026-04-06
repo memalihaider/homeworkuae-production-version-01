@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Search, ChevronRight, Clock, User, Zap } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 const POSTS_PER_PAGE = 6
 
@@ -28,6 +30,31 @@ type FirebaseBlogPost = {
   publishedAt: string;
   image: string;
 }
+
+type TimestampLike = Date | string | { toDate?: () => Date; seconds?: number } | null | undefined
+
+const toDate = (value: TimestampLike): Date => {
+  if (!value) return new Date(0)
+  if (value instanceof Date) return value
+  if (typeof value === 'string') {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toDate === 'function') return value.toDate()
+    if (typeof value.seconds === 'number') return new Date(value.seconds * 1000)
+  }
+  return new Date(0)
+}
+
+const slugify = (value: string) => (
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+)
 
 // Categories derived from tags
 const getCategoriesFromTags = (posts: FirebaseBlogPost[]) => {
@@ -52,7 +79,7 @@ export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const firebasePosts = useMemo<FirebaseBlogPost[]>(() => (
+  const fallbackPosts = useMemo<FirebaseBlogPost[]>(() => (
     INITIAL_BLOG_POSTS.map((post) => ({
       id: post.id,
       title: post.title,
@@ -72,7 +99,67 @@ export default function BlogPage() {
       image: post.image,
     }))
   ), [])
-  const loading = false
+  const [firebasePosts, setFirebasePosts] = useState<FirebaseBlogPost[]>(fallbackPosts)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, 'blog-post'),
+      (snapshot) => {
+        const posts: FirebaseBlogPost[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as {
+            title?: string
+            name?: string
+            description?: string
+            content?: string
+            readTime?: number
+            imageURL?: string
+            featured?: boolean
+            tags?: string[]
+            createdAt?: TimestampLike
+            slug?: string
+          }
+
+          const createdAt = toDate(data.createdAt)
+          const fallbackSlugSource = data.title || docSnap.id
+          const resolvedSlug = (data.slug && data.slug.trim()) || slugify(fallbackSlugSource)
+          const categoryFromTag = data.tags?.[0]?.toLowerCase().replace(/\s+/g, '-') || 'general'
+
+          return {
+            id: docSnap.id,
+            title: data.title || 'Untitled Post',
+            name: data.name || 'Admin',
+            description: data.description || '',
+            content: data.content || '',
+            readTime: data.readTime || 5,
+            imageURL: data.imageURL || '/images/default-blog.jpg',
+            featured: Boolean(data.featured),
+            tags: data.tags || [],
+            createdAt,
+            slug: resolvedSlug,
+            excerpt: data.description || '',
+            author: data.name || 'Admin',
+            category: categoryFromTag,
+            publishedAt: createdAt.toISOString(),
+            image: data.imageURL || '/images/default-blog.jpg',
+          }
+        })
+
+        if (posts.length > 0) {
+          setFirebasePosts(posts)
+        } else {
+          setFirebasePosts(fallbackPosts)
+        }
+        setLoading(false)
+      },
+      () => {
+        setFirebasePosts(fallbackPosts)
+        setLoading(false)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [fallbackPosts])
 
   // Get categories from Firebase posts
   const blogCategories = useMemo(() => {

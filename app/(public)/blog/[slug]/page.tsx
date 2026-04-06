@@ -5,8 +5,10 @@ import { ArrowLeft, Clock, User, Share2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { INITIAL_BLOG_POSTS } from '@/lib/blog-data'
-import { notFound } from 'next/navigation'
-import { use } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { useParams } from 'next/navigation'
 
 // Combined blog post type
 type BlogPost = {
@@ -24,13 +26,115 @@ type BlogPost = {
   authorImage?: string;
 }
 
-export default function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params)
-  const allPosts: BlogPost[] = INITIAL_BLOG_POSTS
+type TimestampLike = Date | string | { toDate?: () => Date; seconds?: number } | null | undefined
+
+const toDate = (value: TimestampLike): Date => {
+  if (!value) return new Date(0)
+  if (value instanceof Date) return value
+  if (typeof value === 'string') {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toDate === 'function') return value.toDate()
+    if (typeof value.seconds === 'number') return new Date(value.seconds * 1000)
+  }
+  return new Date(0)
+}
+
+const slugify = (value: string) => (
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+)
+
+export default function BlogDetailPage() {
+  const params = useParams<{ slug: string }>()
+  const slug = params?.slug || ''
+  const fallbackPosts = useMemo<BlogPost[]>(() => INITIAL_BLOG_POSTS, [])
+  const [allPosts, setAllPosts] = useState<BlogPost[]>(fallbackPosts)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, 'blog-post'),
+      (snapshot) => {
+        const posts: BlogPost[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as {
+            title?: string
+            slug?: string
+            description?: string
+            content?: string
+            imageURL?: string
+            tags?: string[]
+            readTime?: number
+            name?: string
+            featured?: boolean
+            createdAt?: TimestampLike
+          }
+
+          const createdAt = toDate(data.createdAt)
+          const resolvedSlug = (data.slug && data.slug.trim()) || slugify(data.title || docSnap.id)
+          const category = data.tags?.[0]?.toLowerCase().replace(/\s+/g, '-') || 'general'
+
+          return {
+            id: docSnap.id,
+            title: data.title || 'Untitled Post',
+            slug: resolvedSlug,
+            excerpt: data.description || '',
+            content: data.content || '',
+            image: data.imageURL || '/images/default-blog.jpg',
+            category,
+            readTime: data.readTime || 5,
+            author: data.name || 'Admin',
+            publishedAt: createdAt.toISOString(),
+            featured: Boolean(data.featured),
+          }
+        })
+
+        setAllPosts(posts.length > 0 ? posts : fallbackPosts)
+        setLoading(false)
+      },
+      () => {
+        setAllPosts(fallbackPosts)
+        setLoading(false)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [fallbackPosts])
+
   const post = allPosts.find((item) => item.slug === slug)
 
+  if (loading) {
+    return (
+      <div className="flex flex-col overflow-hidden pt-20">
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-slate-600 font-medium">Loading article...</p>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
   if (!post) {
-    notFound()
+    return (
+      <div className="flex flex-col overflow-hidden pt-20">
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-3xl font-black text-slate-900 mb-3">Article not found</h1>
+            <p className="text-slate-600 mb-6">This blog post does not exist or has been removed.</p>
+            <Link href="/blog" className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Back to Blog
+            </Link>
+          </div>
+        </section>
+      </div>
+    )
   }
 
   const relatedPosts = allPosts
