@@ -1,17 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { 
   Plus, FileText, TrendingUp, Bell, CheckSquare, 
-  Download, History, Sparkles, ArrowUpRight, Loader2
+  Download, History, Sparkles, ArrowUpRight, Loader2, BarChart3
 } from 'lucide-react'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
+import { getSession } from '@/lib/auth'
 
 import QuotationDashboard from './components/QuotationDashboard'
 import QuotationList from './components/QuotationList'
 import QuotationBuilder from './components/QuotationBuilder'
 import QuotationApproval from './components/QuotationApproval'
 import QuotationReminders from './components/QuotationReminders'
+import QuotationAdvancedReports from './components/QuotationAdvancedReports'
 
 // Common interface for all components
 interface BaseQuotation {
@@ -70,11 +72,13 @@ export interface LocalQuotation extends BaseQuotation {
 }
 
 export default function QuotationsPage() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'list' | 'builder' | 'approval' | 'reminders'>('dashboard')
+  type QuotationTabId = 'dashboard' | 'list' | 'builder' | 'approval' | 'reminders' | 'reports'
+  const [activeTab, setActiveTab] = useState<QuotationTabId>('dashboard')
   const [editingQuotation, setEditingQuotation] = useState<LocalQuotation | null>(null)
   const [selectedQuotation, setSelectedQuotation] = useState<(Partial<LocalQuotation> & { id?: string | number }) | null>(null)
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -83,6 +87,23 @@ export default function QuotationsPage() {
       }
     }
   }, [previewPdfUrl])
+
+  useEffect(() => {
+    const session = getSession()
+    if (!session) {
+      setIsSuperAdmin(false)
+      return
+    }
+
+    const roleName = (session.roleName || '').toLowerCase()
+    const email = (session.user?.email || '').toLowerCase()
+    const portal = (session.portal || '').toLowerCase()
+    const superAdminByRole = roleName.includes('super')
+    const superAdminByEmail = email === 'admin@homeware.ae'
+    const superAdminByPortal = portal === 'admin'
+
+    setIsSuperAdmin(superAdminByRole || superAdminByEmail || superAdminByPortal)
+  }, [])
 
   const handleEdit = (quotation: Partial<LocalQuotation> & { id?: string | number }) => {
     // Convert any quotation format to LocalQuotation
@@ -182,13 +203,17 @@ export default function QuotationsPage() {
     setIsGeneratingPreview(false)
   }
 
-  const tabs = [
+  const tabs: Array<{ id: QuotationTabId; label: string; icon: ComponentType<{ className?: string }> }> = [
     { id: 'dashboard', label: 'Overview', icon: TrendingUp },
     { id: 'list', label: 'Quotation List', icon: FileText },
     { id: 'builder', label: editingQuotation ? 'Edit Quotation' : 'Create New', icon: Plus },
     { id: 'approval', label: 'Approval Queue', icon: CheckSquare },
     { id: 'reminders', label: 'Notifications', icon: Bell },
-  ] as const
+  ]
+
+  if (isSuperAdmin) {
+    tabs.push({ id: 'reports', label: 'Advanced Reports', icon: BarChart3 })
+  }
 
   return (
     <div className="w-full min-h-screen bg-white text-black space-y-8 pb-10">
@@ -275,6 +300,7 @@ export default function QuotationsPage() {
         )}
         {activeTab === 'approval' && <QuotationApproval />}
         {activeTab === 'reminders' && <QuotationReminders />}
+        {activeTab === 'reports' && isSuperAdmin && <QuotationAdvancedReports />}
       </div>
 
       {selectedQuotation && (
