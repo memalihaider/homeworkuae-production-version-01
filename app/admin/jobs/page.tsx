@@ -31,6 +31,7 @@ import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, where, g
 import { db } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
+import SearchSuggestSelect from '@/components/ui/search-suggest-select'
 
 interface Job {
   id: string
@@ -51,6 +52,12 @@ interface Job {
   riskLevel: 'Low' | 'Medium' | 'High'
   slaDeadline?: string
   estimatedDuration: string
+  estimatedDurationMinutes?: number
+  actualDuration?: string
+  actualDurationMinutes?: number
+  timePerformanceStatus?: 'On Time' | 'Delayed' | 'Unknown'
+  timePerformanceDeltaMinutes?: number
+  timePerformanceNote?: string
   requiredSkills: string[]
   equipment: string[] 
   permits: string[]
@@ -63,7 +70,8 @@ interface Job {
   executionLogs: Array<Record<string, unknown>>
   assignedTo: string[]
   assignedEmployees: { id: string; name: string; email: string }[]
-  jobCreatedBy: string // 👈 NEW FIELD ADDED
+  jobCreatedBy: string
+  jobResponsibleBy?: string
   reminderEnabled?: boolean
   reminderDate?: string
   reminderSent?: boolean
@@ -193,6 +201,7 @@ interface NewJobForm {
   recurring: boolean
   selectedEmployees: string[]
   jobCreatedBy: string // 👈 NEW FIELD ADDED
+  jobResponsibleBy: string
   services?: JobService[]
   upsales?: Array<{ name: string; quantity: number; unitPrice: number; total: number; note?: string }>
   tasks?: JobTask[]
@@ -228,11 +237,11 @@ export default function JobsPage() {
   const [userAvailability, setUserAvailability] = useState<Record<string, UserWeeklyAvailability>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [showSearchBar, setShowSearchBar] = useState(false)
-  const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [creatorFilter, setCreatorFilter] = useState<string>('all')
-  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'nextDay' | 'custom' | 'all'>('today')
+  const [jobCategoryFilter, setJobCategoryFilter] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'nextDay' | 'custom' | 'all'>('all')
   const [customDateFilter, setCustomDateFilter] = useState('')
   const [timeFromFilter, setTimeFromFilter] = useState('')
   const [timeToFilter, setTimeToFilter] = useState('')
@@ -248,6 +257,7 @@ export default function JobsPage() {
   const [totalTeamCapacity, setTotalTeamCapacity] = useState(10)
   const [travelBufferMinutes, setTravelBufferMinutes] = useState(30)
   const [lunchBufferMinutes, setLunchBufferMinutes] = useState(30)
+  const [selectedTeamMemberToAdd, setSelectedTeamMemberToAdd] = useState('')
 
   const [newJobForm, setNewJobForm] = useState<NewJobForm>({
     title: '',
@@ -271,6 +281,7 @@ export default function JobsPage() {
     recurring: false,
     selectedEmployees: [],
     jobCreatedBy: '', // 👈 NEW FIELD INITIALIZED
+    jobResponsibleBy: '',
     services: [],
     tasks: [],
     selectedEquipment: [],
@@ -288,6 +299,51 @@ export default function JobsPage() {
     allowValidationOverride: false,
     upsales: []
   })
+
+  const employeeOptions = useMemo(() => {
+    return employees.map((employee) => ({
+      value: employee.id,
+      label: `${employee.name} - ${employee.position} (${employee.department})`,
+      keywords: [employee.email || '', employee.department || '', employee.position || '']
+    }))
+  }, [employees])
+
+  const jobCategoryValues = useMemo(() => {
+    const fromServices = services
+      .map((service) => (service.categoryName || '').trim())
+      .filter(Boolean)
+
+    const fromJobs = jobs
+      .map((job) => (job.title || '').trim())
+      .filter(Boolean)
+
+    return Array.from(new Set([...fromServices, ...fromJobs])).sort((a, b) => a.localeCompare(b))
+  }, [services, jobs])
+
+  const jobCategoryFilterOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'All Categories' },
+      ...jobCategoryValues.map((category) => ({
+        value: category,
+        label: category,
+      })),
+    ]
+  }, [jobCategoryValues])
+
+  const jobTitleCreateOptions = useMemo(() => {
+    const values = new Set(jobCategoryValues)
+    const currentTitle = (newJobForm.title || '').trim()
+    if (currentTitle) {
+      values.add(currentTitle)
+    }
+
+    return Array.from(values)
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({
+        value,
+        label: value,
+      }))
+  }, [jobCategoryValues, newJobForm.title])
 
   // Fetch jobs, employees, clients, equipment, permits and services from Firebase
   useEffect(() => {
@@ -318,6 +374,12 @@ export default function JobsPage() {
             riskLevel: data.riskLevel || 'Low',
             slaDeadline: data.slaDeadline || '',
             estimatedDuration: data.estimatedDuration || '',
+            estimatedDurationMinutes: data.estimatedDurationMinutes || 0,
+            actualDuration: data.actualDuration || '',
+            actualDurationMinutes: data.actualDurationMinutes || 0,
+            timePerformanceStatus: data.timePerformanceStatus || 'Unknown',
+            timePerformanceDeltaMinutes: data.timePerformanceDeltaMinutes || 0,
+            timePerformanceNote: data.timePerformanceNote || '',
             requiredSkills: data.requiredSkills || [],
             equipment: data.equipment || [],
             permits: data.permits || [],
@@ -331,6 +393,7 @@ export default function JobsPage() {
             assignedTo: data.assignedTo || [],
             assignedEmployees: data.assignedEmployees || [],
             jobCreatedBy: data.jobCreatedBy || '', // 👈 NEW FIELD FROM DATABASE
+            jobResponsibleBy: data.jobResponsibleBy || '',
             reminderEnabled: data.reminderEnabled || false,
             reminderDate: data.reminderDate || '',
             reminderSent: data.reminderSent || false,
@@ -567,6 +630,7 @@ export default function JobsPage() {
           recurring: jobData.recurring || false,
           selectedEmployees: jobData.assignedEmployees?.map((emp: { id: string }) => emp.id) || [],
           jobCreatedBy: jobData.jobCreatedBy || '', // 👈 NEW FIELD ADDED TO EDIT
+          jobResponsibleBy: jobData.jobResponsibleBy || jobData.jobCreatedBy || '',
           services: jobData.services || [],
           upsales: jobData.upsales || [],
           tasks: jobData.tasks || [],
@@ -586,6 +650,7 @@ export default function JobsPage() {
         })
         
         setEditingJobId(jobId)
+        setSelectedTeamMemberToAdd('')
         setShowNewJobModal(true)
       }
     } catch (error) {
@@ -654,6 +719,47 @@ export default function JobsPage() {
     }
 
     return ''
+  }
+
+  const parseDurationToMinutes = (value?: string) => {
+    if (!value) return null
+    const raw = value.trim().toLowerCase()
+    if (!raw) return null
+
+    const normalized = raw.replace(/,/g, ' ')
+    const hourMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)/)
+    const minuteMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(m|min|mins|minute|minutes)/)
+
+    const hoursFromUnits = hourMatch ? Number(hourMatch[1]) : 0
+    const minutesFromUnits = minuteMatch ? Number(minuteMatch[1]) : 0
+    const totalFromUnits = Math.round((hoursFromUnits * 60) + minutesFromUnits)
+    if (totalFromUnits > 0) return totalFromUnits
+
+    const hhmmMatch = normalized.match(/^(\d{1,2}):(\d{2})$/)
+    if (hhmmMatch) {
+      const hours = Number(hhmmMatch[1])
+      const minutes = Number(hhmmMatch[2])
+      if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
+        return (hours * 60) + minutes
+      }
+    }
+
+    const numeric = Number(normalized)
+    if (!Number.isNaN(numeric) && numeric > 0) {
+      return numeric <= 24 ? Math.round(numeric * 60) : Math.round(numeric)
+    }
+
+    return null
+  }
+
+  const formatMinutesAsDuration = (minutes?: number | null) => {
+    if (minutes == null || Number.isNaN(minutes) || minutes < 0) return ''
+    const safe = Math.round(minutes)
+    const hours = Math.floor(safe / 60)
+    const mins = safe % 60
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`
+    if (hours > 0) return `${hours}h`
+    return `${mins}m`
   }
 
   const toTimeLabel = (minutes: number) => {
@@ -1014,6 +1120,11 @@ export default function JobsPage() {
       return
     }
 
+    if (!newJobForm.jobResponsibleBy) {
+      alert('Please select the responsible person for this job')
+      return
+    }
+
     if (newJobForm.quotationRequired && newJobForm.quotationStatus !== 'Approved' && !newJobForm.allowValidationOverride) {
       alert('Quotation must be approved before scheduling this job. Enable override to proceed anyway.')
       return
@@ -1087,6 +1198,7 @@ export default function JobsPage() {
       const enteredBudget = Math.max(0, Number(newJobForm.budget) || 0)
       const taxAmount = Number((enteredBudget * JOB_TAX_RATE).toFixed(2))
       const budgetWithTax = Number((enteredBudget + taxAmount).toFixed(2))
+      const existingJob = editingJobId ? jobs.find((job) => job.id === editingJobId) : null
 
       const jobData = {
         title: newJobForm.title,
@@ -1107,6 +1219,12 @@ export default function JobsPage() {
         riskLevel: newJobForm.riskLevel,
         slaDeadline: newJobForm.slaDeadline,
         estimatedDuration: newJobForm.estimatedDuration,
+        estimatedDurationMinutes: parseDurationToMinutes(newJobForm.estimatedDuration) || 0,
+        actualDuration: existingJob?.actualDuration || '',
+        actualDurationMinutes: existingJob?.actualDurationMinutes || 0,
+        timePerformanceStatus: existingJob?.timePerformanceStatus || 'Unknown',
+        timePerformanceDeltaMinutes: existingJob?.timePerformanceDeltaMinutes || 0,
+        timePerformanceNote: existingJob?.timePerformanceNote || '',
         requiredSkills: newJobForm.requiredSkills.split(',').map(s => s.trim()).filter(s => s),
         equipment: selectedEquipmentNames,
         permits: selectedPermitNames,
@@ -1120,6 +1238,7 @@ export default function JobsPage() {
         assignedTo: selectedEmployeesDetails.map(emp => emp.name),
         assignedEmployees: selectedEmployeesDetails,
         jobCreatedBy: newJobForm.jobCreatedBy, // 👈 NEW FIELD SAVED TO FIREBASE
+        jobResponsibleBy: newJobForm.jobResponsibleBy || '',
         quotationRequired: newJobForm.quotationRequired,
         quotationStatus: newJobForm.quotationRequired ? newJobForm.quotationStatus : 'Not Required',
         surveyRequired: newJobForm.surveyRequired,
@@ -1222,6 +1341,7 @@ export default function JobsPage() {
       
       setShowNewJobModal(false)
       setEditingJobId(null)
+      setSelectedTeamMemberToAdd('')
     } catch (error) {
       console.error('Error saving job:', error)
       alert('Error saving job. Please try again.')
@@ -1324,6 +1444,7 @@ export default function JobsPage() {
             : job.status === statusFilter
       const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter
       const matchesCreator = creatorFilter === 'all' || job.jobCreatedBy === creatorFilter
+      const matchesCategory = jobCategoryFilter === 'all' || (job.title || '').trim() === jobCategoryFilter
 
       const { start: jobStartDate, end: jobEndDate } = getJobDateRange(job)
       const matchesDate =
@@ -1354,9 +1475,9 @@ export default function JobsPage() {
         }
       }
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesCreator && matchesDate && matchesTime
+      return matchesSearch && matchesStatus && matchesPriority && matchesCreator && matchesCategory && matchesDate && matchesTime
     })
-  }, [jobs, searchTerm, statusFilter, priorityFilter, creatorFilter, dateFilter, customDateFilter, timeFromFilter, timeToFilter])
+  }, [jobs, searchTerm, statusFilter, priorityFilter, creatorFilter, jobCategoryFilter, dateFilter, customDateFilter, timeFromFilter, timeToFilter])
 
   const handleExportJobs = useCallback(() => {
     if (filteredJobs.length === 0) {
@@ -1383,6 +1504,12 @@ export default function JobsPage() {
       'Description': job.description,
       'SLA Deadline': job.slaDeadline || '',
       'Estimated Duration': job.estimatedDuration,
+      'Estimated Duration (minutes)': job.estimatedDurationMinutes || '',
+      'Actual Duration': job.actualDuration || '',
+      'Actual Duration (minutes)': job.actualDurationMinutes || '',
+      'Time Performance': job.timePerformanceStatus || 'Unknown',
+      'Time Delta (minutes)': job.timePerformanceDeltaMinutes || '',
+      'Time Note': job.timePerformanceNote || '',
       'Required Skills': (job.requiredSkills || []).join(', '),
       'Equipment': (job.equipment || []).join(', '),
       'Permits': (job.permits || []).join(', '),
@@ -1397,6 +1524,8 @@ export default function JobsPage() {
       'Assigned Employees': JSON.stringify(job.assignedEmployees || []),
       'Job Created By ID': job.jobCreatedBy || '',
       'Job Created By Name': job.jobCreatedBy ? getCreatorName(job.jobCreatedBy) : '',
+      'Job Responsible By ID': job.jobResponsibleBy || '',
+      'Job Responsible By Name': job.jobResponsibleBy ? getCreatorName(job.jobResponsibleBy) : '',
       'Reminder Enabled': job.reminderEnabled ? 'Yes' : 'No',
       'Reminder Date': job.reminderDate || '',
       'Reminder Sent': job.reminderSent ? 'Yes' : 'No',
@@ -1486,6 +1615,7 @@ export default function JobsPage() {
       recurring: false,
       selectedEmployees: [],
       jobCreatedBy: '', // 👈 RESET ON NEW JOB
+      jobResponsibleBy: '',
       services: [],
       tasks: [],
       selectedEquipment: [],
@@ -1503,7 +1633,7 @@ export default function JobsPage() {
       allowValidationOverride: false,
       upsales: []
     })
-    setClientSearchTerm('')
+    setSelectedTeamMemberToAdd('')
     setShowNewJobModal(true)
   }
 
@@ -1649,6 +1779,13 @@ export default function JobsPage() {
   const handleUpdateJobStatus = useCallback(async (jobId: string, newStatus: Job['status']) => {
     try {
       const selectedJob = jobs.find(j => j.id === jobId)
+      if (!selectedJob) return
+
+      const statusUpdate: Record<string, unknown> = {
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      }
+
       if (selectedJob && newStatus === 'Scheduled') {
         if (selectedJob.quotationRequired && selectedJob.quotationStatus !== 'Approved') {
           alert('Cannot schedule: quotation is not approved.')
@@ -1664,11 +1801,55 @@ export default function JobsPage() {
         }
       }
 
+      if (newStatus === 'Completed') {
+        const completedAtIso = new Date().toISOString()
+        const estimatedMinutes = parseDurationToMinutes(selectedJob.estimatedDuration)
+
+        const executionStartLog = [...(selectedJob.executionLogs || [])]
+          .reverse()
+          .find((log) => typeof log.type === 'string' && log.type === 'execution_started')
+
+        const startTimestampCandidate =
+          (executionStartLog?.timestamp as string | undefined) ||
+          (selectedJob.scheduledDate && selectedJob.scheduledTime
+            ? `${selectedJob.scheduledDate}T${selectedJob.scheduledTime}:00`
+            : '') ||
+          selectedJob.createdAt
+
+        const startDate = startTimestampCandidate ? new Date(startTimestampCandidate) : null
+        const completedDate = new Date(completedAtIso)
+        const actualMinutes = startDate && !Number.isNaN(startDate.getTime())
+          ? Math.max(0, Math.round((completedDate.getTime() - startDate.getTime()) / 60000))
+          : null
+
+        const performanceStatus: Job['timePerformanceStatus'] =
+          estimatedMinutes != null && actualMinutes != null
+            ? (actualMinutes <= estimatedMinutes ? 'On Time' : 'Delayed')
+            : 'Unknown'
+
+        const deltaMinutes =
+          estimatedMinutes != null && actualMinutes != null
+            ? actualMinutes - estimatedMinutes
+            : 0
+
+        const performanceNote =
+          performanceStatus === 'On Time'
+            ? 'Completed within estimated time.'
+            : performanceStatus === 'Delayed'
+              ? 'Completed after estimated time.'
+              : 'Insufficient timing data for comparison.'
+
+        statusUpdate.completedAt = completedAtIso
+        statusUpdate.estimatedDurationMinutes = estimatedMinutes || 0
+        statusUpdate.actualDurationMinutes = actualMinutes || 0
+        statusUpdate.actualDuration = formatMinutesAsDuration(actualMinutes)
+        statusUpdate.timePerformanceStatus = performanceStatus
+        statusUpdate.timePerformanceDeltaMinutes = deltaMinutes
+        statusUpdate.timePerformanceNote = performanceNote
+      }
+
       const jobRef = doc(db, 'jobs', jobId)
-      await updateDoc(jobRef, {
-        status: newStatus,
-        updatedAt: new Date().toISOString()
-      })
+      await updateDoc(jobRef, statusUpdate)
 
       await createJobAuditLog('status_updated', jobId, `Job status changed to ${newStatus}`)
 
@@ -1678,7 +1859,7 @@ export default function JobsPage() {
 
       setJobs(jobs.map(j =>
         j.id === jobId
-          ? { ...j, status: newStatus, updatedAt: new Date().toISOString() }
+          ? { ...j, ...(statusUpdate as Partial<Job>) }
           : j
       ))
       alert(`Job status updated to ${newStatus}`)
@@ -1856,7 +2037,7 @@ export default function JobsPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by job title, client, or location..."
+                placeholder="Search by category/title, client, or location..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               />
             </div>
@@ -1904,6 +2085,14 @@ export default function JobsPage() {
               })}
             </select>
 
+            <SearchSuggestSelect
+              value={jobCategoryFilter}
+              onChange={(value) => setJobCategoryFilter(value || 'all')}
+              options={jobCategoryFilterOptions}
+              placeholder="Search category..."
+              inputClassName="min-w-[220px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+            />
+
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as 'today' | 'yesterday' | 'nextDay' | 'custom' | 'all')}
@@ -1946,14 +2135,19 @@ export default function JobsPage() {
 
             <button
               onClick={() => {
-                setDateFilter('today')
+                setDateFilter('all')
                 setCustomDateFilter('')
                 setTimeFromFilter('')
                 setTimeToFilter('')
+                setJobCategoryFilter('all')
+                setStatusFilter('all')
+                setPriorityFilter('all')
+                setCreatorFilter('all')
+                setSearchTerm('')
               }}
               className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
-              Reset Day Filter
+              Reset All Filters
             </button>
 
             <button
@@ -1973,18 +2167,11 @@ export default function JobsPage() {
               <FileText className="w-4 h-4" />
               Export Excel
             </button>
-
-            <Link href="/admin/jobs/expense-manager">
-              <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors">
-                <Banknote className="w-4 h-4" />
-                Expense Manager
-              </button>
-            </Link>
           </div>
         </div>
 
         <div className="text-xs text-gray-500">
-          Default view shows only today's jobs. Use Queued, Previous Day, Next Day, Custom Date, or All History to quickly find scheduled jobs.
+          Tip: Start with All History to see every job, then narrow down by status, date, time, or category.
         </div>
       </div>
 
@@ -2048,8 +2235,28 @@ export default function JobsPage() {
 
                     {/* 👇 NEW FIELD DISPLAY - Job Created By */}
                     {job.jobCreatedBy && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        <span className="font-medium">Created by:</span> {getCreatorName(job.jobCreatedBy)}
+                      <div className="mt-2 text-xs text-gray-500 space-y-1">
+                        <div>
+                          <span className="font-medium">Created by:</span> {getCreatorName(job.jobCreatedBy)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Responsible:</span> {job.jobResponsibleBy ? getCreatorName(job.jobResponsibleBy) : 'N/A'}
+                        </div>
+                        {job.status === 'Completed' && (
+                          <div>
+                            <span className="font-medium">Time:</span>{' '}
+                            <span className={
+                              job.timePerformanceStatus === 'On Time'
+                                ? 'text-emerald-700'
+                                : job.timePerformanceStatus === 'Delayed'
+                                  ? 'text-red-700'
+                                  : 'text-gray-600'
+                            }>
+                              {job.timePerformanceStatus || 'Unknown'}
+                              {job.actualDuration ? ` (${job.actualDuration})` : ''}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -2192,7 +2399,7 @@ export default function JobsPage() {
           <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
             <Briefcase className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p className="text-lg font-medium text-gray-900">No jobs found</p>
-            <p className="text-sm text-gray-600">Try adjusting your filters or create a new job</p>
+            <p className="text-sm text-gray-600">Try Reset All Filters or create a new job</p>
           </div>
         )}
       </div>
@@ -2200,30 +2407,29 @@ export default function JobsPage() {
       {/* New Job/Edit Modal */}
       {showNewJobModal && (
         <div className="fixed inset-0 z-50">
-          <div 
-            className="absolute inset-0 backdrop-blur-sm bg-black/10" 
-            onClick={() => { 
-              setShowNewJobModal(false); 
-              setClientSearchTerm('');
-              setEditingJobId(null); 
+          <div
+            className="absolute inset-0 backdrop-blur-sm bg-black/20"
+            onClick={() => {
+              setShowNewJobModal(false)
+              setEditingJobId(null)
             }}
           ></div>
-          <div className="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl flex flex-col">
+          <div className="absolute inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl flex flex-col border-l border-blue-100">
             {/* Header */}
-            <div className="sticky top-0 bg-linear-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
+            <div className="sticky top-0 z-20 shrink-0 bg-linear-to-r from-blue-600 to-blue-700 text-white px-5 py-3 flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold">{editingJobId ? 'Edit Job' : 'Create New Job'}</h2>
-                <p className="text-blue-100 text-sm mt-1">Complete all job details</p>
+                <h2 className="text-xl font-bold leading-tight">{editingJobId ? 'Edit Job' : 'Create New Job'}</h2>
+                <p className="text-blue-100 text-xs mt-0.5">Complete all job details</p>
               </div>
-              <button onClick={() => { setShowNewJobModal(false); setClientSearchTerm(''); setEditingJobId(null) }} className="text-blue-100 hover:text-white transition-colors">
+              <button onClick={() => { setShowNewJobModal(false); setEditingJobId(null) }} className="text-blue-100 hover:text-white transition-colors">
                 <X className="h-6 w-6" />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto px-4 pb-4 pt-0 md:px-5 md:pb-5 md:pt-0 space-y-4 bg-linear-to-b from-white via-blue-50/20 to-white">
               {/* Basic Information */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Briefcase className="h-5 w-5 text-blue-600" />
                   Basic Information
@@ -2231,72 +2437,36 @@ export default function JobsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Job Title *</label>
-                    <input
-                      type="text"
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Job Category / Title *</label>
+                    <SearchSuggestSelect
                       value={newJobForm.title}
-                      onChange={(e) => setNewJobForm({...newJobForm, title: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="e.g., Office Deep Cleaning"
+                      onChange={(value) => setNewJobForm({ ...newJobForm, title: value || '' })}
+                      options={jobTitleCreateOptions}
+                      placeholder={jobTitleCreateOptions.length > 0 ? 'Search and select service category...' : 'No service categories found'}
+                      inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Job title will use the selected service category.</p>
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Client *</label>
-                    <input
-                      type="text"
-                      value={clientSearchTerm}
-                      onChange={(e) => setClientSearchTerm(e.target.value)}
-                      placeholder="Search client or lead by name/company/email/phone..."
-                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    <select
+                    <SearchSuggestSelect
                       value={newJobForm.clientId || ''}
-                      onChange={(e) => {
-                        const selected = clients.find(c => c.id === e.target.value)
+                      onChange={(value) => {
+                        const selected = clients.find((c) => c.id === value)
                         setNewJobForm({
                           ...newJobForm,
                           clientId: selected?.id || null,
                           client: selected?.name || ''
                         })
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="">Select a client or lead...</option>
-                      
-                      <optgroup label="━━━━ Clients ━━━━" className="font-bold text-gray-700">
-                        {clients
-                          .filter(c => c.type === 'client')
-                          .filter((client) => {
-                            const q = clientSearchTerm.trim().toLowerCase()
-                            if (!q) return true
-                            return [client.name, client.company, client.email, client.phone]
-                              .filter(Boolean)
-                              .some((field) => String(field).toLowerCase().includes(q))
-                          })
-                          .map((client) => (
-                          <option key={`client-${client.id}`} value={client.id}>
-                            {client.name} - {client.company} (Client)
-                          </option>
-                        ))}
-                      </optgroup>
-                      
-                      <optgroup label="━━━━ Won/Qualified Leads ━━━━" className="font-bold text-gray-700">
-                        {clients
-                          .filter(c => c.type === 'lead')
-                          .filter((lead) => {
-                            const q = clientSearchTerm.trim().toLowerCase()
-                            if (!q) return true
-                            return [lead.name, lead.company, lead.email, lead.phone, lead.status]
-                              .filter(Boolean)
-                              .some((field) => String(field).toLowerCase().includes(q))
-                          })
-                          .map((lead) => (
-                          <option key={`lead-${lead.id}`} value={lead.id}>
-                            {lead.name} - {lead.company} ({lead.status} Lead)
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
+                      options={clients.map((client) => ({
+                        value: client.id,
+                        label: `${client.name} - ${client.company} (${client.type === 'client' ? 'Client' : `${client.status || 'Lead'} Lead`})`,
+                        keywords: [client.name, client.company, client.email, client.phone, client.status || '', client.type]
+                      }))}
+                      placeholder="Search and select client or lead..."
+                      inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
                     {newJobForm.clientId === null && newJobForm.client && (
                       <p className="text-sm text-gray-500 mt-1">Client will be saved as: {newJobForm.client}</p>
                     )}
@@ -2319,33 +2489,23 @@ export default function JobsPage() {
               </div>
 
               {/* 👇 NEW SECTION - Job Created By */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <UserPlus className="h-5 w-5 text-blue-600" />
-                  Job Creator Information
+                  Ownership
                 </h3>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
                     Job Created By (Select Member) *
                   </label>
-                  <select
+                  <SearchSuggestSelect
                     value={newJobForm.jobCreatedBy}
-                    onChange={(e) => setNewJobForm({...newJobForm, jobCreatedBy: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    required
-                  >
-                    <option value="">-- Select a member --</option>
-                    {employees.length > 0 ? (
-                      employees.map(employee => (
-                        <option key={employee.id} value={employee.id}>
-                          {employee.name} - {employee.position} ({employee.department})
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No employees found</option>
-                    )}
-                  </select>
+                    onChange={(value) => setNewJobForm({ ...newJobForm, jobCreatedBy: value || '' })}
+                    options={employeeOptions}
+                    placeholder={employeeOptions.length > 0 ? 'Search and select creator...' : 'No employees found'}
+                    inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                   <p className="text-xs text-gray-500 mt-1">
                     Select the person who is creating/requesting this job
                   </p>
@@ -2359,10 +2519,35 @@ export default function JobsPage() {
                     </p>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Job Responsible Person *
+                  </label>
+                  <SearchSuggestSelect
+                    value={newJobForm.jobResponsibleBy}
+                    onChange={(value) => setNewJobForm({ ...newJobForm, jobResponsibleBy: value || '' })}
+                    options={employeeOptions}
+                    placeholder={employeeOptions.length > 0 ? 'Search and select responsible person...' : 'No employees found'}
+                    inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This person owns job execution accountability.
+                  </p>
+                </div>
+
+                {newJobForm.jobResponsibleBy && (
+                  <div className="mt-2 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">Responsible Person:</span>{' '}
+                      {employees.find(e => e.id === newJobForm.jobResponsibleBy)?.name || ''}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Team Assignment Section */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                     <UserPlus className="h-5 w-5 text-blue-600" />
@@ -2421,39 +2606,41 @@ export default function JobsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-900">Select Employees</label>
-                  <div className="relative">
-                    <select
-                      multiple
-                      value={newJobForm.selectedEmployees}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions).map(option => option.value)
-                        setNewJobForm(prev => ({
+                  <label className="block text-sm font-semibold text-gray-900">Search & Assign Team Member</label>
+                  <SearchSuggestSelect
+                    value={selectedTeamMemberToAdd}
+                    onChange={(value) => {
+                      const employeeId = value || ''
+                      setSelectedTeamMemberToAdd(employeeId)
+                      if (!employeeId) return
+
+                      setNewJobForm((prev) => {
+                        if (prev.selectedEmployees.includes(employeeId)) {
+                          return prev
+                        }
+
+                        if (prev.selectedEmployees.length >= prev.teamRequired) {
+                          alert(`Maximum ${prev.teamRequired} employees can be assigned to this job. Please increase team size or remove existing selections.`)
+                          return prev
+                        }
+
+                        return {
                           ...prev,
-                          selectedEmployees: selected.slice(0, prev.teamRequired)
-                        }))
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-white"
-                      size={5}
-                    >
-                      {employees.length > 0 ? (
-                        employees.map(employee => (
-                          <option key={employee.id} value={employee.id}>
-                            {employee.name} - {employee.position} ({employee.department})
-                          </option>
-                        ))
-                      ) : (
-                        <option disabled>No active employees found</option>
-                      )}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                  </div>
-                  <p className="text-xs text-gray-500">Hold Ctrl/Cmd to select multiple employees</p>
+                          selectedEmployees: [...prev.selectedEmployees, employeeId]
+                        }
+                      })
+                      setSelectedTeamMemberToAdd('')
+                    }}
+                    options={employeeOptions}
+                    placeholder={employeeOptions.length > 0 ? 'Search employee to assign...' : 'No active employees found'}
+                    inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-xs text-gray-500">Search and add members one by one. Use X on tags to remove.</p>
                 </div>
               </div>
 
               {/* Location & Priority */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-blue-600" />
                   Location & Priority
@@ -2500,7 +2687,7 @@ export default function JobsPage() {
               </div>
 
               {/* Commercial & Compliance */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <FileText className="h-5 w-5 text-blue-600" />
                   Commercial & Compliance
@@ -2630,7 +2817,7 @@ export default function JobsPage() {
               </div>
 
               {/* Scheduling */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
                   Scheduling
@@ -2803,7 +2990,7 @@ export default function JobsPage() {
               </div>
 
               {/* Resources & Budget */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Banknote className="h-5 w-5 text-blue-600" />
                   Resources & Budget
@@ -2842,7 +3029,7 @@ export default function JobsPage() {
               </div>
 
               {/* Equipment Section */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-blue-600" />
                   Required Equipment
@@ -2909,7 +3096,7 @@ export default function JobsPage() {
               </div>
 
               {/* Permits Section */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <FileText className="h-5 w-5 text-blue-600" />
                   Required Permits & Licenses
@@ -2987,7 +3174,7 @@ export default function JobsPage() {
               </div>
 
               {/* Services Section */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5 text-blue-600" />
                   Job Services
@@ -3108,7 +3295,7 @@ export default function JobsPage() {
               </div>
 
               {/* Tasks Section */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                     <ListTodo className="h-5 w-5 text-blue-600" />
@@ -3194,7 +3381,7 @@ export default function JobsPage() {
               </div>
 
               {/* Special Instructions */}
-              <div className="space-y-4 border-b pb-6">
+              <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Clock className="h-5 w-5 text-blue-600" />
                   Special Instructions

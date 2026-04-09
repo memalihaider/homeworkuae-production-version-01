@@ -20,6 +20,7 @@ type JobRecord = {
   client?: string
   createdAt?: DateLike
   scheduledDate?: string
+  
 }
 
 type Period = 'daily' | 'weekly' | 'monthly'

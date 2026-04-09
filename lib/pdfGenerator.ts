@@ -22,6 +22,19 @@ interface QuotationData {
   subtotal: number;
   taxAmount: number;
   total: number;
+  selectedCategory?: string;
+  option2Heading?: string;
+  showOption2InPdf?: boolean;
+  option2Services?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }>;
+  quoteNote?: string;
+  showQuoteNoteInPdf?: boolean;
   notes: string;
   terms: string;
   confirmationLetter?: string;
@@ -59,6 +72,9 @@ interface QuotationData {
   updatedAt: string | Date;
   createdBy: string;
   createdByPhone?: string;
+  assignedTo?: string;
+  assignedToId?: string;
+  showAssignedToInPdf?: boolean;
 }
 
 export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fileName: string, blobUrl: string } => {
@@ -82,14 +98,29 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
 
   let yPos = pageTopContentY;
 
+  const stripHtml = (value: string): string => {
+    return value
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<li>/gi, '• ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  };
+
   const allItems = [
     ...quotation.services.map(service => ({
-      description: service.description ? `${service.name}\n${service.description}` : service.name,
+      description: service.description ? `${service.name}\n${stripHtml(service.description)}` : service.name,
       quantity: service.quantity,
       amount: service.total,
     })),
     ...quotation.products.map(product => ({
-      description: [product.name, product.description, product.sku ? `SKU: ${product.sku}` : ''].filter(Boolean).join('\n'),
+      description: [product.name, product.description ? stripHtml(product.description) : '', product.sku ? `SKU: ${product.sku}` : ''].filter(Boolean).join('\n'),
       quantity: product.quantity,
       amount: product.total,
     })),
@@ -102,6 +133,7 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   const serviceSummary = allItems.length > 0
     ? allItems[0].description.split('\n')[0]
     : 'General Cleaning Service';
+  const serviceType = quotation.selectedCategory?.trim() || serviceSummary;
 
   const formatQuantity = (quantity: number) => {
     const numericQuantity = Number(quantity);
@@ -222,12 +254,16 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   // Header info blocks
   const infoGap = 4;
   const infoBoxWidth = (contentWidth - infoGap) / 2;
-  const rightInfoRows = [
+  const rightInfoRows: Array<[string, string]> = [
     ['Quote No:', quotation.quoteNumber || 'N/A'],
     ['Date:', formatDate(quotation.date)],
     ['Sales Executive:', quotation.createdBy || 'N/A'],
-    ['Service:', serviceSummary],
-  ] as const;
+    ['Service Type:', serviceType],
+  ];
+
+  if (quotation.showAssignedToInPdf && quotation.assignedTo?.trim()) {
+    rightInfoRows.splice(3, 0, ['Assigned To:', quotation.assignedTo.trim()])
+  }
 
   const recipientLines: string[] = [];
   if (quotation.company?.trim()) recipientLines.push(quotation.company.trim());
@@ -324,14 +360,20 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
 
   // Charges table
   ensureSpace(40);
-  const chargesHeader = `${quotation.location ? `Location - ${quotation.location}` : 'Service Location'} (${currencyCode})`;
+  const chargesHeader = `${quotation.location ? `Location - ${quotation.location}` : 'Service Location'}`;
   const tableItems = allItems.length > 0
     ? allItems
     : [{ description: 'Cleaning service as per agreed scope', quantity: 1, amount: quotation.subtotal || quotation.total || 0 }];
 
+  const option2TableItems = (quotation.option2Services || []).map((service) => ({
+    description: service.description ? `${service.name}\n${stripHtml(service.description)}` : service.name,
+    quantity: service.quantity,
+    amount: service.total,
+  }));
+
   autoTable(doc, {
     startY: yPos,
-    head: [[chargesHeader, 'Quantity', `Charges (${currencyCode})`]],
+    head: [[chargesHeader, '#', `Charges (${currencyCode})`]],
     body: [
       ...tableItems.map(item => [item.description, formatQuantity(item.quantity), formatCurrency(item.amount)]),
       [`VAT ${quotation.taxRate}%`, '-', formatCurrency(quotation.taxAmount)],
@@ -382,6 +424,56 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
 
   const tableDoc = doc as jsPDF & { lastAutoTable?: { finalY: number } };
   yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 7;
+
+  if (quotation.showOption2InPdf && option2TableItems.length > 0) {
+    drawSectionBar(quotation.option2Heading?.trim() || 'Option 2 - Comparative Offer');
+    ensureSpace(24);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Service Details', '#', `Charges (${currencyCode})`]],
+      body: option2TableItems.map(item => [item.description, formatQuantity(item.quantity), formatCurrency(item.amount)]),
+      theme: 'grid',
+      margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+      styles: {
+        font: FONT_BODY,
+        fontSize: 7.8,
+        cellPadding: 2.4,
+        lineColor: BORDER_GRAY,
+        lineWidth: 0.2,
+        textColor: TEXT_PRIMARY,
+      },
+      headStyles: {
+        fillColor: SOFT_GRAY,
+        textColor: TEXT_PRIMARY,
+        font: FONT_HEADING,
+        fontSize: 8,
+        fontStyle: 'bold',
+        halign: 'left',
+      },
+      columnStyles: {
+        0: { cellWidth: contentWidth - 52 },
+        1: { cellWidth: 12, halign: 'center' },
+        2: { cellWidth: 40, halign: 'right' },
+      },
+      didParseCell: data => {
+        if (data.section === 'body' && data.column.index === 2) {
+          data.cell.styles.halign = 'right';
+        }
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.halign = 'center';
+        }
+        if (data.section === 'body' && data.column.index === 0) {
+          data.cell.styles.font = FONT_BODY;
+        }
+      },
+      didDrawPage: () => {
+        drawHeader();
+      },
+    });
+
+    yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 7;
+  }
 
   // Payment terms table
   ensureSpace(28);
@@ -496,11 +588,43 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
   doc.setTextColor(...TEXT_PRIMARY);
   doc.text((quotation.createdBy || 'Sales Executive').toUpperCase(), margin, yPos);
 
-  // Optional acceptance/bank page
-  if ((quotation.confirmationLetter && quotation.confirmationLetter.trim()) || quotation.bankDetails) {
+  const quoteNoteText = quotation.quoteNote?.trim() || '';
+  const shouldShowQuoteNote = Boolean(quotation.showQuoteNoteInPdf ?? true) && Boolean(quoteNoteText);
+
+  // Optional note/acceptance/bank page
+  if (shouldShowQuoteNote || (quotation.confirmationLetter && quotation.confirmationLetter.trim()) || quotation.bankDetails) {
     doc.addPage();
     drawHeader();
     yPos = pageTopContentY;
+
+    if (shouldShowQuoteNote) {
+      drawSectionBar('NOTE');
+
+      autoTable(doc, {
+        startY: yPos,
+        body: [[quoteNoteText]],
+        theme: 'grid',
+        margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
+        styles: {
+          font: FONT_BODY,
+          fontSize: 7.6,
+          cellPadding: 2.6,
+          lineColor: BORDER_GRAY,
+          lineWidth: 0.2,
+          textColor: TEXT_PRIMARY,
+          overflow: 'linebreak',
+          valign: 'top',
+        },
+        columnStyles: {
+          0: { cellWidth: contentWidth },
+        },
+        didDrawPage: () => {
+          drawHeader();
+        },
+      });
+
+      yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 6;
+    }
 
     drawSectionBar('CONFIRMATION LETTER / ACCEPTANCE FORM');
 
@@ -636,7 +760,7 @@ const formatCurrency = (amount: number): string => {
   return amount.toLocaleString('en-AE', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }) + ' AED';
+  });
 };
 
 const formatDate = (dateString: string): string => {

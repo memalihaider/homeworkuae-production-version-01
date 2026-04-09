@@ -1524,7 +1524,6 @@ export default function CommunicationLog() {
               selectedLead.status === 'Negotiation' ? 'bg-yellow-100 text-yellow-800' :
               selectedLead.status === 'Proposal' ? 'bg-blue-100 text-blue-800' :
               selectedLead.status === 'Qualified' ? 'bg-purple-100 text-purple-800' :
-              selectedLead.status === 'Contacted' ? 'bg-indigo-100 text-indigo-800' :
               'bg-gray-100 text-gray-800'
             }`}>
               {selectedLead.status || 'New'}

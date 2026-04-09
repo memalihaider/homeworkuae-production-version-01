@@ -78,6 +78,7 @@ interface Invoice {
   lineItems: Array<{
     id: string;
     description: string;
+    category?: string;
     quantity: number;
     unitPrice: number;
     unit: string;
@@ -152,7 +153,7 @@ export default function UnifiedFinancePage() {
 
   const [newInvoice, setNewInvoice] = useState({
     clientId: '',
-    lineItems: [{ description: '', quantity: 1, unitPrice: 0, unit: 'service' }],
+    lineItems: [{ description: '', category: '', quantity: 1, unitPrice: 0, unit: 'service' }],
     notes: '',
     paymentTerms: '30 days',
     dueDate: '',
@@ -404,6 +405,7 @@ export default function UnifiedFinancePage() {
       lineItems: newInvoice.lineItems.map((item, idx) => ({
         id: `LI${Date.now()}${idx}`,
         ...item,
+        category: item.category || '',
         amount: item.quantity * item.unitPrice
       })),
       subtotal,
@@ -432,7 +434,7 @@ export default function UnifiedFinancePage() {
       setInvoices([...invoices, newInvoiceObj])
       setNewInvoice({ 
         clientId: '', 
-        lineItems: [{ description: '', quantity: 1, unitPrice: 0, unit: 'service' }], 
+        lineItems: [{ description: '', category: '', quantity: 1, unitPrice: 0, unit: 'service' }], 
         notes: '', 
         paymentTerms: '30 days', 
         dueDate: '', 
@@ -461,6 +463,12 @@ export default function UnifiedFinancePage() {
 
     const multilineToHtml = (value: string) => escapeHtml(value).replace(/\n/g, '<br/>')
     const taxPercent = Math.round((invoice.taxRate || 0) * 100)
+    const invoiceCategories = Array.from(new Set(
+      invoice.lineItems
+        .map((item) => item.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ))
+    const serviceTypeLabel = invoiceCategories.length > 0 ? invoiceCategories.join(', ') : 'General'
 
     const clientEmailLine = invoice.clientEmail?.trim()
       ? `<p><strong>Email:</strong> ${escapeHtml(invoice.clientEmail)}</p>`
@@ -502,7 +510,7 @@ export default function UnifiedFinancePage() {
             .line-items { width: 100%; border-collapse: collapse; margin: 16px 0; }
             .line-items th, .line-items td { border: 1px solid #d1d5db; padding: 9px 10px; font-size: 13px; vertical-align: top; }
             .line-items th { background: #f3f4f6; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
-            .line-items td:nth-child(2), .line-items td:nth-child(3), .line-items td:nth-child(4) { text-align: right; }
+            .line-items td:nth-child(3), .line-items td:nth-child(4), .line-items td:nth-child(5) { text-align: right; }
             .totals-wrap { display: flex; justify-content: flex-end; margin: 14px 0 24px; }
             .totals { width: 340px; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; }
             .totals p { margin: 7px 0; font-size: 13px; display: flex; justify-content: space-between; }
@@ -542,6 +550,7 @@ export default function UnifiedFinancePage() {
             <div class="meta-box">
               <h3>Invoice Details</h3>
               <p><strong>Status:</strong> ${escapeHtml(invoice.status)}</p>
+              <p><strong>Service Type:</strong> ${escapeHtml(serviceTypeLabel)}</p>
               <p><strong>Payment Terms:</strong> ${escapeHtml(invoice.paymentTerms)}</p>
               <p><strong>Currency:</strong> ${escapeHtml(invoice.currencyCode || 'AED')}</p>
             </div>
@@ -551,6 +560,7 @@ export default function UnifiedFinancePage() {
             <thead>
               <tr>
                 <th>Description</th>
+                <th>Category</th>
                 <th>Qty</th>
                 <th>Unit Price</th>
                 <th>Amount</th>
@@ -560,6 +570,7 @@ export default function UnifiedFinancePage() {
               ${invoice.lineItems.map(item => `
                 <tr>
                   <td>${escapeHtml(item.description)}</td>
+                  <td>${escapeHtml(item.category || 'N/A')}</td>
                   <td>${item.quantity}</td>
                   <td>${formatCurrency(item.unitPrice)}</td>
                   <td>${formatCurrency(item.amount)}</td>
@@ -835,6 +846,16 @@ export default function UnifiedFinancePage() {
       case 'Draft': return 'bg-gray-100 text-gray-700'
       default: return 'bg-gray-100 text-gray-700'
     }
+  }
+
+  const getInvoiceCategoriesText = (invoice: Invoice) => {
+    const categories = Array.from(new Set(
+      invoice.lineItems
+        .map((item) => item.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ))
+
+    return categories.length > 0 ? categories.join(', ') : 'N/A'
   }
 
   const getTierColor = (tier: string) => {
@@ -1130,6 +1151,10 @@ export default function UnifiedFinancePage() {
                         <p className="font-bold">{inv.lineItems.length}</p>
                       </div>
                       <div>
+                        <p className="text-xs text-muted-foreground">Category</p>
+                        <p className="font-bold truncate">{getInvoiceCategoriesText(inv)}</p>
+                      </div>
+                      <div>
                         <p className="text-xs text-muted-foreground">Status</p>
                         <span className={`text-xs font-bold px-2 py-1 rounded ${getStatusColor(inv.status)}`}>
                           {inv.status}
@@ -1368,7 +1393,7 @@ export default function UnifiedFinancePage() {
                 <label className="text-sm font-bold mb-2 block">Line Items *</label>
                 <div className="space-y-3">
                   {newInvoice.lineItems.map((item, idx) => (
-                    <div key={idx} className="grid grid-cols-5 gap-2">
+                    <div key={idx} className="grid grid-cols-6 gap-2">
                       <input
                         type="text"
                         placeholder="Description"
@@ -1376,6 +1401,17 @@ export default function UnifiedFinancePage() {
                         onChange={(e) => {
                           const updated = [...newInvoice.lineItems]
                           updated[idx].description = e.target.value
+                          setNewInvoice({ ...newInvoice, lineItems: updated })
+                        }}
+                        className="col-span-2 px-3 py-2 bg-muted/50 border rounded-lg text-sm"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Category"
+                        value={item.category || ''}
+                        onChange={(e) => {
+                          const updated = [...newInvoice.lineItems]
+                          updated[idx].category = e.target.value
                           setNewInvoice({ ...newInvoice, lineItems: updated })
                         }}
                         className="col-span-2 px-3 py-2 bg-muted/50 border rounded-lg text-sm"
@@ -1407,7 +1443,7 @@ export default function UnifiedFinancePage() {
                   <button
                     onClick={() => setNewInvoice({
                       ...newInvoice,
-                      lineItems: [...newInvoice.lineItems, { description: '', quantity: 1, unitPrice: 0, unit: 'service' }]
+                      lineItems: [...newInvoice.lineItems, { description: '', category: '', quantity: 1, unitPrice: 0, unit: 'service' }]
                     })}
                     className="w-full px-3 py-2 border-2 border-dashed rounded-lg text-sm font-bold hover:bg-muted"
                   >

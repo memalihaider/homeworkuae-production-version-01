@@ -121,7 +121,6 @@ export default function QuotationReminders() {
   const [stats, setStats] = useState({
     total: 0,
     sent: 0,
-    draft: 0,
     approved: 0,
     rejected: 0,
     totalValue: 0
@@ -150,7 +149,7 @@ export default function QuotationReminders() {
           phone: data.phone || '',
           total: data.total || 0,
           currency: data.currency || 'AED',
-          status: data.status || 'Draft',
+          status: data.status || 'Approved',
           date: data.date || '',
           validUntil: data.validUntil || '',
           services: data.services || [],
@@ -233,7 +232,6 @@ export default function QuotationReminders() {
   const calculateStats = (data: Quotation[]) => {
     const total = data.length
     const sent = data.filter(q => q.status === 'Sent').length
-    const draft = data.filter(q => q.status === 'Draft').length
     const approved = data.filter(q => q.status === 'Approved' || q.status === 'Accepted').length
     const rejected = data.filter(q => q.status === 'Rejected').length
     const totalValue = data.reduce((sum, q) => sum + (q.total || 0), 0)
@@ -241,7 +239,6 @@ export default function QuotationReminders() {
     setStats({
       total,
       sent,
-      draft,
       approved,
       rejected,
       totalValue
@@ -442,8 +439,8 @@ export default function QuotationReminders() {
             <p className="text-lg font-black text-green-600">{stats.approved}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded p-2">
-            <p className="text-[9px] uppercase font-bold text-gray-400">Draft</p>
-            <p className="text-lg font-black text-yellow-600">{stats.draft}</p>
+            <p className="text-[9px] uppercase font-bold text-gray-400">Rejected</p>
+            <p className="text-lg font-black text-red-600">{stats.rejected}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded p-2">
             <p className="text-[9px] uppercase font-bold text-gray-400">Total Value</p>

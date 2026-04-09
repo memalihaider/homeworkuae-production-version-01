@@ -6,6 +6,7 @@ import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
 import * as XLSX from 'xlsx'
+import SearchSuggestSelect from '@/components/ui/search-suggest-select'
 
 interface FirestoreTimestampLike {
   toDate?: () => Date
@@ -22,10 +23,13 @@ interface FirebaseQuotation {
   date: string
   validUntil: string
   status: string
+  selectedCategory?: string
   total: number
   currency: string
   createdBy?: string
   createdById?: string
+  assignedTo?: string
+  assignedToId?: string
   createdAt?: string | Date | FirestoreTimestampLike
   updatedAt?: string | Date | FirestoreTimestampLike
 }
@@ -74,7 +78,6 @@ export default function QuotationAdvancedReports() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState('All')
-  const [personFilter, setPersonFilter] = useState('')
   const [fromDate, setFromDate] = useState(() => toIsoDateInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)))
   const [toDate, setToDate] = useState(() => toIsoDateInput(new Date()))
 
@@ -114,10 +117,13 @@ export default function QuotationAdvancedReports() {
               date: (data.date as string) || '',
               validUntil: (data.validUntil as string) || '',
               status: normalizeStatus(data.status),
+              selectedCategory: (data.selectedCategory as string) || '',
               total: Number(data.total) || 0,
               currency: (data.currency as string) || 'AED',
               createdBy: (data.createdBy as string) || 'Unassigned',
               createdById: (data.createdById as string) || '',
+              assignedTo: (data.assignedTo as string) || '',
+              assignedToId: (data.assignedToId as string) || '',
               createdAt: data.createdAt as string | Date | FirestoreTimestampLike | undefined,
               updatedAt: data.updatedAt as string | Date | FirestoreTimestampLike | undefined,
             } as FirebaseQuotation
@@ -146,14 +152,13 @@ export default function QuotationAdvancedReports() {
     return ['All', ...Array.from(unique)]
   }, [quotations])
 
-  const creatorOptions = useMemo(() => {
-    return Array.from(new Set(quotations.map((quotation) => quotation.createdBy || 'Unassigned'))).sort((a, b) => a.localeCompare(b))
-  }, [quotations])
+  const statusFilterOptions = useMemo(() => {
+    return statusOptions.map((option) => ({ value: option, label: option }))
+  }, [statusOptions])
 
   const filteredQuotations = useMemo(() => {
     const from = fromDate ? new Date(`${fromDate}T00:00:00`) : null
     const to = toDate ? new Date(`${toDate}T23:59:59`) : null
-    const personNeedle = personFilter.trim().toLowerCase()
 
     return quotations.filter((quotation) => {
       const createdAt = toDateValue(quotation.createdAt) || (quotation.date ? new Date(quotation.date) : null)
@@ -162,22 +167,27 @@ export default function QuotationAdvancedReports() {
       if (to && createdAt && createdAt > to) return false
       if (statusFilter !== 'All' && quotation.status !== statusFilter) return false
 
-      if (personNeedle) {
-        const creator = (quotation.createdBy || '').toLowerCase()
-        if (!creator.includes(personNeedle)) return false
-      }
-
       return true
     })
-  }, [quotations, fromDate, toDate, statusFilter, personFilter])
+  }, [quotations, fromDate, toDate, statusFilter])
 
   const personReport = useMemo<PersonReportRow[]>(() => {
     const grouped = new Map<string, FirebaseQuotation[]>()
 
-    filteredQuotations.forEach((quotation) => {
-      const key = quotation.createdBy?.trim() || 'Unassigned'
+    const addPersonQuote = (rawPerson: string | undefined, quotation: FirebaseQuotation) => {
+      const key = rawPerson?.trim() || 'Unassigned'
       if (!grouped.has(key)) grouped.set(key, [])
       grouped.get(key)?.push(quotation)
+    }
+
+    filteredQuotations.forEach((quotation) => {
+      addPersonQuote(quotation.createdBy, quotation)
+
+      const creatorKey = quotation.createdBy?.trim() || 'Unassigned'
+      const assignedKey = quotation.assignedTo?.trim() || ''
+      if (assignedKey && assignedKey !== creatorKey) {
+        addPersonQuote(assignedKey, quotation)
+      }
     })
 
     return Array.from(grouped.entries())
@@ -236,8 +246,10 @@ export default function QuotationAdvancedReports() {
         'Quotation ID': quotation.id,
         'Quote Number': quotation.quoteNumber,
         'Created By': quotation.createdBy || 'Unassigned',
+        'Assigned To': quotation.assignedTo || 'N/A',
         Client: quotation.client,
         Company: quotation.company,
+        Category: quotation.selectedCategory || '',
         Status: quotation.status,
         'Total (AED)': quotation.total || 0,
         Currency: quotation.currency || 'AED',
@@ -306,7 +318,7 @@ export default function QuotationAdvancedReports() {
         <div className="flex items-center gap-2 text-gray-700 text-sm font-bold">
           <Filter className="w-4 h-4" /> Filters
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">From</label>
             <input
@@ -327,36 +339,18 @@ export default function QuotationAdvancedReports() {
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Status</label>
-            <select
+            <SearchSuggestSelect
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="w-full h-10 rounded-lg border border-gray-300 px-3 text-sm bg-white"
-            >
-              {statusOptions.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Person</label>
-            <input
-              value={personFilter}
-              onChange={(event) => setPersonFilter(event.target.value)}
-              list="quotation-report-creators"
-              placeholder="Search creator"
-              className="w-full h-10 rounded-lg border border-gray-300 px-3 text-sm"
+              onChange={(value) => setStatusFilter(value || 'All')}
+              options={statusFilterOptions}
+              placeholder="Search status..."
+              inputClassName="w-full h-10 rounded-lg border border-gray-300 px-3 text-sm bg-white"
             />
-            <datalist id="quotation-report-creators">
-              {creatorOptions.map((person) => (
-                <option key={person} value={person} />
-              ))}
-            </datalist>
           </div>
           <div className="flex items-end">
             <button
               onClick={() => {
                 setStatusFilter('All')
-                setPersonFilter('')
                 setFromDate(toIsoDateInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)))
                 setToDate(toIsoDateInput(new Date()))
               }}
@@ -432,7 +426,9 @@ export default function QuotationAdvancedReports() {
                 <tr className="bg-white border-b border-gray-200 text-gray-500 uppercase text-[11px] tracking-wide">
                   <th className="text-left px-4 py-3 font-bold">Quote #</th>
                   <th className="text-left px-4 py-3 font-bold">Created By</th>
+                  <th className="text-left px-4 py-3 font-bold">Assigned To</th>
                   <th className="text-left px-4 py-3 font-bold">Client</th>
+                  <th className="text-left px-4 py-3 font-bold">Category</th>
                   <th className="text-left px-4 py-3 font-bold">Status</th>
                   <th className="text-right px-4 py-3 font-bold">Value</th>
                   <th className="text-left px-4 py-3 font-bold">Date</th>
@@ -443,7 +439,9 @@ export default function QuotationAdvancedReports() {
                   <tr key={quotation.id} className="border-b border-gray-100 last:border-b-0">
                     <td className="px-4 py-3 font-semibold text-black">{quotation.quoteNumber}</td>
                     <td className="px-4 py-3 text-gray-700">{quotation.createdBy || 'Unassigned'}</td>
+                    <td className="px-4 py-3 text-gray-700">{quotation.assignedTo || 'N/A'}</td>
                     <td className="px-4 py-3 text-gray-700">{quotation.client}</td>
+                    <td className="px-4 py-3 text-gray-700">{quotation.selectedCategory || 'N/A'}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex px-2 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
                         {quotation.status}

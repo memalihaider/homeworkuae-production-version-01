@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { 
+import {
   Plus, 
   Edit2, 
   Trash2, 
@@ -17,7 +17,6 @@ import {
   Mail,
   Eye,
   EyeOff,
-  Briefcase,
   UserCog,
   MessageCircle,
   BarChart3 // ✅ Import Report icon
@@ -87,7 +86,7 @@ const normalizePageKey = (page: string) => {
   return alias || trimmed
 }
 
-const normalizePortalPages = (portal: 'admin' | 'employee', pages: string[]) => {
+const normalizePortalPages = (pages: string[]) => {
   const normalizedPages = Array.from(
     new Set(
       pages
@@ -96,10 +95,6 @@ const normalizePortalPages = (portal: 'admin' | 'employee', pages: string[]) => 
         .filter(page => ALL_PAGES.includes(page))
     )
   )
-
-  if (portal !== 'admin') {
-    return ['Employee Chat']
-  }
 
   // Keep permissions page-based while ensuring critical admin navigation pages exist.
   const criticalPages = ['Dashboard', 'Quotations', 'Quotation List', 'Process Inquiry', 'Universal Calendar']
@@ -112,12 +107,6 @@ const normalizePortalPages = (portal: 'admin' | 'employee', pages: string[]) => 
 
   return normalizedPages
 }
-
-// Portal Types
-const PORTALS = [
-  { id: 'admin', name: 'Admin Portal', icon: Shield },
-  { id: 'employee', name: 'Employee Portal', icon: Briefcase }
-]
 
 // Employee Interface
 interface Employee {
@@ -132,7 +121,7 @@ interface Employee {
 interface LocalUserRole extends UserRole {
   allowedPages: string[]
   allowedActions: string[]
-  portal: 'admin' | 'employee'
+  portal: 'admin'
   employeeId?: string
   employeeName?: string
 }
@@ -149,7 +138,7 @@ export default function RoleManager() {
     name: '',
     email: '',
     password: '',
-    portal: 'admin' as 'admin' | 'employee',
+    roleName: 'admin' as 'admin' | 'employee',
     employeeId: '',
     allowedPages: [] as string[],
     allowedActions: [...ALL_ACTIONS] as string[]
@@ -163,12 +152,12 @@ export default function RoleManager() {
     fetchUserRoles()
   }, [])
 
-  // Fetch employees when portal changes to employee
+  // Fetch employees when role changes to employee
   useEffect(() => {
-    if (newUser.portal === 'employee') {
+    if (newUser.roleName === 'employee') {
       fetchEmployees()
     }
-  }, [newUser.portal])
+  }, [newUser.roleName])
 
   const fetchUserRoles = async () => {
     try {
@@ -180,10 +169,10 @@ export default function RoleManager() {
       
       snapshot.forEach(doc => {
         const data = doc.data()
-        const portal = data.portal || 'admin'
-        const allowedPages = normalizePortalPages(portal, data.allowedPages || [])
-        const roleName = data.roleName || (portal === 'admin' ? 'admin' : 'employee')
-        const allowedActions = portal === 'admin' ? [...ALL_ACTIONS] : ['view']
+        const roleName = data.roleName === 'employee' ? 'employee' : 'admin'
+        const portal: 'admin' = 'admin'
+        const allowedPages = normalizePortalPages(data.allowedPages || [])
+        const allowedActions = roleName === 'admin' ? [...ALL_ACTIONS] : ['view']
 
         const needsPortalFix = !data.portal
         const currentAllowedPages = Array.isArray(data.allowedPages) ? data.allowedPages : []
@@ -202,7 +191,7 @@ export default function RoleManager() {
         if (needsPortalFix || hasPagesChanged || hasRoleNameChanged || hasActionsChanged) {
           healPromises.push(
             updateDoc(doc.ref, {
-              portal,
+              portal: 'admin',
               roleName,
               allowedPages,
               allowedActions,
@@ -279,19 +268,23 @@ export default function RoleManager() {
   }, [searchTerm, userRoles])
 
   const handleAddUser = async () => {
-    if (!newUser.name || !newUser.email || !newUser.password) {
+    if (!newUser.name || !newUser.email) {
       alert('Please fill all required fields')
       return
     }
 
-    if (newUser.portal === 'employee' && !newUser.employeeId) {
+    if (newUser.roleName === 'admin' && !newUser.password.trim()) {
+      alert('Password is required for admin role')
+      return
+    }
+
+    if (newUser.roleName === 'employee' && !newUser.employeeId) {
       alert('Please select an employee')
       return
     }
 
-    // For admin portal, require page selection
-    if (newUser.portal === 'admin' && newUser.allowedPages.length === 0) {
-      alert('Please select at least one page access for admin')
+    if (newUser.allowedPages.length === 0) {
+      alert('Please select at least one page access')
       return
     }
 
@@ -300,28 +293,32 @@ export default function RoleManager() {
     try {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
-      const allowedPages = normalizePortalPages(newUser.portal, newUser.allowedPages)
-      const allowedActions = newUser.portal === 'admin' ? [...ALL_ACTIONS] : ['view']
-      const roleName = newUser.portal === 'admin' ? 'admin' : 'employee'
+      const allowedPages = normalizePortalPages(newUser.allowedPages)
+      const allowedActions = newUser.roleName === 'admin' ? [...ALL_ACTIONS] : ['view']
+      const roleName = newUser.roleName
+      const generatedPassword =
+        newUser.roleName === 'employee' && !newUser.password.trim()
+          ? `Temp@${Date.now().toString().slice(-8)}`
+          : newUser.password.trim()
       
       console.log('📝 Creating user with data:', {
         email: newUser.email,
         name: newUser.name,
-        portal: newUser.portal,
+        portal: 'admin',
+        roleName,
         employeeId: newUser.employeeId,
         allowedPages,
         allowedActions,
-        roleName
       })
       
       const result = await createUserWithRole(
         newUser.email,
-        newUser.password,
+        generatedPassword,
         newUser.name,
         allowedPages,
-        newUser.portal,
-        newUser.portal === 'employee' ? newUser.employeeId : '',
-        newUser.portal === 'employee' ? selectedEmployee?.name : '',
+        'admin',
+        newUser.roleName === 'employee' ? newUser.employeeId : '',
+        newUser.roleName === 'employee' ? selectedEmployee?.name : '',
         roleName,
         allowedActions
       )
@@ -332,7 +329,7 @@ export default function RoleManager() {
           name: '',
           email: '',
           password: '',
-          portal: 'admin',
+          roleName: 'admin',
           employeeId: '',
           allowedPages: [],
           allowedActions: [...ALL_ACTIONS]
@@ -357,7 +354,7 @@ export default function RoleManager() {
         name: user.name,
         email: user.email,
         password: '',
-        portal: user.portal,
+        roleName: user.roleName === 'employee' ? 'employee' : 'admin',
         employeeId: user.employeeId || '',
         allowedPages: user.allowedPages,
         allowedActions: user.allowedActions
@@ -365,8 +362,8 @@ export default function RoleManager() {
       setEditingUserId(userId)
       setShowForm(true)
       
-      // If portal is employee, fetch employees
-      if (user.portal === 'employee') {
+      // If role is employee, fetch employees
+      if (user.roleName === 'employee') {
         fetchEmployees()
       }
     }
@@ -378,14 +375,13 @@ export default function RoleManager() {
       return
     }
 
-    if (newUser.portal === 'employee' && !newUser.employeeId) {
+    if (newUser.roleName === 'employee' && !newUser.employeeId) {
       alert('Please select an employee')
       return
     }
 
-    // For admin portal, require page selection
-    if (newUser.portal === 'admin' && newUser.allowedPages.length === 0) {
-      alert('Please select at least one page access for admin')
+    if (newUser.allowedPages.length === 0) {
+      alert('Please select at least one page access')
       return
     }
 
@@ -394,26 +390,27 @@ export default function RoleManager() {
     try {
       const selectedEmployee = employees.find(e => e.id === newUser.employeeId)
       
-      const allowedPages = normalizePortalPages(newUser.portal, newUser.allowedPages)
-      const allowedActions = newUser.portal === 'admin' ? [...ALL_ACTIONS] : ['view']
-      const roleName = newUser.portal === 'admin' ? 'admin' : 'employee'
+      const allowedPages = normalizePortalPages(newUser.allowedPages)
+      const allowedActions = newUser.roleName === 'admin' ? [...ALL_ACTIONS] : ['view']
+      const roleName = newUser.roleName
       
       console.log('📝 Updating user:', { 
         id: editingUserId, 
         name: newUser.name, 
-        portal: newUser.portal,
+        portal: 'admin',
+        roleName,
         employeeId: newUser.employeeId 
       })
       
       const updateData: any = {
         name: newUser.name,
-        portal: newUser.portal,
+        portal: 'admin',
         roleName,
         allowedPages: allowedPages,
         allowedActions
       }
       
-      if (newUser.portal === 'employee') {
+      if (newUser.roleName === 'employee') {
         updateData.employeeId = newUser.employeeId
         updateData.employeeName = selectedEmployee?.name || newUser.name
       } else {
@@ -430,7 +427,7 @@ export default function RoleManager() {
           name: '',
           email: '',
           password: '',
-          portal: 'admin',
+          roleName: 'admin',
           employeeId: '',
           allowedPages: [],
           allowedActions: [...ALL_ACTIONS]
@@ -505,7 +502,7 @@ export default function RoleManager() {
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-black">Create User Roles</h1>
             <p className="text-gray-600 mt-3 text-lg font-medium max-w-xl">
-              Create users with specific portal access. Admin users get page permissions, employees get chat access only.
+              Create users with one unified admin portal. Access is now controlled only by role and page permissions.
             </p>
           </div>
           <button 
@@ -516,7 +513,7 @@ export default function RoleManager() {
                 name: '', 
                 email: '', 
                 password: '', 
-                portal: 'admin',
+                roleName: 'admin',
                 employeeId: '',
                 allowedPages: [],
                 allowedActions: [...ALL_ACTIONS]
@@ -536,9 +533,9 @@ export default function RoleManager() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Users', value: userRoles.length, color: 'blue', icon: Users },
-          { label: 'Admin Users', value: userRoles.filter(r => r.portal === 'admin').length, color: 'purple', icon: Lock },
-          { label: 'Employee Users', value: userRoles.filter(r => r.portal === 'employee').length, color: 'emerald', icon: Briefcase },
-          { label: 'Chat Users', value: userRoles.filter(r => r.portal === 'employee').length, color: 'amber', icon: MessageCircle }
+          { label: 'Admin Role', value: userRoles.filter(r => r.roleName === 'admin').length, color: 'purple', icon: Lock },
+          { label: 'Employee Role', value: userRoles.filter(r => r.roleName === 'employee').length, color: 'emerald', icon: Users },
+          { label: 'With Employee Link', value: userRoles.filter(r => Boolean(r.employeeId)).length, color: 'amber', icon: MessageCircle }
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
@@ -575,14 +572,14 @@ export default function RoleManager() {
           </div>
         ) : (
           filteredRoles.map((user) => {
-            const PortalIcon = user.portal === 'admin' ? Shield : Briefcase
+            const PortalIcon = user.roleName === 'admin' ? Shield : Users
             return (
               <div key={user.id} className="group relative bg-white border border-gray-200 rounded-[32px] p-8 hover:bg-gray-50 transition-all overflow-hidden shadow-sm">
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-4">
                       <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border ${
-                        user.portal === 'admin' 
+                        user.roleName === 'admin' 
                           ? 'bg-purple-100 border-purple-200 text-purple-600' 
                           : 'bg-emerald-100 border-emerald-200 text-emerald-600'
                       }`}>
@@ -592,13 +589,13 @@ export default function RoleManager() {
                         <h3 className="text-2xl font-black text-black group-hover:text-blue-600 transition-colors">{user.name}</h3>
                         <div className="flex items-center gap-2 mt-2">
                           <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                            user.portal === 'admin'
+                            user.roleName === 'admin'
                               ? 'bg-purple-100 text-purple-600 border-purple-200'
                               : 'bg-emerald-100 text-emerald-600 border-emerald-200'
                           } border`}>
-                            {user.portal === 'admin' ? 'Admin Portal' : 'Employee Portal'}
+                            {user.roleName === 'admin' ? 'Admin Role' : 'Employee Role'}
                           </span>
-                          {user.portal === 'employee' && user.employeeName && (
+                          {user.roleName === 'employee' && user.employeeName && (
                             <span className="text-sm text-gray-600">
                               ({user.employeeName})
                             </span>
@@ -625,43 +622,22 @@ export default function RoleManager() {
                   {/* Allowed Pages - Show different for Admin vs Employee */}
                   <div className="mb-6">
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">
-                      {user.portal === 'admin' ? 'Allowed Pages' : 'Access'}
+                      Allowed Pages
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {user.portal === 'admin' ? (
-                        // Show actual pages for admin
-                        user.allowedPages.length > 0 ? (
-                          user.allowedPages.slice(0, 5).map((page, index) => (
-                            <span 
-                              key={index}
-                              className="px-3 py-1.5 bg-emerald-100 text-emerald-600 text-xs font-bold rounded-lg border border-emerald-200"
-                            >
-                              {page}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-200">
-                            No pages assigned
+                      {user.allowedPages.length > 0 ? (
+                        user.allowedPages.slice(0, 5).map((page, index) => (
+                          <span 
+                            key={index}
+                            className="px-3 py-1.5 bg-emerald-100 text-emerald-600 text-xs font-bold rounded-lg border border-emerald-200"
+                          >
+                            {page}
                           </span>
-                        )
+                        ))
                       ) : (
-                        // Show chat access for employee with proper label
-                        user.allowedPages.length > 0 ? (
-                          user.allowedPages.slice(0, 5).map((page, index) => (
-                            <span 
-                              key={index}
-                              className="px-3 py-1.5 bg-blue-100 text-blue-600 text-xs font-bold rounded-lg border border-blue-200 flex items-center gap-1"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                              {page}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="px-3 py-1.5 bg-blue-100 text-blue-600 text-xs font-bold rounded-lg border border-blue-200 flex items-center gap-1">
-                            <MessageCircle className="h-3 w-3" />
-                            Employee Chat
-                          </span>
-                        )
+                        <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-200">
+                          No pages assigned
+                        </span>
                       )}
                       {user.allowedPages.length > 5 && (
                         <span className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-200">
@@ -675,11 +651,11 @@ export default function RoleManager() {
                     <div className="flex items-center gap-6">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                          {user.portal === 'admin' ? 'Pages Access' : 'Chat Access'}
+                          Pages Access
                         </span>
                         <span className="text-lg font-black text-black">
                           {user.allowedPages.length} 
-                          {user.portal === 'admin' && ` of ${ALL_PAGES.length}`}
+                          {` of ${ALL_PAGES.length}`}
                         </span>
                       </div>
                       <div className="flex flex-col">
@@ -712,7 +688,7 @@ export default function RoleManager() {
                   {editingUserId ? 'Edit User Access' : 'Create New User'}
                 </h2>
                 <p className="text-gray-600 text-sm font-medium mt-1">
-                  {editingUserId ? 'Update user details and permissions' : 'Create new user with specific portal access'}
+                  {editingUserId ? 'Update user details and permissions' : 'Create new user with role-based access'}
                 </p>
               </div>
               <button onClick={() => {
@@ -722,7 +698,7 @@ export default function RoleManager() {
                   name: '',
                   email: '',
                   password: '',
-                  portal: 'admin',
+                  roleName: 'admin',
                   employeeId: '',
                   allowedPages: [],
                   allowedActions: [...ALL_ACTIONS]
@@ -734,49 +710,54 @@ export default function RoleManager() {
             
             <div className="p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Portal Selection */}
+                {/* Role Selection */}
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
-                    Select Portal *
+                    Select Role *
                   </label>
                   <div className="grid grid-cols-2 gap-4">
-                    {PORTALS.map((portal) => {
-                      const Icon = portal.icon
-                      const isSelected = newUser.portal === portal.id
-                      return (
-                        <button
-                          key={portal.id}
-                          type="button"
-                          onClick={() => setNewUser({
-                            ...newUser,
-                            portal: portal.id as 'admin' | 'employee',
-                            employeeId: '',
-                            allowedActions: portal.id === 'admin' ? [...ALL_ACTIONS] : ['view']
-                          })}
-                          className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                            isSelected
-                              ? portal.id === 'admin'
-                                ? 'border-purple-500 bg-purple-50'
-                                : 'border-emerald-500 bg-emerald-50'
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
-                        >
-                          <div className={`p-2 rounded-lg ${
-                            portal.id === 'admin' ? 'bg-purple-100' : 'bg-emerald-100'
-                          }`}>
-                            <Icon className={`h-5 w-5 ${
-                              portal.id === 'admin' ? 'text-purple-600' : 'text-emerald-600'
-                            }`} />
-                          </div>
-                          <span className="font-bold text-gray-900">{portal.name}</span>
-                        </button>
-                      )
-                    })}
+                    <button
+                      type="button"
+                      onClick={() => setNewUser({
+                        ...newUser,
+                        roleName: 'admin',
+                        employeeId: '',
+                        allowedActions: [...ALL_ACTIONS]
+                      })}
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                        newUser.roleName === 'admin'
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="p-2 rounded-lg bg-purple-100">
+                        <Shield className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <span className="font-bold text-gray-900">Admin Role</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewUser({
+                        ...newUser,
+                        roleName: 'employee',
+                        allowedActions: ['view']
+                      })}
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                        newUser.roleName === 'employee'
+                          ? 'border-emerald-500 bg-emerald-50'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="p-2 rounded-lg bg-emerald-100">
+                        <Users className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <span className="font-bold text-gray-900">Employee Role</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Employee Selection - ONLY SHOW when portal = employee */}
-                {newUser.portal === 'employee' && (
+                {/* Employee Selection - ONLY SHOW when role = employee */}
+                {newUser.roleName === 'employee' && (
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
                       Select Employee *
@@ -843,12 +824,12 @@ export default function RoleManager() {
                 {!editingUserId && (
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
-                      Password *
+                      Password {newUser.roleName === 'employee' ? '(Optional)' : '*'}
                     </label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter password"
+                        placeholder={newUser.roleName === 'employee' ? 'Leave blank to auto-generate' : 'Enter password'}
                         value={newUser.password}
                         onChange={(e) => setNewUser({...newUser, password: e.target.value})}
                         className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all pr-12"
@@ -865,9 +846,8 @@ export default function RoleManager() {
                 )}
               </div>
 
-              {/* Page Access Selection - ONLY SHOW when portal = admin */}
-              {newUser.portal === 'admin' && (
-                <div className="space-y-4">
+              {/* Page Access Selection */}
+              <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
                       Select Pages Access *
@@ -918,7 +898,6 @@ export default function RoleManager() {
                     Selected {newUser.allowedPages.length} of {ALL_PAGES.length} pages
                   </p>
                 </div>
-              )}
             </div>
 
             <div className="p-8 bg-gray-50 border-t border-gray-200 flex gap-4">
@@ -930,7 +909,7 @@ export default function RoleManager() {
                     name: '',
                     email: '',
                     password: '',
-                    portal: 'admin',
+                    roleName: 'admin',
                     employeeId: '',
                     allowedPages: [],
                     allowedActions: [...ALL_ACTIONS]

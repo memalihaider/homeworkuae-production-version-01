@@ -25,12 +25,8 @@ const normalizePageKey = (page: string) => {
   return alias || trimmed
 }
 
-const normalizePagesForPortal = (portal: 'admin' | 'employee', pages: string[]) => {
+const normalizePagesForPortal = (_portal: 'admin' | 'employee', pages: string[]) => {
   const normalized = Array.from(new Set((pages || []).map(normalizePageKey).filter(Boolean)))
-
-  if (portal === 'employee') {
-    return ['Employee Chat']
-  }
 
   const criticalPages = ['Dashboard', 'Quotations', 'Quotation List', 'Process Inquiry']
   criticalPages.forEach((page) => {
@@ -46,6 +42,22 @@ const ALL_ACTIONS = ['view', 'add', 'edit', 'remove'] as const
 
 const normalizeActionsForPortal = (portal: 'admin' | 'employee', actions?: string[]) => {
   if (portal === 'admin') {
+    return [...ALL_ACTIONS]
+  }
+
+  const normalized = Array.from(
+    new Set((actions || []).map((action) => action?.toString().toLowerCase().trim()).filter(Boolean)),
+  )
+
+  if (!normalized.includes('view')) {
+    normalized.unshift('view')
+  }
+
+  return normalized
+}
+
+const normalizeActionsForRole = (roleName: string, actions?: string[]) => {
+  if ((roleName || '').toLowerCase() === 'admin') {
     return [...ALL_ACTIONS]
   }
 
@@ -100,7 +112,7 @@ export async function createUserWithRole(
   allowedActions?: string[]
 ) {
   try {
-    console.log('📝 Creating user:', { email, name, portal, employeeId });
+    console.log('📝 Creating user:', { email, name, portal: 'admin', employeeId, roleName });
     
     // Firebase authentication mein user create karna
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
@@ -117,7 +129,7 @@ export async function createUserWithRole(
       email: string
       name: string
       allowedPages: string[]
-      portal: 'admin' | 'employee'
+      portal: 'admin'
       roleName: string
       allowedActions: string[]
       createdAt: string
@@ -128,15 +140,15 @@ export async function createUserWithRole(
       email,
       name,
       allowedPages,
-      portal,
-      roleName: roleName || (portal === 'admin' ? 'admin' : 'employee'),
-      allowedActions: normalizeActionsForPortal(portal, allowedActions),
+      portal: 'admin',
+      roleName: roleName || 'admin',
+      allowedActions: normalizeActionsForRole(roleName || 'admin', allowedActions),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
     
-    // Add employee fields if portal is employee
-    if (portal === 'employee') {
+    // Keep employee link metadata when role is employee (even with unified admin portal)
+    if ((roleName || '').toLowerCase() === 'employee' || Boolean(employeeId)) {
       userData.employeeId = employeeId || ''
       userData.employeeName = employeeName || name
     }
@@ -161,18 +173,17 @@ export async function getUserRole(uid: string): Promise<UserRole | null> {
       const data = docSnap.data()
       const rawPortal = (data.portal || '').toString().toLowerCase()
       const rawRoleName = (data.roleName || '').toString().toLowerCase()
-      const inferredPortal: 'admin' | 'employee' =
-        rawPortal === 'employee' || rawRoleName === 'employee' ? 'employee' : 'admin'
+      const inferredPortal: 'admin' = 'admin'
+      const roleName = rawRoleName === 'employee' ? 'employee' : 'admin'
 
       const normalizedAllowedPages = normalizePagesForPortal(
         inferredPortal,
         (data.allowedPages || []) as string[],
       )
-      const normalizedAllowedActions = normalizeActionsForPortal(
-        inferredPortal,
+      const normalizedAllowedActions = normalizeActionsForRole(
+        roleName,
         (data.allowedActions || []) as string[],
       )
-      const roleName = inferredPortal === 'admin' ? 'admin' : 'employee'
 
       const sourceAllowedPages = Array.isArray(data.allowedPages) ? data.allowedPages : []
       const allowedPagesChanged =
@@ -272,22 +283,6 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
       allowedPages: userRole.allowedPages 
     });
     
-    // ✅ Check if portal matches
-    if (userRole.portal !== portal) {
-      console.log(`❌ Portal mismatch: expected ${portal}, got ${userRole.portal}`);
-      await signOut(auth).catch((cleanupError) => {
-        console.warn('Auth cleanup failed after portal mismatch:', cleanupError)
-      })
-      clearSession()
-      return { 
-        success: false, 
-        message: portal === 'admin' 
-          ? 'This is an employee account. Please use Employee Login.'
-          : 'This is an admin account. Please use Admin Login.',
-        redirectTo: null
-      }
-    }
-    
     const session: SessionData = {
       user: {
         uid: userCredential.user.uid,
@@ -295,15 +290,15 @@ export async function validateCredentials(portal: 'admin' | 'employee', email: s
         name: userRole.name
       },
       allowedPages: userRole.allowedPages,
-      portal: userRole.portal,
+      portal: 'admin',
       employeeId: userRole.employeeId,
       employeeName: userRole.employeeName,
       loggedInAt: new Date().toISOString(),
       roleName: userRole.roleName || userRole.portal
     }
     
-    // Determine redirect path based on portal
-    const redirectTo = portal === 'admin' ? '/admin/dashboard' : '/employee/dashboard'
+    // Employee portal retired: all authenticated users land in admin portal.
+    const redirectTo = '/admin/dashboard'
     
     return { 
       success: true, 

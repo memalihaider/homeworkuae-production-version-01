@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ComponentType } from 'react'
 import { 
-  Plus, FileText, TrendingUp, Bell, CheckSquare, 
+  Plus, FileText, TrendingUp, Bell, 
   Download, History, Sparkles, ArrowUpRight, Loader2, BarChart3
 } from 'lucide-react'
 import { getPDFAsBlob } from '@/lib/pdfGenerator'
@@ -11,7 +11,6 @@ import { getSession } from '@/lib/auth'
 import QuotationDashboard from './components/QuotationDashboard'
 import QuotationList from './components/QuotationList'
 import QuotationBuilder from './components/QuotationBuilder'
-import QuotationApproval from './components/QuotationApproval'
 import QuotationReminders from './components/QuotationReminders'
 import QuotationAdvancedReports from './components/QuotationAdvancedReports'
 
@@ -72,7 +71,7 @@ export interface LocalQuotation extends BaseQuotation {
 }
 
 export default function QuotationsPage() {
-  type QuotationTabId = 'dashboard' | 'list' | 'builder' | 'approval' | 'reminders' | 'reports'
+  type QuotationTabId = 'dashboard' | 'list' | 'builder' | 'reminders' | 'reports'
   const [activeTab, setActiveTab] = useState<QuotationTabId>('dashboard')
   const [editingQuotation, setEditingQuotation] = useState<LocalQuotation | null>(null)
   const [selectedQuotation, setSelectedQuotation] = useState<(Partial<LocalQuotation> & { id?: string | number }) | null>(null)
@@ -117,7 +116,7 @@ export default function QuotationsPage() {
       phone: quotation.phone || '',
       total: quotation.total ?? quotation.amount ?? 0,
       currency: quotation.currency || 'AED',
-      status: quotation.status || 'Sent',
+      status: quotation.status || 'Approved',
       date: quotation.date || new Date().toISOString().split('T')[0],
       validUntil: quotation.validUntil || '',
       dueDate: (quotation as LocalQuotation).dueDate || quotation.validUntil || '',
@@ -169,7 +168,7 @@ export default function QuotationsPage() {
         discount: (quotation as any).discount || 0,
         discountAmount: (quotation as any).discountAmount || 0,
         discountType: (quotation as any).discountType || 'percentage',
-        status: quotation.status || 'Sent',
+        status: quotation.status || 'Approved',
         subtotal: (quotation as any).subtotal || quotation.total || 0,
         taxAmount: (quotation as any).taxAmount || 0,
         total: quotation.total || 0,
@@ -207,7 +206,6 @@ export default function QuotationsPage() {
     { id: 'dashboard', label: 'Overview', icon: TrendingUp },
     { id: 'list', label: 'Quotation List', icon: FileText },
     { id: 'builder', label: editingQuotation ? 'Edit Quotation' : 'Create New', icon: Plus },
-    { id: 'approval', label: 'Approval Queue', icon: CheckSquare },
     { id: 'reminders', label: 'Notifications', icon: Bell },
   ]
 
@@ -229,7 +227,7 @@ export default function QuotationsPage() {
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-black">Quotation Management</h1>
             <p className="text-gray-600 mt-3 text-lg font-medium max-w-3xl">
-              Generate professional quotes, manage approvals, and keep client follow-ups organized in one place.
+              Generate professional quotes and keep client follow-ups organized in one place.
             </p>
           </div>
 
@@ -298,7 +296,6 @@ export default function QuotationsPage() {
             }}
           />
         )}
-        {activeTab === 'approval' && <QuotationApproval />}
         {activeTab === 'reminders' && <QuotationReminders />}
         {activeTab === 'reports' && isSuperAdmin && <QuotationAdvancedReports />}
       </div>

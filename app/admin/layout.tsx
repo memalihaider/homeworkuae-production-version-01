@@ -457,7 +457,7 @@ const normalizePageKey = (page: string): string => {
 
 const getNormalizedAllowedPages = (
   pages: string[] = [],
-  portal: string,
+  _portal: string,
 ): string[] => {
   const normalized = Array.from(
     new Set(
@@ -467,18 +467,11 @@ const getNormalizedAllowedPages = (
     ),
   );
 
-  if (portal === "admin") {
-    ["Dashboard", "Quotations", "Quotation List", "Process Inquiry", "Universal Calendar"].forEach((page) => {
-      if (!normalized.includes(page)) {
-        normalized.push(page);
-      }
-    });
-    return normalized;
-  }
-
-  if (!normalized.includes("Employee Chat")) {
-    normalized.push("Employee Chat");
-  }
+  ["Dashboard", "Quotations", "Quotation List", "Process Inquiry", "Universal Calendar"].forEach((page) => {
+    if (!normalized.includes(page)) {
+      normalized.push(page);
+    }
+  });
 
   return normalized;
 };
@@ -511,6 +504,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   });
 
   const [isListening, setIsListening] = useState(false);
+  const [portalDataIssue, setPortalDataIssue] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [userSession, setUserSession] = useState<{
     name: string;
@@ -570,6 +565,29 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncNetworkState = () => {
+      const offline = !navigator.onLine;
+      setIsOffline(offline);
+      setPortalDataIssue(
+        offline
+          ? "Network connection appears offline. Portal data may not load until connection is restored."
+          : null,
+      );
+    };
+
+    syncNetworkState();
+    window.addEventListener("online", syncNetworkState);
+    window.addEventListener("offline", syncNetworkState);
+
+    return () => {
+      window.removeEventListener("online", syncNetworkState);
+      window.removeEventListener("offline", syncNetworkState);
+    };
   }, []);
 
   // Save processed booking IDs to localStorage
@@ -685,6 +703,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         unsubscribeBookings = onSnapshot(
           bookingsQuery,
           (snapshot) => {
+            if (!isOffline) {
+              setPortalDataIssue(null);
+            }
             snapshot.docChanges().forEach((change) => {
               if (change.type === "added") {
                 const bookingData = change.doc.data();
@@ -751,11 +772,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           },
           (error) => {
             if ((error as any)?.code === "permission-denied") {
+              setPortalDataIssue(
+                "Permission denied while reading Bookings. Your role may not have access to required collections.",
+              );
               console.warn(
                 "Skipping bookings listener due to Firestore permissions for current user.",
               );
               return;
             }
+            setPortalDataIssue(
+              "Live data connection for Bookings failed. Check network or Firestore availability.",
+            );
             console.error("Firebase listener error:", error);
           },
         );
@@ -765,6 +792,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         unsubscribeJobs = onSnapshot(
           jobsQuery,
           (snapshot) => {
+            if (!isOffline) {
+              setPortalDataIssue(null);
+            }
             // Seed baseline jobs from first snapshot to avoid flood on initial load.
             if (!hasInitializedJobsSnapshot) {
               snapshot.docs.forEach((jobDoc) => {
@@ -878,11 +908,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           },
           (error) => {
             if ((error as any)?.code === "permission-denied") {
+              setPortalDataIssue(
+                "Permission denied while reading Jobs. Your role may not have access to required collections.",
+              );
               console.warn(
                 "Skipping jobs listener due to Firestore permissions for current user.",
               );
               return;
             }
+            setPortalDataIssue(
+              "Live data connection for Jobs failed. Check network or Firestore availability.",
+            );
             console.error("Jobs listener error:", error);
           },
         );
@@ -893,6 +929,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         deadlineReminderInterval = setInterval(checkUpcomingJobDeadlines, 60 * 1000);
       } catch (error) {
         console.error("Error setting up Firebase listener:", error);
+        setPortalDataIssue(
+          "Unable to start portal listeners. Check network and Firestore configuration.",
+        );
         setIsListening(false);
       }
     };
@@ -1126,12 +1165,26 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }, []);
 
   const filteredMenuItems = getFilteredMenuItems();
+  const dataIssueBanner = portalDataIssue ? (
+    <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold">Portal Data Notice</p>
+          <p className="text-xs">{portalDataIssue}</p>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (!userSession) {
     return (
       <div className="min-h-screen bg-background text-foreground flex">
         <main className="flex-1 p-8 overflow-y-auto">
-          <div className="w-full">{children}</div>
+          <div className="w-full">
+            {dataIssueBanner}
+            {children}
+          </div>
         </main>
       </div>
     );
@@ -1654,7 +1707,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 p-6 overflow-y-auto bg-muted/20">
-          <div className="w-full">{children}</div>
+          <div className="w-full">
+            {dataIssueBanner}
+            {children}
+          </div>
         </main>
       </div>
     </div>

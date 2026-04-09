@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   ArrowLeft,
   Edit2,
@@ -196,6 +196,47 @@ const [milestones, setMilestones] = useState<Array<{
     return match ? parseInt(match[0], 10) : 0
   }
 
+  const parseDurationToMinutes = (value?: string): number | null => {
+    if (!value) return null
+    const raw = value.trim().toLowerCase()
+    if (!raw) return null
+
+    const normalized = raw.replace(/,/g, ' ')
+    const hourMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)/)
+    const minuteMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(m|min|mins|minute|minutes)/)
+
+    const hoursFromUnits = hourMatch ? Number(hourMatch[1]) : 0
+    const minutesFromUnits = minuteMatch ? Number(minuteMatch[1]) : 0
+    const totalFromUnits = Math.round((hoursFromUnits * 60) + minutesFromUnits)
+    if (totalFromUnits > 0) return totalFromUnits
+
+    const hhmmMatch = normalized.match(/^(\d{1,2}):(\d{2})$/)
+    if (hhmmMatch) {
+      const hours = Number(hhmmMatch[1])
+      const minutes = Number(hhmmMatch[2])
+      if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
+        return (hours * 60) + minutes
+      }
+    }
+
+    const numeric = Number(normalized)
+    if (!Number.isNaN(numeric) && numeric > 0) {
+      return numeric <= 24 ? Math.round(numeric * 60) : Math.round(numeric)
+    }
+
+    return null
+  }
+
+  const formatMinutesAsDuration = (minutes?: number | null): string => {
+    if (minutes == null || Number.isNaN(minutes) || minutes < 0) return 'N/A'
+    const safe = Math.round(minutes)
+    const hours = Math.floor(safe / 60)
+    const mins = safe % 60
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`
+    if (hours > 0) return `${hours}h`
+    return `${mins}m`
+  }
+
   const normalizeUploadedDocuments = (docs: any[] = []) => {
     const byName = new Map<string, any>()
 
@@ -363,6 +404,12 @@ const [milestones, setMilestones] = useState<Array<{
           riskLevel: jobData.riskLevel || 'Low',
           slaDeadline: jobData.slaDeadline || '',
           estimatedDuration: jobData.estimatedDuration || '',
+          estimatedDurationMinutes: jobData.estimatedDurationMinutes || 0,
+          actualDuration: jobData.actualDuration || '',
+          actualDurationMinutes: jobData.actualDurationMinutes || 0,
+          timePerformanceStatus: jobData.timePerformanceStatus || 'Unknown',
+          timePerformanceDeltaMinutes: jobData.timePerformanceDeltaMinutes || 0,
+          timePerformanceNote: jobData.timePerformanceNote || '',
           requiredSkills: jobData.requiredSkills || [],
           permits: jobData.permits || [],
           tags: jobData.tags || [],
@@ -1592,9 +1639,13 @@ const handleDeleteMilestone = async (milestoneId: string) => {
       if (newStatus === 'Completed') {
         updateData.completedAt = Timestamp.fromDate(now)
 
+        const estimatedMinutes = Number(job?.estimatedDurationMinutes || parseDurationToMinutes(job?.estimatedDuration) || 0)
+        let actualMinutes = Number(job?.actualDurationMinutes || 0)
+
         if (executionTime.startedAt) {
           const startedAtDate = new Date(executionTime.startedAt)
           const elapsedMinutes = Math.max(0, Math.floor((now.getTime() - startedAtDate.getTime()) / (1000 * 60)))
+          actualMinutes = elapsedMinutes
 
           updateData.executionTracking = {
             startedAt: Timestamp.fromDate(startedAtDate),
@@ -1604,6 +1655,27 @@ const handleDeleteMilestone = async (milestoneId: string) => {
             lastUpdated: Timestamp.fromDate(now)
           }
         }
+
+        const performanceStatus =
+          estimatedMinutes > 0 && actualMinutes > 0
+            ? (actualMinutes <= estimatedMinutes ? 'On Time' : 'Delayed')
+            : 'Unknown'
+        const deltaMinutes =
+          estimatedMinutes > 0 && actualMinutes > 0
+            ? actualMinutes - estimatedMinutes
+            : 0
+
+        updateData.estimatedDurationMinutes = estimatedMinutes
+        updateData.actualDurationMinutes = actualMinutes
+        updateData.actualDuration = formatMinutesAsDuration(actualMinutes)
+        updateData.timePerformanceStatus = performanceStatus
+        updateData.timePerformanceDeltaMinutes = deltaMinutes
+        updateData.timePerformanceNote =
+          performanceStatus === 'On Time'
+            ? 'Completed within expected time.'
+            : performanceStatus === 'Delayed'
+              ? 'Completed after expected time.'
+              : 'Timing data not sufficient yet.'
       }
       
       // Add startedAt timestamp if starting job
@@ -1631,6 +1703,14 @@ const handleDeleteMilestone = async (milestoneId: string) => {
         status: newStatus,
         updatedAt: now.toISOString(),
         ...(newStatus === 'Completed' && { completedAt: now.toISOString() }),
+        ...(newStatus === 'Completed' && {
+          estimatedDurationMinutes: Number(updateData.estimatedDurationMinutes || prev?.estimatedDurationMinutes || 0),
+          actualDurationMinutes: Number(updateData.actualDurationMinutes || prev?.actualDurationMinutes || 0),
+          actualDuration: updateData.actualDuration || prev?.actualDuration || '',
+          timePerformanceStatus: updateData.timePerformanceStatus || prev?.timePerformanceStatus || 'Unknown',
+          timePerformanceDeltaMinutes: Number(updateData.timePerformanceDeltaMinutes || prev?.timePerformanceDeltaMinutes || 0),
+          timePerformanceNote: updateData.timePerformanceNote || prev?.timePerformanceNote || ''
+        }),
         ...(newStatus === 'In Progress' && { startedAt: now.toISOString() })
       }))
 
@@ -2084,6 +2164,31 @@ const handleDeleteMilestone = async (milestoneId: string) => {
   const currentTeamTotal = teamMembers.length + additionalTeamMembers.length
   const availableTeamSlots = Math.max(0, requiredTeamLimit - currentTeamTotal)
   const canAddMoreTeamMembers = availableTeamSlots > 0
+
+  const timeSignal = useMemo(() => {
+    const estimatedMinutes = Number(job?.estimatedDurationMinutes || parseDurationToMinutes(job?.estimatedDuration) || 0)
+    const actualMinutes = Number(job?.actualDurationMinutes || parseDurationToMinutes(job?.actualDuration) || (job?.status === 'Completed' ? executionTime.elapsedTotalMinutes : 0) || 0)
+    const fallbackStatus = estimatedMinutes > 0 && actualMinutes > 0
+      ? (actualMinutes <= estimatedMinutes ? 'On Time' : 'Delayed')
+      : 'Unknown'
+
+    const status = job?.timePerformanceStatus || fallbackStatus
+    const deltaMinutes = typeof job?.timePerformanceDeltaMinutes === 'number'
+      ? job.timePerformanceDeltaMinutes
+      : (estimatedMinutes > 0 && actualMinutes > 0 ? actualMinutes - estimatedMinutes : 0)
+
+    return {
+      status,
+      deltaMinutes,
+      estimatedLabel: estimatedMinutes > 0 ? formatMinutesAsDuration(estimatedMinutes) : (job?.estimatedDuration || 'N/A'),
+      actualLabel: job?.actualDuration || (actualMinutes > 0 ? formatMinutesAsDuration(actualMinutes) : 'N/A'),
+      note: job?.timePerformanceNote || (status === 'On Time'
+        ? 'Completed within expected time.'
+        : status === 'Delayed'
+          ? 'Completed after expected time.'
+          : 'Timing data not sufficient yet.'),
+    }
+  }, [job, executionTime.elapsedTotalMinutes])
 
   // PDF Download Function
 
@@ -2738,7 +2843,7 @@ const downloadJobPDF = () => {
       </div>
 
       {/* Enhanced Quick Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {[
           { 
             label: 'Scheduled Date', 
@@ -2781,6 +2886,13 @@ const downloadJobPDF = () => {
             sub: 'Assessment', 
             icon: job.riskLevel === 'High' ? AlertTriangle : job.riskLevel === 'Medium' ? Clock : CheckCircle, 
             color: job.riskLevel === 'High' ? 'text-red-600' : job.riskLevel === 'Medium' ? 'text-yellow-600' : 'text-green-600' 
+          },
+          {
+            label: 'Time Signal',
+            value: timeSignal.status,
+            sub: `${timeSignal.actualLabel} vs ${timeSignal.estimatedLabel}`,
+            icon: timeSignal.status === 'On Time' ? CheckCircle : timeSignal.status === 'Delayed' ? AlertTriangle : Clock,
+            color: timeSignal.status === 'On Time' ? 'text-emerald-600' : timeSignal.status === 'Delayed' ? 'text-red-600' : 'text-gray-600'
           },
         ].map((stat, i) => (
           <div key={i} className="bg-white border border-gray-300 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all">
@@ -3070,6 +3182,22 @@ const downloadJobPDF = () => {
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-500">Team Required</label>
                     <div className="text-lg font-bold text-gray-900">{job.teamRequired} members</div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-500">Time Performance Signal</label>
+                    <div className={`text-lg font-bold ${
+                      timeSignal.status === 'On Time'
+                        ? 'text-emerald-700'
+                        : timeSignal.status === 'Delayed'
+                          ? 'text-red-700'
+                          : 'text-gray-700'
+                    }`}>
+                      {timeSignal.status}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {timeSignal.actualLabel} vs {timeSignal.estimatedLabel} ({timeSignal.deltaMinutes > 0 ? '+' : ''}{timeSignal.deltaMinutes} min)
+                    </div>
                   </div>
                 </div>
 

@@ -36,6 +36,7 @@ import {
   getDownloadURL,
   deleteObject 
 } from 'firebase/storage'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 
 // Types
 interface Category {
@@ -638,13 +639,12 @@ export default function ProductBuilder({ product, onSave, onCancel }: ProductBui
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Description</label>
-              <textarea
-                rows={3}
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-200 focus:border-black outline-none text-sm font-bold"
-                placeholder="PROPER APPLICATION AND MIXING RATIO..."
+              <RichTextEditor
+                value={formData.description || ''}
+                onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+                placeholder="Write advanced description with bold, colors, bullets, and numbering..."
+                minHeightClassName="min-h-[180px]"
+                className="bg-white"
               />
             </div>
 

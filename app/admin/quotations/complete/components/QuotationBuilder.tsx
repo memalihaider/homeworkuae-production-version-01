@@ -9,6 +9,8 @@ import {
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, addDoc, updateDoc, doc, serverTimestamp, getDocs, getDoc, query, where } from 'firebase/firestore'
+import SearchSuggestSelect from '@/components/ui/search-suggest-select'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 
 interface Client {
   id: string;
@@ -37,6 +39,8 @@ interface Service {
   description: string;
   sku: string;
   type?: string;
+  categoryName?: string;
+  category?: string;
 }
 
 interface Employee {
@@ -62,18 +66,6 @@ const DEFAULT_BANK_DETAILS = {
   swiftCode: '',
   iban: ''
 }
-
-const QUOTATION_STATUS_OPTIONS = [
-  'Sent',
-  'Approved',
-  'Rejected',
-  'Lost',
-  'Won',
-  'Reject due to High Price',
-  'Reject due to Other Reason',
-  'Expired',
-] as const
-
 
 export default function QuotationBuilder({ initialData, onSave, onCancel }: Props) {
   // 👇 NEW STATES FOR EDIT MODE
@@ -105,16 +97,25 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       discount: 0,
       discountType: 'percentage',
       template: 'professional',
-      status: 'Sent',
+      status: 'Approved',
+      selectedCategory: '',
       outcomeRemarks: '',
       upsales: [],
       services: [],
+      option2Heading: 'Option 2 - Comparative Offer',
+      showOption2InPdf: false,
+      option2Services: [],
       products: [],
+      quoteNote: saved.quoteNote ?? '',
+      showQuoteNoteInPdf: saved.showQuoteNoteInPdf ?? true,
       notes: saved.notes ?? '',
       terms: saved.terms ?? '',
       createdBy: '', // Store employee ID for dropdown selection
       createdByName: '', // Store employee name for Firebase
       createdByPhone: '',
+      assignedTo: '',
+      assignedToName: '',
+      showAssignedToInPdf: false,
       confirmationLetter: saved.confirmationLetter ?? '',
       companySealImage: saved.companySealImage ?? '',
       bankDetails: {
@@ -130,8 +131,6 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
   const [leads, setLeads] = useState<Lead[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [memberSearchTerm, setMemberSearchTerm] = useState('')
-  const [contactSearchTerm, setContactSearchTerm] = useState('')
   const [showCustomClient, setShowCustomClient] = useState(false)
   const [customClient, setCustomClient] = useState({
     name: '',
@@ -166,16 +165,25 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         discount: typeof initialData.discount === 'number' ? initialData.discount : prev.discount,
         discountType: initialData.discountType || prev.discountType || 'percentage',
         template: initialData.template || prev.template || 'professional',
-        status: initialData.status || prev.status || 'Sent',
+        status: initialData.status || prev.status || 'Approved',
+        selectedCategory: initialData.selectedCategory || prev.selectedCategory || '',
         outcomeRemarks: initialData.outcomeRemarks ?? prev.outcomeRemarks ?? '',
         upsales: initialData.upsales || prev.upsales || [],
         services: initialData.services || prev.services || [],
+        option2Heading: initialData.option2Heading || prev.option2Heading || 'Option 2 - Comparative Offer',
+        showOption2InPdf: Boolean(initialData.showOption2InPdf ?? prev.showOption2InPdf),
+        option2Services: initialData.option2Services || prev.option2Services || [],
         products: initialData.products || prev.products || [],
+        quoteNote: initialData.quoteNote ?? prev.quoteNote ?? '',
+        showQuoteNoteInPdf: Boolean(initialData.showQuoteNoteInPdf ?? prev.showQuoteNoteInPdf ?? true),
         notes: initialData.notes ?? prev.notes ?? '',
         terms: initialData.terms ?? prev.terms ?? '',
         createdBy: initialData.createdById || prev.createdBy || '',
         createdByName: initialData.createdBy || prev.createdByName || '',
         createdByPhone: initialData.createdByPhone || prev.createdByPhone || '',
+        assignedTo: initialData.assignedToId || prev.assignedTo || '',
+        assignedToName: initialData.assignedTo || prev.assignedToName || '',
+        showAssignedToInPdf: Boolean(initialData.showAssignedToInPdf ?? prev.showAssignedToInPdf ?? false),
         confirmationLetter: initialData.confirmationLetter ?? prev.confirmationLetter ?? '',
         companySealImage: initialData.companySealImage ?? prev.companySealImage ?? '',
         bankDetails: {
@@ -197,7 +205,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
     }
 
     setFormData((prev: any) => {
-      if (prev.createdBy && prev.createdByName) {
+      if (prev.createdBy && prev.createdByName && (!prev.assignedTo || prev.assignedToName)) {
         return prev
       }
 
@@ -219,7 +227,22 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         }
       }
 
-      if (!createdById && !createdByName && !createdByPhone) {
+      let assignedToName = initialData.assignedTo || prev.assignedToName || ''
+      let assignedToId = initialData.assignedToId || prev.assignedTo || ''
+
+      if (assignedToId) {
+        const assignedEmployeeById = employees.find(e => e.id === assignedToId)
+        if (assignedEmployeeById) {
+          assignedToName = assignedEmployeeById.name || assignedToName
+        }
+      } else if (assignedToName) {
+        const assignedEmployeeByName = employees.find(e => e.name === assignedToName)
+        if (assignedEmployeeByName) {
+          assignedToId = assignedEmployeeByName.id
+        }
+      }
+
+      if (!createdById && !createdByName && !createdByPhone && !assignedToId && !assignedToName) {
         return prev
       }
 
@@ -227,7 +250,9 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         ...prev,
         createdBy: createdById || prev.createdBy,
         createdByName: createdByName || prev.createdByName,
-        createdByPhone: createdByPhone || prev.createdByPhone
+        createdByPhone: createdByPhone || prev.createdByPhone,
+        assignedTo: assignedToId || prev.assignedTo,
+        assignedToName: assignedToName || prev.assignedToName
       }
     })
   }, [initialData, employees])
@@ -261,6 +286,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         setFormData((prev: any) => ({
           ...prev,
           taxRate: typeof settings?.taxPercentage === 'number' ? settings.taxPercentage : prev.taxRate,
+          quoteNote: quotationDefaults.quoteNote ?? prev.quoteNote,
+          showQuoteNoteInPdf: Boolean(quotationDefaults.showQuoteNoteInPdf ?? prev.showQuoteNoteInPdf ?? true),
           notes: quotationDefaults.notes ?? prev.notes,
           terms: quotationDefaults.terms ?? prev.terms,
           confirmationLetter: quotationDefaults.confirmationLetter ?? prev.confirmationLetter,
@@ -397,38 +424,56 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
     }))
   ]
 
-  const filteredEmployees = useMemo(() => {
-    const query = memberSearchTerm.trim().toLowerCase()
-    if (!query) return employees
+  const filteredEmployees = employees
+  const filteredClients = clients
+  const filteredLeads = leads
 
-    return employees.filter((employee) =>
-      [employee.name, employee.email, employee.position, employee.department]
+  const memberOptions = useMemo(() => {
+    return filteredEmployees.map((employee) => ({
+      value: employee.id,
+      label: `${employee.name} - ${employee.position} (${employee.department})`,
+      keywords: [employee.email || '', employee.department || '', employee.position || '']
+    }))
+  }, [filteredEmployees])
+
+  const contactOptions = useMemo(() => {
+    const clientOptions = filteredClients.map((client) => ({
+      value: `client_${client.id}`,
+      label: `${client.name} - ${client.company} (Client)`,
+      keywords: [client.email || '', client.phone || '', client.location || '']
+    }))
+
+    const leadOptions = filteredLeads.map((lead) => ({
+      value: `lead_${lead.id}`,
+      label: `${lead.name} - ${lead.company} (${lead.status} Lead)`,
+      keywords: [lead.email || '', lead.phone || '', lead.address || '', lead.status || '']
+    }))
+
+    return [...clientOptions, ...leadOptions]
+  }, [filteredClients, filteredLeads])
+
+  const categoryOptions = useMemo(() => {
+    const categories = Array.from(new Set(
+      services
+        .map((svc) => svc.categoryName || svc.category || svc.type || '')
         .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(query)),
-    )
-  }, [employees, memberSearchTerm])
-
-  const filteredClients = useMemo(() => {
-    const query = contactSearchTerm.trim().toLowerCase()
-    if (!query) return clients
-
-    return clients.filter((client) =>
-      [client.name, client.company, client.email, client.phone, client.location]
+        .map((value) => String(value).trim())
         .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(query)),
-    )
-  }, [clients, contactSearchTerm])
+    )).sort((a, b) => a.localeCompare(b))
 
-  const filteredLeads = useMemo(() => {
-    const query = contactSearchTerm.trim().toLowerCase()
-    if (!query) return leads
+    return categories.map((category) => ({
+      value: category,
+      label: category,
+    }))
+  }, [services])
 
-    return leads.filter((lead) =>
-      [lead.name, lead.company, lead.email, lead.phone, lead.address, lead.status]
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(query)),
-    )
-  }, [leads, contactSearchTerm])
+  const serviceOptions = useMemo(() => {
+    return services.map((svc) => ({
+      value: svc.id,
+      label: `${svc.name} (${svc.type || 'SERVICE'}) - ${Number(svc.price || 0).toLocaleString()}`,
+      keywords: [svc.name, svc.description || '', svc.sku || '', svc.type || '']
+    }))
+  }, [services])
 
   // Fix the calculation error
   const calculations = useMemo(() => {
@@ -520,14 +565,22 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         
         // Other
         template: quotationData.template,
-        status: quotationData.status,
+        status: isEditing ? (quotationData.status || 'Approved') : 'Approved',
+        selectedCategory: quotationData.selectedCategory || '',
         outcomeRemarks: quotationData.outcomeRemarks || '',
         upsales: quotationData.upsales || [],
+        option2Heading: quotationData.option2Heading || 'Option 2 - Comparative Offer',
+        showOption2InPdf: Boolean(quotationData.showOption2InPdf),
+        quoteNote: quotationData.quoteNote || '',
+        showQuoteNoteInPdf: Boolean(quotationData.showQuoteNoteInPdf),
         notes: quotationData.notes,
         terms: quotationData.terms,
         createdBy: quotationData.createdByName || '', // Save employee name
         createdById: quotationData.createdBy || '', // Save employee ID for future edits
         createdByPhone: quotationData.createdByPhone || '',
+        assignedTo: quotationData.assignedToName || '',
+        assignedToId: quotationData.assignedTo || '',
+        showAssignedToInPdf: Boolean(quotationData.showAssignedToInPdf),
         confirmationLetter: quotationData.confirmationLetter || '',
         companySealImage: quotationData.companySealImage || '',
         bankDetails: {
@@ -538,6 +591,14 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
         
         // Services and Products
         services: (quotationData.services || []).map((service: any) => ({
+          id: service.id,
+          name: service.name || '',
+          description: service.description || '',
+          quantity: service.quantity || 0,
+          unitPrice: service.unitPrice || 0,
+          total: service.total || 0
+        })),
+        option2Services: (quotationData.option2Services || []).map((service: any) => ({
           id: service.id,
           name: service.name || '',
           description: service.description || '',
@@ -588,6 +649,8 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
       // Persist Payment Terms, T&C, Bank Details, and Confirmation Letter as defaults for new quotations
       try {
         localStorage.setItem('quotationDefaults', JSON.stringify({
+          quoteNote: quotationData.quoteNote ?? '',
+          showQuoteNoteInPdf: Boolean(quotationData.showQuoteNoteInPdf ?? true),
           notes: quotationData.notes ?? '',
           terms: quotationData.terms ?? '',
           confirmationLetter: quotationData.confirmationLetter ?? '',
@@ -625,12 +688,6 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
 
     if (formData.services.length === 0 && formData.products.length === 0) {
       alert('⚠️ Please add at least one service or product before saving.')
-      return
-    }
-
-    const statusNeedsRemarks = ['Won', 'Lost', 'Reject due to High Price', 'Reject due to Other Reason'].includes(formData.status)
-    if (statusNeedsRemarks && !(formData.outcomeRemarks || '').trim()) {
-      alert('⚠️ Please add outcome remarks for this quotation status.')
       return
     }
 
@@ -700,6 +757,41 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
 
   const handleRemoveProduct = (id: string) => {
     setFormData({ ...formData, products: formData.products.filter((p: any) => p.id !== id) })
+  }
+
+  const handleAddOption2Service = () => {
+    const newService = {
+      id: `opt2_${Date.now().toString()}`,
+      name: '',
+      quantity: 1,
+      unitPrice: 0,
+      total: 0,
+      description: ''
+    }
+    setFormData((prev: any) => ({ ...prev, option2Services: [...(prev.option2Services || []), newService] }))
+  }
+
+  const handleUpdateOption2Service = (id: string, field: string, value: any) => {
+    setFormData((prev: any) => {
+      const updated = (prev.option2Services || []).map((s: any) => {
+        if (s.id === id) {
+          const up = { ...s, [field]: value }
+          if (field === 'quantity' || field === 'unitPrice') {
+            up.total = (up.quantity || 0) * (up.unitPrice || 0)
+          }
+          return up
+        }
+        return s
+      })
+      return { ...prev, option2Services: updated }
+    })
+  }
+
+  const handleRemoveOption2Service = (id: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      option2Services: (prev.option2Services || []).filter((s: any) => s.id !== id)
+    }))
   }
 
   const selectContact = (contactId: string) => {
@@ -799,6 +891,26 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
     }
   }
 
+  const handleAssignedToSelect = (employeeId: string) => {
+    if (!employeeId) {
+      setFormData({
+        ...formData,
+        assignedTo: '',
+        assignedToName: ''
+      })
+      return
+    }
+
+    const selectedEmployee = employees.find(e => e.id === employeeId)
+    if (selectedEmployee) {
+      setFormData({
+        ...formData,
+        assignedTo: employeeId,
+        assignedToName: selectedEmployee.name
+      })
+    }
+  }
+
   // Count of filtered items
   const clientsCount = clients.length
   const qualifiedLeadsCount = leads.length
@@ -838,33 +950,37 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 mb-1 block">
                 Select Member *
               </label>
-              <input
-                type="text"
-                value={memberSearchTerm}
-                onChange={(e) => setMemberSearchTerm(e.target.value)}
-                placeholder="Advanced search member by name, email, role, department..."
-                className="w-full px-3 py-2 mb-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+              <SearchSuggestSelect
+                value={formData.createdBy || ''}
+                onChange={(value) => handleEmployeeSelect(value)}
+                options={memberOptions}
+                placeholder={filteredEmployees.length > 0 ? 'Search and select a member...' : 'No members available'}
+                inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
               />
-              <select
-                value={formData.createdBy}
-                onChange={(e) => handleEmployeeSelect(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
-                required
-              >
-                <option value="">-- Select a member --</option>
-                {filteredEmployees.length > 0 ? (
-                  filteredEmployees.map(employee => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.name} - {employee.position} ({employee.department})
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No members found for current search</option>
-                )}
-              </select>
               <p className="text-[10px] text-gray-400 mt-1">
-                {filteredEmployees.length} of {employees.length} members shown
+                {employees.length} members available
               </p>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 mb-1 block">
+                Assign Quotation To
+              </label>
+              <SearchSuggestSelect
+                value={formData.assignedTo || ''}
+                onChange={(value) => handleAssignedToSelect(value)}
+                options={memberOptions}
+                placeholder={filteredEmployees.length > 0 ? 'Search and assign to a member...' : 'No members available'}
+                inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+              />
+              <label className="inline-flex items-center gap-2 text-xs text-gray-700 mt-2">
+                <input
+                  type="checkbox"
+                  checked={Boolean(formData.showAssignedToInPdf)}
+                  onChange={(e) => setFormData({ ...formData, showAssignedToInPdf: e.target.checked })}
+                />
+                Show assigned member in PDF header
+              </label>
             </div>
 
             {formData.createdByName && (
@@ -873,8 +989,14 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                   <span className="font-semibold">Selected Creator:</span>{' '}
                   {formData.createdByName}
                 </p>
+                {formData.assignedToName && (
+                  <p className="text-xs text-gray-700 mt-1">
+                    <span className="font-semibold">Assigned To:</span>{' '}
+                    {formData.assignedToName}
+                  </p>
+                )}
                 <p className="text-[9px] text-blue-600 mt-1">
-                  This name will be saved in Firebase
+                  Creator and assignee will be saved in Firebase
                 </p>
               </div>
             )}
@@ -1001,43 +1123,18 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
             {/* Client Selection Dropdown (only show when custom client form is hidden) */}
             {!showCustomClient && (
               <>
-                <input
-                  type="text"
-                  value={contactSearchTerm}
-                  onChange={(e) => setContactSearchTerm(e.target.value)}
-                  placeholder="Advanced search client/lead by name, company, email, phone, location..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
-                />
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <select
-                    onChange={(e) => selectContact(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black bg-white font-medium"
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+                  <SearchSuggestSelect
                     value={formData.clientId || ''}
-                  >
-                    <option value="">Select Client or Lead...</option>
-                    
-                    {/* Clients Section */}
-                    <optgroup label="━━━━ Clients ━━━━" className="font-bold text-gray-700">
-                      {filteredClients.map(client => (
-                        <option key={`client_${client.id}`} value={`client_${client.id}`}>
-                          {client.name} - {client.company} (Client)
-                        </option>
-                      ))}
-                    </optgroup>
-                    
-                    {/* Qualified & Won Leads Section */}
-                    <optgroup label="━━━━ Qualified/Won Leads ━━━━" className="font-bold text-gray-700">
-                      {filteredLeads.map(lead => (
-                        <option key={`lead_${lead.id}`} value={`lead_${lead.id}`}>
-                          {lead.name} - {lead.company} ({lead.status} Lead)
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
+                    onChange={(value) => selectContact(value)}
+                    options={contactOptions}
+                    placeholder="Search and select client or lead..."
+                    inputClassName="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black bg-white font-medium"
+                  />
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  {filteredClients.length} of {clientsCount} clients & {filteredLeads.length} of {qualifiedLeadsCount} qualified/won leads shown
+                  {clientsCount} clients & {qualifiedLeadsCount} qualified/won leads available
                 </p>
               </>
             )}
@@ -1088,7 +1185,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           </div>
 
           {/* Date Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Issue Date</label>
               <input
@@ -1109,32 +1206,25 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
             </div>
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Quotation Status</label>
-              <select
-                value={formData.status || 'Sent'}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black bg-white"
-              >
-                {QUOTATION_STATUS_OPTIONS.map((statusOption) => (
-                  <option key={statusOption} value={statusOption}>
-                    {statusOption}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full px-3 py-2 border border-green-300 rounded text-sm font-bold bg-green-50 text-green-700">
+                {isEditing ? (formData.status || 'Approved') : 'Approved (Auto)'}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Category</label>
+              <SearchSuggestSelect
+                value={formData.selectedCategory || ''}
+                onChange={(value) => setFormData({ ...formData, selectedCategory: value })}
+                options={categoryOptions}
+                placeholder={categoryOptions.length > 0 ? 'Search and select category...' : 'No categories available'}
+                inputClassName="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black bg-white"
+              />
             </div>
           </div>
 
-          {(formData.status === 'Won' || formData.status === 'Lost' || formData.status === 'Reject due to High Price' || formData.status === 'Reject due to Other Reason') && (
-            <div className="mt-3 space-y-1">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Outcome Remarks</label>
-              <textarea
-                rows={3}
-                value={formData.outcomeRemarks || ''}
-                onChange={(e) => setFormData({ ...formData, outcomeRemarks: e.target.value })}
-                placeholder="Add reason/remarks for won or lost quotation..."
-                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
-              />
-            </div>
-          )}
+          <div className="mt-3 text-[11px] font-medium text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">
+            New quotations are automatically saved as Approved and shown in the quotation list.
+          </div>
 
           {/* Client Details Inputs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50/50 p-3 rounded border border-gray-100 italic">
@@ -1200,10 +1290,11 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
           <div className="space-y-2">
             {formData.services.map((service: any) => (
               <div key={service.id} className="grid grid-cols-12 gap-2 items-start bg-white border border-gray-200 p-2 rounded relative group">
-                <div className="col-span-4 space-y-1">
-                   <select 
-                    onChange={(e) => {
-                      const selectedService = services.find(s => s.id === e.target.value)
+                <div className="col-span-6 space-y-1">
+                   <SearchSuggestSelect
+                    value={services.find((svc) => svc.name === service.name)?.id || ''}
+                    onChange={(value) => {
+                      const selectedService = services.find(s => s.id === value)
                       setFormData((prev: any) => {
                         const updatedServices = prev.services.map((row: any) => {
                           if (row.id !== service.id) return row
@@ -1226,25 +1317,18 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                         return { ...prev, services: updatedServices }
                       })
                     }}
-                    className="w-full text-xs font-bold border-none p-1 focus:ring-0 bg-gray-50 rounded"
-                    value={services.find((svc) => svc.name === service.name)?.id || ''}
-                   >
-                    <option value="">Choose Service...</option>
-                    {services.map(svc => (
-                      <option key={svc.id} value={svc.id}>
-                        {svc.name} ({svc.type || 'SERVICE'}) - {Number(svc.price || 0).toLocaleString()}
-                      </option>
-                    ))}
-                   </select>
-                   <textarea 
-                    placeholder="Service description (auto-filled from catalog, editable)..."
-                    className="w-full text-[10px] border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-blue-200 focus:outline-none text-gray-600 bg-gray-50 resize-none leading-relaxed"
-                    rows={2}
-                    value={service.description}
-                    onChange={(e) => handleUpdateService(service.id, 'description', e.target.value)}
+                    options={serviceOptions}
+                    placeholder="Search service..."
+                    inputClassName="w-full text-xs font-bold border-none p-1 focus:ring-0 bg-gray-50 rounded"
                    />
+                     <RichTextEditor
+                      value={service.description || ''}
+                      onChange={(nextValue) => handleUpdateService(service.id, 'description', nextValue)}
+                      placeholder="Service description (rich text): bold, color, bullets, numbering..."
+                      minHeightClassName="min-h-[160px]"
+                     />
                 </div>
-                <div className="col-span-2">
+                   <div className="col-span-1">
                    <input 
                     type="number" 
                     placeholder="Qty" 
@@ -1254,7 +1338,7 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
                     min="1"
                    />
                 </div>
-                <div className="col-span-3">
+                   <div className="col-span-2">
                    <div className="relative">
                       <input 
                         type="number" 
@@ -1292,6 +1376,129 @@ export default function QuotationBuilder({ initialData, onSave, onCancel }: Prop
             {services.length === 0 && (
               <div className="text-center py-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-600 text-xs">
                 No services found. Please add services first.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Option 2 Comparative Services Section */}
+        <div className="bg-white border border-dashed border-gray-300 rounded p-4 space-y-4 shadow-none">
+          <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 mb-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
+              <input
+                id="show-option2-in-pdf"
+                type="checkbox"
+                checked={Boolean(formData.showOption2InPdf)}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, showOption2InPdf: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <label htmlFor="show-option2-in-pdf" className="text-xs font-black uppercase tracking-wider text-black">
+                Show Option 2 In PDF
+              </label>
+            </div>
+            <button
+              onClick={handleAddOption2Service}
+              className="px-3 py-1 bg-black text-white text-[10px] uppercase font-bold rounded hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+              type="button"
+            >
+              <Plus className="w-3 h-3" />
+              Add Option 2 Service
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Option 2 Heading (Editable)</label>
+            <input
+              type="text"
+              value={formData.option2Heading || ''}
+              onChange={(e) => setFormData((prev: any) => ({ ...prev, option2Heading: e.target.value }))}
+              placeholder="Option 2 - Weekly Payment Plan"
+              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+            />
+          </div>
+
+          <div className="space-y-2">
+            {(formData.option2Services || []).map((service: any) => (
+              <div key={service.id} className="grid grid-cols-12 gap-2 items-start bg-white border border-gray-200 p-2 rounded relative group">
+                <div className="col-span-6 space-y-1">
+                  <SearchSuggestSelect
+                    value={services.find((svc) => svc.name === service.name)?.id || ''}
+                    onChange={(value) => {
+                      const selectedService = services.find(s => s.id === value)
+                      setFormData((prev: any) => {
+                        const updatedServices = (prev.option2Services || []).map((row: any) => {
+                          if (row.id !== service.id) return row
+
+                          if (!selectedService) {
+                            return { ...row, name: '', description: '' }
+                          }
+
+                          const nextUnitPrice = Number(selectedService.price) || 0
+                          const nextQuantity = Number(row.quantity) || 0
+                          return {
+                            ...row,
+                            name: selectedService.name,
+                            unitPrice: nextUnitPrice,
+                            description: selectedService.description || '',
+                            total: nextQuantity * nextUnitPrice
+                          }
+                        })
+
+                        return { ...prev, option2Services: updatedServices }
+                      })
+                    }}
+                    options={serviceOptions}
+                    placeholder="Search service for option 2..."
+                    inputClassName="w-full text-xs font-bold border-none p-1 focus:ring-0 bg-gray-50 rounded"
+                  />
+                  <RichTextEditor
+                    value={service.description || ''}
+                    onChange={(nextValue) => handleUpdateOption2Service(service.id, 'description', nextValue)}
+                    placeholder="Option 2 description (rich text): bold, color, bullets, numbering..."
+                    minHeightClassName="min-h-[140px]"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <input
+                    type="number"
+                    placeholder="Qty"
+                    className="w-full text-xs font-bold text-center border-none p-2 bg-gray-50 rounded focus:ring-0"
+                    value={service.quantity}
+                    onChange={(e) => handleUpdateOption2Service(service.id, 'quantity', Number(e.target.value) || 0)}
+                    min="1"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <input
+                    type="number"
+                    placeholder="Price"
+                    className="w-full text-xs font-bold text-right border-none p-2 bg-gray-50 rounded focus:ring-0"
+                    value={service.unitPrice}
+                    onChange={(e) => handleUpdateOption2Service(service.id, 'unitPrice', Number(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <div className="p-2 text-right text-xs font-black text-black">
+                    {((service.total || 0).toLocaleString())}
+                  </div>
+                </div>
+                <div className="col-span-1 flex justify-center pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOption2Service(service.id)}
+                    className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {(formData.option2Services || []).length === 0 && (
+              <div className="text-center py-6 border-2 border-dashed border-gray-100 rounded text-gray-400 text-xs italic">
+                No Option 2 services added. Add comparative services for alternative offer.
               </div>
             )}
           </div>
@@ -1352,6 +1559,27 @@ I/We [Client Name] confirm the booking of [Service Name] with Homework Cleaning 
 
         {/* Notes & Terms */}
         <div className="bg-white border border-gray-300 rounded p-4 space-y-4 shadow-none">
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Note for PDF</label>
+            <label className="inline-flex items-center gap-2 text-xs text-gray-700">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.showQuoteNoteInPdf)}
+                onChange={(e) => setFormData({ ...formData, showQuoteNoteInPdf: e.target.checked })}
+              />
+              Show note above Confirmation Letter in PDF
+            </label>
+            {formData.showQuoteNoteInPdf && (
+              <textarea
+                rows={3}
+                placeholder="Enter note for PDF..."
+                className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:border-black resize-none"
+                value={formData.quoteNote || ''}
+                onChange={(e) => setFormData({ ...formData, quoteNote: e.target.value })}
+              />
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase font-bold text-gray-500 ml-1">Payment terms</label>

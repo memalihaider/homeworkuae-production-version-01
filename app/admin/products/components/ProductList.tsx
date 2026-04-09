@@ -33,6 +33,18 @@ export default function ProductList({ categories, onEdit }: ProductListProps) {
   const [activeTab, setActiveTab] = useState<'ALL' | 'PRODUCT' | 'SERVICE'>('ALL')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
 
+  const stripHtml = (value: string) => {
+    if (!value) return ''
+    return value
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim()
+  }
+
   // Fetch products from Firebase
   useEffect(() => {
     const productsRef = collection(db, 'products')
@@ -225,7 +237,7 @@ export default function ProductList({ categories, onEdit }: ProductListProps) {
                     <div>
                       <p className="text-sm font-black text-black group-hover:underline underline-offset-4 cursor-pointer">{item.name}</p>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{item.sku}</p>
-                      <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{item.description}</p>
+                      <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{stripHtml(item.description)}</p>
                     </div>
                   </div>
                 </td>

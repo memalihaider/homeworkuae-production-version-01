@@ -29,7 +29,6 @@ const LEGACY_INSURANCE_FIELDS = [
 ] as const
 
 const QUOTATION_STATUS_OPTIONS = [
-  'Sent',
   'Approved',
   'Rejected',
   'Won',
@@ -66,8 +65,8 @@ const toDateValue = (value: string | Date | FirestoreTimestampLike | undefined):
 }
 
 const normalizeQuotationStatus = (status: unknown): string => {
-  if (!status || typeof status !== 'string') return 'Sent'
-  if (status.toLowerCase() === 'draft') return 'Sent'
+  if (!status || typeof status !== 'string') return 'Approved'
+  if (status.toLowerCase() === 'draft') return 'Approved'
   return status
 }
 
@@ -91,6 +90,7 @@ interface FirebaseQuotation {
   discountType: string;
   template: string;
   status: string;
+  selectedCategory?: string;
   subtotal: number;
   taxAmount: number;
   total: number;
@@ -118,6 +118,9 @@ interface FirebaseQuotation {
   createdBy: string;
   createdById?: string; // Optional field for employee ID
   createdByPhone?: string;
+  assignedTo?: string;
+  assignedToId?: string;
+  showAssignedToInPdf?: boolean;
 }
 
 interface Props {
@@ -187,6 +190,9 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
         status: normalizeQuotationStatus(data.status),
         createdBy: data.createdBy || '',
         createdById: data.createdById || '',
+        assignedTo: data.assignedTo || '',
+        assignedToId: data.assignedToId || '',
+        showAssignedToInPdf: Boolean(data.showAssignedToInPdf),
       }
     }) as FirebaseQuotation[]
   }
@@ -540,7 +546,9 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
       q.quoteNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       q.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       q.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      q.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.createdBy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.assignedTo?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'All' || q.status === statusFilter
     
@@ -667,17 +675,19 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
               <tr className="border-b border-gray-200 bg-gray-50/80">
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500">Quote Info</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500">Client / Company</th>
+                <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 text-center">Category</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500">Amount</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 text-center">Date</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 text-center">Status</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 text-center">Created By</th>
+                <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 text-center">Assigned To</th>
                 <th className="px-4 py-3 text-[10px] uppercase font-bold text-gray-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center">
+                  <td colSpan={9} className="px-4 py-8 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <FileText className="w-8 h-8 text-gray-300" />
                       <p className="text-sm text-gray-500">No quotations found</p>
@@ -705,6 +715,11 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                       </p>
                       <p className="text-[10px] text-gray-400 font-medium truncate">{q.email}</p>
                     </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                        {q.selectedCategory?.trim() || 'N/A'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <p className="font-bold text-[13px] text-black mb-0.5">
                         {q.total?.toLocaleString()}
@@ -719,10 +734,10 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
                         {getStatusIcon(q.status)}
-                        {q.status || 'Sent'}
+                        {q.status || 'Approved'}
                       </span>
                       <select
-                        value={q.status || 'Sent'}
+                        value={q.status || 'Approved'}
                         onChange={(e) => handleStatusChange(q, e.target.value)}
                         disabled={updatingStatusId === q.id}
                         className="mt-2 w-full px-2 py-1 border border-gray-200 rounded text-[10px] font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
@@ -737,6 +752,11 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <span className="text-xs font-medium text-gray-700">
                         {q.createdBy || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <span className="text-xs font-medium text-gray-700">
+                        {q.assignedTo || 'N/A'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -832,7 +852,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                 </div>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
                   {getStatusIcon(q.status)}
-                  {q.status || 'Sent'}
+                  {q.status || 'Approved'}
                 </span>
               </div>
 
@@ -841,14 +861,18 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                 <p className="text-right font-bold text-black">{q.total?.toLocaleString()}</p>
                 <p className="text-gray-500">Date</p>
                 <p className="text-right font-bold text-gray-700">{formatDate(q.date)}</p>
+                <p className="text-gray-500">Category</p>
+                <p className="text-right font-bold text-gray-700">{q.selectedCategory?.trim() || 'N/A'}</p>
                 <p className="text-gray-500">Created By</p>
                 <p className="text-right font-bold text-gray-700">{q.createdBy || 'N/A'}</p>
+                <p className="text-gray-500">Assigned To</p>
+                <p className="text-right font-bold text-gray-700">{q.assignedTo || 'N/A'}</p>
               </div>
 
               <div className="space-y-1">
                 <p className="text-[10px] uppercase font-bold text-gray-500">Change Status</p>
                 <select
-                  value={q.status || 'Sent'}
+                  value={q.status || 'Approved'}
                   onChange={(e) => handleStatusChange(q, e.target.value)}
                   disabled={updatingStatusId === q.id}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"

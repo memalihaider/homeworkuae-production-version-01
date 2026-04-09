@@ -79,7 +79,7 @@ interface Lead {
   id: string;
   name: string;
   company: string;
-  status: 'Contacter' | 'Negotiation' | 'Contacted' | 'Qualified' | 'Won' | 'New' | 'Lost';
+  status: 'Negotiation' | 'Qualified' | 'Won' | 'New' | 'Lost';
   value: number;
   daysInStage: number;
   priority: 'High' | 'Medium' | 'Low';
@@ -184,7 +184,20 @@ interface AIPersona {
   lastContact: string;
 }
 
-const LEAD_SOURCE_OPTIONS = ['Meta Ads', 'Google Ads', 'E - Movers', 'Email', 'Others'] as const
+const LEAD_SOURCE_OPTIONS = ['Meta Ads', 'Google Ads', 'E - Movers', 'Email', 'In-House', 'Others'] as const
+const VALID_LEAD_STATUSES = ['New', 'Qualified', 'Negotiation', 'Won', 'Lost'] as const
+
+const normalizeLeadStatus = (status?: string): Lead['status'] => {
+  if (status === 'Contacter' || status === 'Contacted') {
+    return 'Qualified'
+  }
+
+  if (status && VALID_LEAD_STATUSES.includes(status as (typeof VALID_LEAD_STATUSES)[number])) {
+    return status as Lead['status']
+  }
+
+  return 'New'
+}
 
 const sanitizeLeadSources = (sources: string[]): string[] => {
   const validSources = sources.filter((source): source is (typeof LEAD_SOURCE_OPTIONS)[number] =>
@@ -262,7 +275,7 @@ export default function UnifiedCRMDashboard() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
 
-  const stages = ['New', 'Contacter', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'Lost'] as const
+  const stages = ['New', 'Qualified', 'Negotiation', 'Won', 'Lost'] as const
 
   // Firebase se data fetch
   useEffect(() => {
@@ -284,7 +297,7 @@ export default function UnifiedCRMDashboard() {
           id: doc.id,
           name: data.name || '',
           company: data.company || '',
-          status: (data.status || 'New') as Lead['status'],
+          status: normalizeLeadStatus(data.status),
           value: data.value || 0,
           daysInStage: data.daysInStage || 0,
           priority: (data.priority || 'Medium') as Lead['priority'],
@@ -449,10 +462,12 @@ export default function UnifiedCRMDashboard() {
 
   const handleMoveStage = useCallback(async (lead: Lead, newStage: string) => {
     try {
+      const normalizedStatus = normalizeLeadStatus(newStage)
+
       // Firebase mein update
       const leadRef = doc(db, 'leads', lead.id)
       await updateDoc(leadRef, {
-        status: newStage,
+        status: normalizedStatus,
         daysInStage: 0,
         updatedAt: serverTimestamp()
       })
@@ -461,7 +476,7 @@ export default function UnifiedCRMDashboard() {
       setLeads(leads.map(l => 
         l.id === lead.id ? { 
           ...l, 
-          status: newStage as Lead['status'], 
+          status: normalizedStatus,
           daysInStage: 0 
         } : l
       ))
@@ -499,7 +514,7 @@ export default function UnifiedCRMDashboard() {
     const newLeadData = {
       name: formData.name,
       company: formData.company,
-      status: formData.status,
+      status: normalizeLeadStatus(formData.status),
       value: parseInt(formData.value) || 0,
       daysInStage: 0,
       priority: formData.priority,
@@ -577,7 +592,7 @@ export default function UnifiedCRMDashboard() {
       id: docRef.id,
       name: newLeadData.name,
       company: newLeadData.company,
-      status: formData.status,
+      status: newLeadData.status,
       value: newLeadData.value,
       daysInStage: newLeadData.daysInStage,
       priority: formData.priority,
@@ -788,12 +803,14 @@ export default function UnifiedCRMDashboard() {
     }
 
     try {
+      const normalizedStatus = normalizeLeadStatus(editFormData.status)
+
       const leadRef = doc(db, 'leads', editFormData.id)
       await updateDoc(leadRef, {
         name: editFormData.name,
         company: editFormData.company,
         value: parseInt(editFormData.value),
-        status: editFormData.status,
+        status: normalizedStatus,
         priority: editFormData.priority,
         email: editFormData.email,
         phone: editFormData.phone,
@@ -810,7 +827,7 @@ export default function UnifiedCRMDashboard() {
               name: editFormData.name,
               company: editFormData.company,
               value: parseInt(editFormData.value),
-              status: editFormData.status,
+              status: normalizedStatus,
               priority: editFormData.priority,
               email: editFormData.email,
               phone: editFormData.phone,
@@ -836,7 +853,6 @@ export default function UnifiedCRMDashboard() {
 
   // Calculate counts for each status
   const newLeadsCount = filteredLeads.filter(l => l.status === 'New').length
-  const contactedLeadsCount = filteredLeads.filter(l => l.status === 'Contacted').length
   const qualifiedLeadsCount = filteredLeads.filter(l => l.status === 'Qualified').length
   const negotiationLeadsCount = filteredLeads.filter(l => l.status === 'Negotiation').length
   const wonLeadsCount = filteredLeads.filter(l => l.status === 'Won').length
@@ -1111,7 +1127,7 @@ export default function UnifiedCRMDashboard() {
       </div>
 
       {/* Stats Grid - Updated with all status counts */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {/* New Leads Card */}
         <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 transition-all">
           <div className="flex items-center justify-between gap-2">
@@ -1121,19 +1137,6 @@ export default function UnifiedCRMDashboard() {
             </div>
             <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
               <UserPlus className="h-4 w-4" />
-            </div>
-          </div>
-        </div>
-
-        {/* Contacted Leads Card */}
-        <div className="bg-white p-3 rounded-lg border border-gray-200 hover:border-indigo-300 transition-all">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contacted</p>
-              <p className="text-lg font-black mt-0.5 text-indigo-700">{contactedLeadsCount}</p>
-            </div>
-            <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700">
-              <PhoneCall className="h-4 w-4" />
             </div>
           </div>
         </div>
@@ -1574,7 +1577,6 @@ export default function UnifiedCRMDashboard() {
                       lead.status === 'Negotiation' ? 'bg-blue-100 text-blue-700 border-blue-300' :
                       lead.status === 'New' ? 'bg-gray-100 text-gray-700 border-gray-300' :
                       lead.status === 'Qualified' ? 'bg-purple-100 text-purple-700 border-purple-300' :
-                      lead.status === 'Contacted' ? 'bg-amber-100 text-amber-700 border-amber-300' :
                       'bg-yellow-100 text-yellow-700 border-yellow-300'
                     }`}>
                       {lead.status}
@@ -2112,8 +2114,6 @@ export default function UnifiedCRMDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 font-bold"
                 >
                   <option value="New">New</option>
-                  <option value="Contacter">Contacter</option>
-                  <option value="Contacted">Contacted</option>
                   <option value="Qualified">Qualified</option>
                   <option value="Negotiation">Negotiation</option>
                   <option value="Won">Won</option>
@@ -2302,8 +2302,6 @@ export default function UnifiedCRMDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 font-bold"
                 >
                   <option value="New">New</option>
-                  <option value="Contacter">Contacter</option>
-                  <option value="Contacted">Contacted</option>
                   <option value="Qualified">Qualified</option>
                   <option value="Negotiation">Negotiation</option>
                   <option value="Won">Won</option>

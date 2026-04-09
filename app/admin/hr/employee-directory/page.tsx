@@ -6,6 +6,9 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import { db } from '@/lib/firebase'
 
 export default function EmployeeDirectory() {
+  const DOCUMENT_REMINDER_DAYS = [30, 15, 7, 1] as const
+  const HR_DOC_NOTIFICATION_PREFIX = 'hr-doc-expiry-'
+
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -95,6 +98,153 @@ export default function EmployeeDirectory() {
   const [documents, setDocuments] = useState<Array<{ id: string; name: string; fileName: string; uploadDate: string; validDate?: string }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const getDateStart = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  }
+
+  const getDaysUntilDate = (dateString: string) => {
+    const today = new Date()
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const targetStart = getDateStart(dateString)
+    return Math.floor((targetStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const formatDateLabel = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  const getDueReminderStage = (daysUntilExpiry: number): `${number}d` | 'expired' | null => {
+    if (daysUntilExpiry < 0) return 'expired'
+    if (DOCUMENT_REMINDER_DAYS.includes(daysUntilExpiry as (typeof DOCUMENT_REMINDER_DAYS)[number])) {
+      return `${daysUntilExpiry}d`
+    }
+    return null
+  }
+
+  const upsertLocalNotifications = (updater: (current: any[]) => any[]) => {
+    if (typeof window === 'undefined') return
+
+    const currentNotifications = JSON.parse(localStorage.getItem('notifications') || '[]') as any[]
+    const nextNotifications = updater(currentNotifications).slice(0, 20)
+
+    localStorage.setItem('notifications', JSON.stringify(nextNotifications))
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'notifications',
+      newValue: JSON.stringify(nextNotifications)
+    }))
+  }
+
+  const pushDocumentExpiryReminder = ({
+    employeeId,
+    employeeName,
+    docId,
+    docName,
+    validDate,
+    stage,
+    daysUntilExpiry
+  }: {
+    employeeId: string
+    employeeName: string
+    docId: string
+    docName: string
+    validDate: string
+    stage: `${number}d` | 'expired'
+    daysUntilExpiry: number
+  }) => {
+    const notificationId = `${HR_DOC_NOTIFICATION_PREFIX}${employeeId}-${docId}-${validDate}-${stage}`
+    const title = stage === 'expired' ? 'Document Expired' : 'Document Expiry Reminder'
+    const message = stage === 'expired'
+      ? `${docName} for ${employeeName} expired on ${formatDateLabel(validDate)}. Please renew it.`
+      : `${docName} for ${employeeName} will expire in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'} on ${formatDateLabel(validDate)}.`
+
+    upsertLocalNotifications((existing) => {
+      if (existing.some((n) => n.id === notificationId)) {
+        return existing
+      }
+
+      const newNotification = {
+        id: notificationId,
+        type: stage === 'expired' ? 'alert' : 'reminder',
+        title,
+        message,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        read: false,
+        link: '/admin/hr/employee-directory'
+      }
+
+      return [newNotification, ...existing]
+    })
+  }
+
+  const cleanupStaleDocumentReminders = ({
+    employeeId,
+    docId,
+    validDate
+  }: {
+    employeeId: string
+    docId: string
+    validDate: string
+  }) => {
+    const docPrefix = `${HR_DOC_NOTIFICATION_PREFIX}${employeeId}-${docId}-`
+    const keepToken = `-${validDate}-`
+
+    upsertLocalNotifications((existing) => existing.filter((n) => {
+      if (typeof n?.id !== 'string') return true
+      if (!n.id.startsWith(docPrefix)) return true
+      return n.id.includes(keepToken)
+    }))
+  }
+
+  const removeAllDocumentReminders = ({
+    employeeId,
+    docId
+  }: {
+    employeeId: string
+    docId: string
+  }) => {
+    const docPrefix = `${HR_DOC_NOTIFICATION_PREFIX}${employeeId}-${docId}-`
+    upsertLocalNotifications((existing) => existing.filter((n) => {
+      if (typeof n?.id !== 'string') return true
+      return !n.id.startsWith(docPrefix)
+    }))
+  }
+
+  const pushExpiryUpdatedNotification = ({
+    employeeName,
+    docName,
+    newValidDate
+  }: {
+    employeeName: string
+    docName: string
+    newValidDate: string
+  }) => {
+    const updateNotificationId = `${HR_DOC_NOTIFICATION_PREFIX}updated-${employeeName}-${docName}-${newValidDate}`
+
+    upsertLocalNotifications((existing) => {
+      if (existing.some((n) => n.id === updateNotificationId)) {
+        return existing
+      }
+
+      const updatedNotification = {
+        id: updateNotificationId,
+        type: 'info',
+        title: 'Document Expiry Updated',
+        message: `${docName} for ${employeeName} has a new expiry date: ${formatDateLabel(newValidDate)}.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        read: false,
+        link: '/admin/hr/employee-directory'
+      }
+
+      return [updatedNotification, ...existing]
+    })
+  }
+
   const availableRoles = [
     'Admin',
     'Manager',
@@ -171,6 +321,54 @@ export default function EmployeeDirectory() {
     fetchDepartments()
     fetchSupervisors()
   }, [])
+
+  useEffect(() => {
+    const syncExpiryReminders = () => {
+      employees.forEach((employee) => {
+        const employeeId = employee.id
+        const employeeName = employee.name || 'Employee'
+        const employeeDocs = Array.isArray(employee.documents) ? employee.documents : []
+
+        employeeDocs.forEach((docEntry: { id?: string; name?: string; validDate?: string }, index: number) => {
+          if (!employeeId) return
+
+          const fallbackDocId = `${docEntry.name || 'document'}-${index}`
+          const docId = docEntry.id || fallbackDocId
+
+          if (!docEntry?.validDate) {
+            removeAllDocumentReminders({ employeeId, docId })
+            return
+          }
+
+          const daysUntilExpiry = getDaysUntilDate(docEntry.validDate)
+          const reminderStage = getDueReminderStage(daysUntilExpiry)
+
+          cleanupStaleDocumentReminders({
+            employeeId,
+            docId,
+            validDate: docEntry.validDate
+          })
+
+          if (!reminderStage) return
+
+          pushDocumentExpiryReminder({
+            employeeId,
+            employeeName,
+            docId,
+            docName: docEntry.name || 'Document',
+            validDate: docEntry.validDate,
+            stage: reminderStage,
+            daysUntilExpiry
+          })
+        })
+      })
+    }
+
+    syncExpiryReminders()
+    const intervalId = setInterval(syncExpiryReminders, 60 * 60 * 1000)
+
+    return () => clearInterval(intervalId)
+  }, [employees])
 
   // Filter employees
   const filteredEmployees = useMemo(() => {
@@ -377,6 +575,14 @@ export default function EmployeeDirectory() {
     }
 
     try {
+      const previousDocumentsById = new Map<string, string | undefined>()
+      if (isEditing && selectedEmployee?.documents) {
+        selectedEmployee.documents.forEach((doc: { id?: string; validDate?: string; name?: string }, index: number) => {
+          const fallbackDocId = `${doc.name || 'document'}-${index}`
+          previousDocumentsById.set(doc.id || fallbackDocId, doc.validDate)
+        })
+      }
+
       const sanitizedDocuments = documents.map((document) => {
         const sanitizedDocument: {
           id: string
@@ -407,6 +613,9 @@ export default function EmployeeDirectory() {
         lastUpdated: new Date().toISOString()
       }
 
+      let savedEmployeeId = selectedEmployee?.id || ''
+      const savedEmployeeName = formData.name
+
       if (isEditing && selectedEmployee) {
         if (!selectedEmployee.id) {
           throw new Error('Missing employee id for update')
@@ -418,11 +627,71 @@ export default function EmployeeDirectory() {
         await updateDoc(employeeDoc, employeeUpdatePayload)
         alert('Employee updated successfully')
       } else {
-        await addDoc(collection(db, 'employees'), {
+        const employeeRef = await addDoc(collection(db, 'employees'), {
           ...employeeData,
           createdAt: new Date().toISOString()
         })
+        savedEmployeeId = employeeRef.id
         alert('Employee added successfully')
+      }
+
+      if (savedEmployeeId) {
+        const currentDocIds = new Set<string>()
+
+        sanitizedDocuments.forEach((docEntry, index) => {
+          const fallbackDocId = `${docEntry.name || 'document'}-${index}`
+          const docId = docEntry.id || fallbackDocId
+          currentDocIds.add(docId)
+
+          if (!docEntry.validDate) {
+            removeAllDocumentReminders({
+              employeeId: savedEmployeeId,
+              docId
+            })
+            return
+          }
+
+          const previousValidDate = previousDocumentsById.get(docId)
+
+          cleanupStaleDocumentReminders({
+            employeeId: savedEmployeeId,
+            docId,
+            validDate: docEntry.validDate
+          })
+
+          const daysUntilExpiry = getDaysUntilDate(docEntry.validDate)
+          const reminderStage = getDueReminderStage(daysUntilExpiry)
+          if (reminderStage) {
+            pushDocumentExpiryReminder({
+              employeeId: savedEmployeeId,
+              employeeName: savedEmployeeName,
+              docId,
+              docName: docEntry.name,
+              validDate: docEntry.validDate,
+              stage: reminderStage,
+              daysUntilExpiry
+            })
+          }
+
+          if (isEditing && previousValidDate && previousValidDate !== docEntry.validDate) {
+            pushExpiryUpdatedNotification({
+              employeeName: savedEmployeeName,
+              docName: docEntry.name,
+              newValidDate: docEntry.validDate
+            })
+          }
+        })
+
+        if (isEditing) {
+          previousDocumentsById.forEach((_validDate, oldDocId) => {
+            if (!currentDocIds.has(oldDocId)) {
+              removeAllDocumentReminders({
+                employeeId: savedEmployeeId,
+                docId: oldDocId
+              })
+            }
+          })
+        }
       }
 
       await fetchEmployees()
@@ -1587,10 +1856,10 @@ export default function EmployeeDirectory() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-bold text-gray-700 mb-2 block">Emirates ID Number</label>
+                    <label className="text-sm font-bold text-gray-700 mb-2 block">Employee ID</label>
                     <input
                       type="text"
-                      placeholder="UAE ID Number"
+                      placeholder="Employee ID"
                       value={formData.emiratesIdNumber}
                       onChange={(e) => setFormData({ ...formData, emiratesIdNumber: e.target.value })}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"

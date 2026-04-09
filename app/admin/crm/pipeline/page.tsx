@@ -30,7 +30,7 @@ import {
 export default function PipelineView() {
   const [leads, setLeads] = useState([
     { id: 1, name: 'Ahmed Al-Mansouri', company: 'Dubai Properties LLC', status: 'Qualified', value: 75000, daysInStage: 3, priority: 'High' },
-    { id: 2, name: 'Fatima Al-Noor', company: 'Al Noor Logistics', status: 'Contacted', value: 45000, daysInStage: 5, priority: 'Medium' },
+    { id: 2, name: 'Fatima Al-Noor', company: 'Al Noor Logistics', status: 'Qualified', value: 45000, daysInStage: 5, priority: 'Medium' },
     { id: 3, name: 'Layla Hassan', company: 'Paradise Hotels', status: 'Proposal', value: 120000, daysInStage: 2, priority: 'High' },
     { id: 4, name: 'Hassan Khan', company: 'Khan Consulting', status: 'New', value: 50000, daysInStage: 1, priority: 'Medium' },
     { id: 5, name: 'Sara Ali', company: 'Ali Trading', status: 'Negotiation', value: 95000, daysInStage: 8, priority: 'High' },
@@ -44,7 +44,7 @@ export default function PipelineView() {
   const [showNewForm, setShowNewForm] = useState(false)
   const [formData, setFormData] = useState({ name: '', company: '', value: '', priority: 'Medium' })
 
-  const stages = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
+  const stages = ['New', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
   
   const leadsByStage = useMemo(() => {
     return stages.map(stage => ({
