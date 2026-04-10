@@ -4,6 +4,16 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Search, Download, Eye, RefreshCw, CheckCircle, Clock, Archive, AlertCircle } from 'lucide-react'
 import { getQuotations, Quotation } from '@/lib/quotations-data'
 
+const isRejectedStatus = (status: string | undefined) => {
+  const normalized = status?.trim().toLowerCase() || ''
+  return normalized === 'rejected' || normalized.startsWith('reject due to')
+}
+
+const getDisplayStatus = (status: string | undefined) => {
+  if (isRejectedStatus(status)) return 'Rejected'
+  return status || 'Pending'
+}
+
 export default function QuotationHistory() {
   const [quotationHistory, setQuotationHistory] = useState<Quotation[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -15,6 +25,7 @@ export default function QuotationHistory() {
   useEffect(() => {
     const loadedQuotations = getQuotations()
     setQuotationHistory(loadedQuotations)
+    setSelectedQuotation((current) => current || loadedQuotations[0] || null)
   }, [])
 
   const filteredHistory = useMemo(() => {
@@ -23,7 +34,9 @@ export default function QuotationHistory() {
                            history.selectedServices[0]?.name.toLowerCase().includes(searchTerm.toLowerCase())
 
       if (statusFilter === 'all') return matchesSearch
-      return matchesSearch && history.status === statusFilter
+
+      const displayStatus = getDisplayStatus(history.status)
+      return matchesSearch && displayStatus === statusFilter
     })
   }, [quotationHistory, searchTerm, statusFilter])
 
@@ -36,7 +49,7 @@ export default function QuotationHistory() {
   }, [])
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (getDisplayStatus(status)) {
       case 'Accepted':
         return 'bg-green-100 text-green-700'
       case 'Rejected':
@@ -51,7 +64,7 @@ export default function QuotationHistory() {
   }
 
   const getAcceptanceIcon = (status: string) => {
-    switch (status) {
+    switch (getDisplayStatus(status)) {
       case 'Accepted':
         return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'Rejected':
@@ -140,7 +153,7 @@ export default function QuotationHistory() {
               <div className="flex items-center gap-2 text-sm">
                 {getAcceptanceIcon(selectedQuotation.status)}
                 <span className={`font-bold px-3 py-1 rounded-full text-xs ${getStatusColor(selectedQuotation.status)}`}>
-                  {selectedQuotation.status}
+                  {getDisplayStatus(selectedQuotation.status)}
                 </span>
               </div>
             </div>
@@ -152,7 +165,7 @@ export default function QuotationHistory() {
               </div>
             )}
 
-            {selectedQuotation.status === 'Rejected' && (
+            {isRejectedStatus(selectedQuotation.status) && (
               <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded p-2">
                 <p className="text-xs text-red-700"><strong>Status:</strong> Quotation was rejected</p>
                 <p className="text-xs text-red-700"><strong>Date:</strong> {selectedQuotation.createdDate}</p>
@@ -174,7 +187,7 @@ export default function QuotationHistory() {
                     <div className="text-right">
                       <p className="text-sm font-bold text-pink-600">v{selectedQuotation.version}</p>
                       <span className={`text-xs font-bold px-2 py-0.5 rounded ${getStatusColor(selectedQuotation.status)}`}>
-                        {selectedQuotation.status}
+                        {getDisplayStatus(selectedQuotation.status)}
                       </span>
                     </div>
                   </div>
@@ -283,7 +296,7 @@ export default function QuotationHistory() {
         </div>
         <div className="bg-card border rounded-lg p-4 text-center">
           <p className="text-sm text-muted-foreground">Rejected</p>
-          <p className="text-2xl font-bold text-red-600">{quotationHistory.filter(q => q.status === 'Rejected').length}</p>
+          <p className="text-2xl font-bold text-red-600">{quotationHistory.filter(q => isRejectedStatus(q.status)).length}</p>
         </div>
         <div className="bg-card border rounded-lg p-4 text-center">
           <p className="text-sm text-muted-foreground">Pending</p>

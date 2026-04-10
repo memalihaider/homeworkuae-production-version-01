@@ -30,6 +30,7 @@ interface FirebaseQuotation {
   createdById?: string
   assignedTo?: string
   assignedToId?: string
+  outcomeRemarks?: string
   createdAt?: string | Date | FirestoreTimestampLike
   updatedAt?: string | Date | FirestoreTimestampLike
 }
@@ -64,6 +65,40 @@ const normalizeStatus = (status: unknown): string => {
   if (!status.trim()) return 'Sent'
   if (status.toLowerCase() === 'draft') return 'Sent'
   return status
+}
+
+const isRejectedStatus = (status: string | undefined): boolean => {
+  const normalizedStatus = status?.trim().toLowerCase() || ''
+  return normalizedStatus === 'rejected' || normalizedStatus.startsWith('reject due to')
+}
+
+const getDisplayStatus = (status: string | undefined): string => {
+  if (isRejectedStatus(status)) return 'Rejected'
+  return status?.trim() || 'Sent'
+}
+
+const getStatusOrRemarks = (quotation: FirebaseQuotation): string => {
+  if (isRejectedStatus(quotation.status) && quotation.outcomeRemarks?.trim()) {
+    return quotation.outcomeRemarks.trim()
+  }
+  return getDisplayStatus(quotation.status)
+}
+
+const getStatusBadgeClass = (status: string | undefined): string => {
+  const normalizedStatus = getDisplayStatus(status).toLowerCase()
+  switch (normalizedStatus) {
+    case 'rejected':
+      return 'bg-red-50 text-red-700 border border-red-100'
+    case 'approved':
+    case 'accepted':
+      return 'bg-green-50 text-green-700 border border-green-100'
+    case 'won':
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+    case 'lost':
+      return 'bg-orange-50 text-orange-700 border border-orange-100'
+    default:
+      return 'bg-blue-50 text-blue-700 border border-blue-100'
+  }
 }
 
 const toIsoDateInput = (value: Date) => {
@@ -124,6 +159,7 @@ export default function QuotationAdvancedReports() {
               createdById: (data.createdById as string) || '',
               assignedTo: (data.assignedTo as string) || '',
               assignedToId: (data.assignedToId as string) || '',
+              outcomeRemarks: (data.outcomeRemarks as string) || '',
               createdAt: data.createdAt as string | Date | FirestoreTimestampLike | undefined,
               updatedAt: data.updatedAt as string | Date | FirestoreTimestampLike | undefined,
             } as FirebaseQuotation
@@ -148,7 +184,7 @@ export default function QuotationAdvancedReports() {
   }, [])
 
   const statusOptions = useMemo(() => {
-    const unique = new Set(quotations.map((quotation) => quotation.status))
+    const unique = new Set(quotations.map((quotation) => getDisplayStatus(quotation.status)))
     return ['All', ...Array.from(unique)]
   }, [quotations])
 
@@ -165,7 +201,7 @@ export default function QuotationAdvancedReports() {
 
       if (from && createdAt && createdAt < from) return false
       if (to && createdAt && createdAt > to) return false
-      if (statusFilter !== 'All' && quotation.status !== statusFilter) return false
+      if (statusFilter !== 'All' && getDisplayStatus(quotation.status) !== statusFilter) return false
 
       return true
     })
@@ -251,6 +287,9 @@ export default function QuotationAdvancedReports() {
         Company: quotation.company,
         Category: quotation.selectedCategory || '',
         Status: quotation.status,
+        'Status (Grouped)': getDisplayStatus(quotation.status),
+        'Rejection Remarks': isRejectedStatus(quotation.status) ? (quotation.outcomeRemarks || '') : '',
+        'Display Status/Reason': getStatusOrRemarks(quotation),
         'Total (AED)': quotation.total || 0,
         Currency: quotation.currency || 'AED',
         Date: quotation.date || '',
@@ -430,6 +469,7 @@ export default function QuotationAdvancedReports() {
                   <th className="text-left px-4 py-3 font-bold">Client</th>
                   <th className="text-left px-4 py-3 font-bold">Category</th>
                   <th className="text-left px-4 py-3 font-bold">Status</th>
+                  <th className="text-left px-4 py-3 font-bold">Reason</th>
                   <th className="text-right px-4 py-3 font-bold">Value</th>
                   <th className="text-left px-4 py-3 font-bold">Date</th>
                 </tr>
@@ -443,9 +483,15 @@ export default function QuotationAdvancedReports() {
                     <td className="px-4 py-3 text-gray-700">{quotation.client}</td>
                     <td className="px-4 py-3 text-gray-700">{quotation.selectedCategory || 'N/A'}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                        {quotation.status}
+                      <span
+                        title={getDisplayStatus(quotation.status)}
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(quotation.status)}`}
+                      >
+                        {getDisplayStatus(quotation.status)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 max-w-64 truncate" title={isRejectedStatus(quotation.status) ? (quotation.outcomeRemarks || '') : ''}>
+                      {isRejectedStatus(quotation.status) ? (quotation.outcomeRemarks || '-') : '-'}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(quotation.total || 0)}</td>
                     <td className="px-4 py-3 text-gray-600">{quotation.date || '-'}</td>

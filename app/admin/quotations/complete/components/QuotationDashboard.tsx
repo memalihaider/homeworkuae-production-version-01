@@ -38,6 +38,11 @@ interface FirebaseQuotation {
   createdBy: string;
 }
 
+const isRejectedStatus = (status: string | undefined): boolean => {
+  const normalizedStatus = status?.trim().toLowerCase() || ''
+  return normalizedStatus === 'rejected' || normalizedStatus.startsWith('reject due to')
+}
+
 export default function QuotationDashboard() {
   const [quotations, setQuotations] = useState<FirebaseQuotation[]>([])
   const [totalValue, setTotalValue] = useState(0)
@@ -101,7 +106,7 @@ export default function QuotationDashboard() {
     const sent = data.filter(q => q.status === 'Sent').length
     const won = data.filter(q => q.status === 'Won').length
     const lost = data.filter(q => q.status === 'Lost').length
-    const rejected = data.filter(q => q.status === 'Rejected').length
+    const rejected = data.filter(q => isRejectedStatus(q.status)).length
     const totalValue = data.reduce((sum, q) => sum + (q.total || 0), 0)
     const conversionRate = total > 0 ? ((accepted + approved) / total) * 100 : 0
     const wonLossRatio = lost > 0 ? won / lost : won > 0 ? won : 0
@@ -152,6 +157,8 @@ export default function QuotationDashboard() {
         return { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' }
       case 'lost':
         return { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' }
+      case 'reject due to high price':
+      case 'reject due to other reason':
       case 'rejected':
         return { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' }
       default:
@@ -171,6 +178,8 @@ export default function QuotationDashboard() {
         return <CheckCircle className="w-3 h-3" />
       case 'lost':
         return <AlertTriangle className="w-3 h-3" />
+      case 'reject due to high price':
+      case 'reject due to other reason':
       case 'rejected':
         return <AlertTriangle className="w-3 h-3" />
       default:

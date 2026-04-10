@@ -28,6 +28,7 @@ import {
   Landmark,
   FileSpreadsheet,
   DownloadCloud,
+  Printer,
   Zap,
   Activity,
   AlertTriangle,
@@ -36,6 +37,7 @@ import {
   ChartPie,
   ChartBar,
   ChartLine,
+  Globe2,
   Receipt,
   HardHat,
   Building,
@@ -289,6 +291,8 @@ interface Job {
   overtimeRequired: boolean
   overtimeHours: number
   overtimeApproved: boolean
+  employeeFeedback?: GenericRecord[]
+  feedback?: GenericRecord
   createdAt: TimestampLike
   updatedAt: TimestampLike
 }
@@ -572,6 +576,9 @@ interface FinancialMetrics {
   collectAfterJobJobs: number
   onTimeJobs: number
   delayedJobs: number
+  totalJobReviews: number
+  reviewedJobs: number
+  avgJobReviewRating: number
   
   // Client metrics
   totalClients: number
@@ -626,7 +633,19 @@ interface FinancialMetrics {
 // ============= DATE RANGE TYPE =============
 
 type DateRangeType = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom' | 'all'
-type ActiveTab = 'overview' | 'revenue' | 'profit-loss' | 'quotations' | 'jobs' | 'clients' | 'employees' | 'services' | 'products'
+type ActiveTab =
+  | 'overview'
+  | 'revenue'
+  | 'profit-loss'
+  | 'quotations'
+  | 'jobs'
+  | 'clients'
+  | 'employees'
+  | 'services'
+  | 'products'
+  | 'bookings'
+  | 'surveys'
+  | 'categories'
 type SortByType = 'date' | 'value' | 'name'
 type ExportFormatType = 'pdf' | 'excel' | 'csv'
 
@@ -898,6 +917,8 @@ export default function FinanceReportPage() {
           overtimeRequired: docData.overtimeRequired || false,
           overtimeHours: docData.overtimeHours || 0,
           overtimeApproved: docData.overtimeApproved || false,
+          employeeFeedback: Array.isArray(docData.employeeFeedback) ? docData.employeeFeedback : [],
+          feedback: (docData.feedback || {}) as GenericRecord,
           createdAt: docData.createdAt,
           updatedAt: docData.updatedAt
         })
@@ -1489,6 +1510,25 @@ export default function FinanceReportPage() {
   }).length
   const onTimeJobs = filteredJobs.filter(j => j.timePerformanceStatus === 'On Time').length
   const delayedJobs = filteredJobs.filter(j => j.timePerformanceStatus === 'Delayed').length
+  const totalJobReviews = filteredJobs.reduce((sum, job) => {
+    const feedbackItems = Array.isArray(job.employeeFeedback) ? job.employeeFeedback.length : 0
+    return sum + feedbackItems
+  }, 0)
+  const reviewedJobs = filteredJobs.filter((job) => {
+    const hasEmployeeFeedback = Array.isArray(job.employeeFeedback) && job.employeeFeedback.length > 0
+    const npsValue = Number((job.feedback as { npsScore?: unknown })?.npsScore)
+    const hasNps = Number.isFinite(npsValue)
+    return hasEmployeeFeedback || hasNps
+  }).length
+  const reviewRatings = filteredJobs.flatMap((job) => {
+    if (!Array.isArray(job.employeeFeedback)) return []
+    return job.employeeFeedback
+      .map((entry) => Number((entry as { rating?: unknown }).rating))
+      .filter((rating) => Number.isFinite(rating) && rating > 0)
+  })
+  const avgJobReviewRating = reviewRatings.length > 0
+    ? reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length
+    : 0
 
   // ===== CLIENT METRICS =====
   const totalClients = filteredClients.length
@@ -1643,6 +1683,9 @@ export default function FinanceReportPage() {
     collectAfterJobJobs,
     onTimeJobs,
     delayedJobs,
+    totalJobReviews,
+    reviewedJobs,
+    avgJobReviewRating,
     
     // Clients
     totalClients,
@@ -2542,6 +2585,18 @@ export default function FinanceReportPage() {
                 ? `${format(parseISO(customStartDate), 'MMM d')} - ${format(parseISO(customEndDate), 'MMM d')}`
                 : 'All Time'
 
+  const reviewedJobsPercentage = metrics.totalJobs > 0
+    ? (metrics.reviewedJobs / metrics.totalJobs) * 100
+    : 0
+
+  const wonQuotationValuePercentage = quotationValueSummary.totalValue > 0
+    ? (quotationValueSummary.wonValue / quotationValueSummary.totalValue) * 100
+    : 0
+
+  const handlePrintOwnerSummary = () => {
+    window.print()
+  }
+
   // ============= MAIN RENDER =============
 
   return (
@@ -2732,6 +2787,9 @@ export default function FinanceReportPage() {
               { id: 'profit-loss', label: 'Profit & Loss', icon: Calculator },
               { id: 'quotations', label: 'Quotations', icon: FileText },
               { id: 'jobs', label: 'Deterox Report', icon: Briefcase },
+              { id: 'bookings', label: 'Bookings', icon: Calendar },
+              { id: 'surveys', label: 'Surveys', icon: FileSpreadsheet },
+              { id: 'categories', label: 'Categories', icon: Layers },
               { id: 'clients', label: 'Clients', icon: Users },
               { id: 'employees', label: 'Employees', icon: HardHat },
               { id: 'services', label: 'Services', icon: Zap },
@@ -2846,8 +2904,99 @@ export default function FinanceReportPage() {
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
+            <TableCard
+              title="Executive Summary"
+              icon={Landmark}
+              action={
+                <button
+                  type="button"
+                  onClick={handlePrintOwnerSummary}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print Universal Report
+                </button>
+              }
+            >
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="rounded-xl border-2 border-slate-200 p-4 bg-white">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Quotation Value</p>
+                    <p className="text-2xl font-black text-slate-900 mt-1">{formatCurrency(quotationValueSummary.totalValue)}</p>
+                    <p className="text-xs text-slate-500 mt-1">All quotations in selected range</p>
+                  </div>
+                  <div className="rounded-xl border-2 border-emerald-200 p-4 bg-emerald-50">
+                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Won Quotation Value</p>
+                    <p className="text-2xl font-black text-emerald-800 mt-1">{formatCurrency(quotationValueSummary.wonValue)}</p>
+                    <p className="text-xs text-emerald-700 mt-1">{formatPercentage(wonQuotationValuePercentage)} of total quotation value</p>
+                  </div>
+                  <div className="rounded-xl border-2 border-slate-200 p-4 bg-white">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Jobs</p>
+                    <p className="text-2xl font-black text-slate-900 mt-1">{formatNumber(metrics.totalJobs)}</p>
+                    <p className="text-xs text-slate-500 mt-1">Across selected date range</p>
+                  </div>
+                  <div className="rounded-xl border-2 border-blue-200 p-4 bg-blue-50">
+                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Reviewed Jobs</p>
+                    <p className="text-2xl font-black text-blue-800 mt-1">{formatNumber(metrics.reviewedJobs)}</p>
+                    <p className="text-xs text-blue-700 mt-1">{formatPercentage(reviewedJobsPercentage)} of total jobs reviewed</p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border-2 border-slate-200">
+                  <table className="w-full bg-white">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Owner Universal Summary</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Total</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Won / Completed</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Pending / Remaining</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Health</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">Quotations (Value)</td>
+                        <td className="py-3 px-4 text-right font-black">{formatCurrency(quotationValueSummary.totalValue)}</td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-700">{formatCurrency(quotationValueSummary.wonValue)}</td>
+                        <td className="py-3 px-4 text-right font-black text-amber-700">{formatCurrency(quotationValueSummary.pendingValue)}</td>
+                        <td className="py-3 px-4 text-right font-black">{formatPercentage(quotationValueSummary.valueConversionRate)} value conversion</td>
+                      </tr>
+                      <tr className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">Jobs</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalJobs)}</td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-700">{formatNumber(metrics.completedJobs)} completed</td>
+                        <td className="py-3 px-4 text-right font-black text-amber-700">{formatNumber(metrics.pendingJobs + metrics.inProgressJobs)} open</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.onTimeJobs)} on-time / {formatNumber(metrics.delayedJobs)} delayed</td>
+                      </tr>
+                      <tr className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">Job Reviews</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalJobReviews)} reviews</td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-700">{formatNumber(metrics.reviewedJobs)} jobs reviewed</td>
+                        <td className="py-3 px-4 text-right font-black text-amber-700">{formatNumber(Math.max(0, metrics.totalJobs - metrics.reviewedJobs))} jobs pending review</td>
+                        <td className="py-3 px-4 text-right font-black">{metrics.avgJobReviewRating.toFixed(1)}/5 avg rating</td>
+                      </tr>
+                      <tr className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">Revenue vs Profit</td>
+                        <td className="py-3 px-4 text-right font-black">{formatCurrency(metrics.totalRevenue)}</td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-700">{formatCurrency(metrics.netProfit)}</td>
+                        <td className="py-3 px-4 text-right font-black text-amber-700">{formatCurrency(Math.max(0, metrics.totalRevenue - metrics.netProfit))}</td>
+                        <td className="py-3 px-4 text-right font-black">{formatPercentage(metrics.profitMargin)} net margin</td>
+                      </tr>
+                      <tr className="hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">Bookings / Clients / Team</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalBookings)} bookings</td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-700">{formatNumber(metrics.completedBookings)} completed bookings</td>
+                        <td className="py-3 px-4 text-right font-black text-amber-700">{formatNumber(metrics.activeClients)} active clients</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.activeEmployees)} active employees</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TableCard>
+
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
               <MetricCard
                 title="Total Revenue"
                 value={formatCurrency(metrics.totalRevenue)}
@@ -2880,6 +3029,22 @@ export default function FinanceReportPage() {
                 subValue={`Payroll: ${formatCurrency(metrics.totalPayroll)}`}
                 color="orange"
                 tooltip="Total operating costs including payroll"
+              />
+              <MetricCard
+                title="Total Quotation Value"
+                value={formatCurrency(metrics.quotationValue)}
+                icon={Receipt}
+                subValue={`${formatNumber(metrics.totalQuotations)} quotations`}
+                color="emerald"
+                tooltip="Sum of all quotation values in selected date range"
+              />
+              <MetricCard
+                title="Total Reviews"
+                value={formatNumber(metrics.totalJobReviews)}
+                icon={Award}
+                subValue={`${formatNumber(metrics.reviewedJobs)} jobs reviewed | Avg ${metrics.avgJobReviewRating.toFixed(1)}/5`}
+                color="pink"
+                tooltip="Reviews collected from total jobs"
               />
             </div>
 
@@ -3160,6 +3325,65 @@ export default function FinanceReportPage() {
                 color="orange"
               />
             </div>
+
+            <TableCard title="Universal Report Snapshot" icon={Globe2}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-slate-200">
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Category</th>
+                      <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Total Count</th>
+                      <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Value / Amount</th>
+                      <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Health KPI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Quotations</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalQuotations)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatCurrency(metrics.quotationValue)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatPercentage(metrics.conversionRate)} approved</td>
+                    </tr>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Jobs</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalJobs)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatCurrency(metrics.jobRevenue)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.onTimeJobs)} on-time / {formatNumber(metrics.delayedJobs)} delayed</td>
+                    </tr>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Bookings</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalBookings)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatCurrency(metrics.bookingValue)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.completedBookings)} completed</td>
+                    </tr>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Clients</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalClients)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatCurrency(metrics.clientLTV)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatPercentage(metrics.repeatRate)} repeat rate</td>
+                    </tr>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Employees</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalEmployees)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatCurrency(metrics.totalPayroll)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.activeEmployees)} active</td>
+                    </tr>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Surveys</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalSurveys)}</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.surveyResponses)} responses</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.completedSurveys)} completed</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="py-3 px-4 font-black text-primary">Reviews</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.totalJobReviews)}</td>
+                      <td className="py-3 px-4 text-right font-black">{metrics.avgJobReviewRating.toFixed(1)}/5 avg rating</td>
+                      <td className="py-3 px-4 text-right font-black">{formatNumber(metrics.reviewedJobs)} jobs reviewed</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </TableCard>
 
             {/* Department Costs */}
             <TableCard title="Department Costs" icon={Building}>
@@ -3972,6 +4196,149 @@ export default function FinanceReportPage() {
         )}
 
         {/* CLIENTS TAB */}
+        {activeTab === 'bookings' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              <MetricCard title="Total Bookings" value={formatNumber(metrics.totalBookings)} icon={Calendar} color="blue" />
+              <MetricCard title="Pending" value={formatNumber(metrics.pendingBookings)} icon={Clock} color="amber" />
+              <MetricCard title="Confirmed" value={formatNumber(metrics.confirmedBookings)} icon={CheckCircle} color="green" />
+              <MetricCard title="Completed" value={formatNumber(metrics.completedBookings)} icon={CheckCircle} color="emerald" />
+              <MetricCard title="Cancelled" value={formatNumber(metrics.cancelledBookings)} icon={XCircle} color="red" />
+            </div>
+
+            <TableCard title="Bookings Report" icon={Calendar}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-slate-200">
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Booking ID</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Customer</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Service</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Area</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Date</th>
+                      <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookings.slice(0, 30).map((booking) => (
+                      <tr key={booking.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">{booking.bookingId}</td>
+                        <td className="py-3 px-4 font-medium">{booking.name}</td>
+                        <td className="py-3 px-4">{booking.service}</td>
+                        <td className="py-3 px-4">{booking.area}</td>
+                        <td className="py-3 px-4">{booking.date} {booking.time}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-block px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                            {booking.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {bookings.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-slate-500">No bookings found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TableCard>
+          </div>
+        )}
+
+        {activeTab === 'surveys' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MetricCard title="Total Surveys" value={formatNumber(metrics.totalSurveys)} icon={FileSpreadsheet} color="blue" />
+              <MetricCard title="Completed" value={formatNumber(metrics.completedSurveys)} icon={CheckCircle} color="green" />
+              <MetricCard title="Responses" value={formatNumber(metrics.surveyResponses)} icon={Activity} color="purple" />
+            </div>
+
+            <TableCard title="Survey Report" icon={FileSpreadsheet}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-slate-200">
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Title</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Category</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Client</th>
+                      <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Responses</th>
+                      <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {surveys.slice(0, 30).map((survey) => (
+                      <tr key={survey.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">{survey.title}</td>
+                        <td className="py-3 px-4">{survey.category}</td>
+                        <td className="py-3 px-4">{survey.selectedClient?.name || 'N/A'}</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(survey.responsesCount || 0)}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-block px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                            {survey.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {surveys.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-500">No surveys found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TableCard>
+          </div>
+        )}
+
+        {activeTab === 'categories' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MetricCard title="Total Categories" value={formatNumber(metrics.totalCategories)} icon={Layers} color="blue" />
+              <MetricCard title="Active Categories" value={formatNumber(metrics.activeCategories)} icon={CheckCircle} color="green" />
+              <MetricCard title="With Items" value={formatNumber(metrics.categoriesWithItems.length)} icon={Box} color="purple" />
+            </div>
+
+            <TableCard title="Category Report" icon={Layers}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-slate-200">
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Category</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Slug</th>
+                      <th className="text-right py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Items</th>
+                      <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.slice(0, 30).map((category) => (
+                      <tr key={category.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-4 font-black text-primary">{category.name}</td>
+                        <td className="py-3 px-4">{category.slug}</td>
+                        <td className="py-3 px-4 text-right font-black">{formatNumber(category.itemCount || 0)}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-block px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                            category.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {category.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {categories.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-slate-500">No categories found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TableCard>
+          </div>
+        )}
+
+        {/* CLIENTS TAB */}
         {activeTab === 'clients' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -4370,7 +4737,7 @@ export default function FinanceReportPage() {
                 <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Include Sections</label>
                   <div className="space-y-2">
-                    {['Overview', 'Revenue', 'Profit & Loss', 'Quotations', 'Deterox Report', 'Clients', 'Employees', 'Services', 'Products'].map(section => (
+                    {['Overview', 'Revenue', 'Profit & Loss', 'Quotations', 'Deterox Report', 'Bookings', 'Surveys', 'Categories', 'Clients', 'Employees', 'Services', 'Products'].map(section => (
                       <label key={section} className="flex items-center gap-2">
                         <input type="checkbox" defaultChecked className="rounded border-slate-300 text-primary focus:ring-primary" />
                         <span className="text-sm font-medium">{section}</span>

@@ -563,13 +563,14 @@ export default function HomePage() {
               viewport={{ once: true, margin: '-60px' }}
               variants={fadeUp}
               custom={1}
-              className="group relative p-10 bg-slate-900 rounded-2xl shadow-lg flex flex-col text-white"
+              className="group relative p-10 rounded-2xl shadow-lg flex flex-col text-white"
+              style={{ backgroundImage: trustBannerGradient }}
             >
               <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center text-white mb-5">
                 <Shield className="h-7 w-7" />
               </div>
               <h3 className="text-2xl font-black mb-3">Our Mission</h3>
-              <p className="text-slate-400 leading-relaxed">
+              <p className="text-white/85 leading-relaxed">
                 To provide reliable, flexible, and consistent solutions to our internal and external stakeholders in our hygiene business.
               </p>
             </motion.div>
@@ -672,19 +673,19 @@ export default function HomePage() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-slate-900 text-white overflow-hidden relative">
+      <section className="py-20 text-white overflow-hidden relative" style={{ backgroundImage: trustBannerGradient }}>
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-10">
               <div className="space-y-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 text-primary font-semibold text-[11px] uppercase tracking-wider border border-primary/20">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 text-white font-semibold text-[11px] uppercase tracking-wider border border-white/30">
                   <Award className="h-3 w-3" />
                   The Difference
                 </span>
                 <h3 className="text-3xl lg:text-5xl font-black tracking-tight leading-tight">
-                  Why Choose <span className="text-primary">HomeWork UAE</span>?
+                  Why Choose <span className="text-white">HomeWork UAE</span>?
                 </h3>
-                <p className="text-slate-400 text-base leading-relaxed">Elevating hygiene standards with certified excellence and innovation</p>
+                <p className="text-white/85 text-base leading-relaxed">Elevating hygiene standards with certified excellence and innovation</p>
               </div>
 
               <motion.div
@@ -712,12 +713,12 @@ export default function HomePage() {
                   }
                 ].map((item, i) => (
                   <motion.div key={i} variants={fadeUp} custom={i} className="flex gap-5 group">
-                    <div className="h-14 w-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                    <div className="h-14 w-14 rounded-xl bg-white/10 border border-white/25 flex items-center justify-center text-white shrink-0 group-hover:bg-white group-hover:text-primary transition-colors duration-300">
                       <item.icon className="h-6 w-6" />
                     </div>
                     <div>
                       <h4 className="text-lg font-bold mb-1.5">{item.title}</h4>
-                      <p className="text-slate-400 text-sm leading-relaxed max-w-md">{item.desc}</p>
+                      <p className="text-white/85 text-sm leading-relaxed max-w-md">{item.desc}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -731,13 +732,13 @@ export default function HomePage() {
               variants={fadeUp}
               className="relative"
             >
-              <div className="bg-slate-800/60 rounded-2xl p-10 border border-white/5">
+              <div className="bg-white/10 rounded-2xl p-10 border border-white/25 backdrop-blur-[2px]">
                 <h4 className="text-2xl font-black mb-8 tracking-tight">Direct Support</h4>
                 <div className="space-y-8">
                   <div className="flex items-center gap-5">
                     <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center font-bold text-lg">800</div>
                     <div>
-                      <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-0.5">Toll Free Support</div>
+                      <div className="text-[10px] font-medium text-white/70 uppercase tracking-wider mb-0.5">Toll Free Support</div>
                       <div className="text-2xl font-black tracking-tight">+971 50 717 7059</div>
                     </div>
                   </div>
@@ -750,8 +751,8 @@ export default function HomePage() {
                       "Flexible Payment Plans Available"
                     ].map((text, i) => (
                       <div key={i} className="flex items-center gap-3 group">
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-slate-300 text-sm font-medium">{text}</span>
+                        <CheckCircle2 className="h-4 w-4 text-white shrink-0" />
+                        <span className="text-white/90 text-sm font-medium">{text}</span>
                       </div>
                     ))}
                   </div>

@@ -100,15 +100,24 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
 
   const stripHtml = (value: string): string => {
     return value
+      .replace(/\r\n/g, '\n')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
       .replace(/<\/div>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<\/ul>/gi, '\n')
+      .replace(/<\/ol>/gi, '\n')
       .replace(/<li>/gi, '• ')
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
+      // Ensure each bullet starts on a fresh line for clean PDF wrapping.
+      .replace(/\s*•\s*/g, '\n• ')
+      .replace(/([^\n])\n•\s*/g, '$1\n• ')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n[ \t]+/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
   };
@@ -365,6 +374,12 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     ? allItems
     : [{ description: 'Cleaning service as per agreed scope', quantity: 1, amount: quotation.subtotal || quotation.total || 0 }];
 
+  const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+  const servicesSubtotal = roundMoney(tableItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
+  const taxRate = Number.isFinite(Number(quotation.taxRate)) ? Number(quotation.taxRate) : 0;
+  const vatAmount = roundMoney((servicesSubtotal * taxRate) / 100);
+  const totalIncludingTax = roundMoney(servicesSubtotal + vatAmount);
+
   const option2TableItems = (quotation.option2Services || []).map((service) => ({
     description: service.description ? `${service.name}\n${stripHtml(service.description)}` : service.name,
     quantity: service.quantity,
@@ -376,8 +391,9 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
     head: [[chargesHeader, '#', `Charges (${currencyCode})`]],
     body: [
       ...tableItems.map(item => [item.description, formatQuantity(item.quantity), formatCurrency(item.amount)]),
-      [`VAT ${quotation.taxRate}%`, '-', formatCurrency(quotation.taxAmount)],
-      ['TOTAL', '-', formatCurrency(quotation.total)],
+      ['SUBTOTAL (Services)', '-', formatCurrency(servicesSubtotal)],
+      [`VAT ${taxRate}%`, '-', formatCurrency(vatAmount)],
+      ['TOTAL (Including Tax)', '-', formatCurrency(totalIncludingTax)],
     ],
     theme: 'grid',
     margin: { top: pageTopContentY, bottom: pageBottomSafeY, left: margin, right: margin },
@@ -388,6 +404,8 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       lineColor: BORDER_GRAY,
       lineWidth: 0.2,
       textColor: TEXT_PRIMARY,
+      overflow: 'linebreak',
+      valign: 'top',
     },
     headStyles: {
       fillColor: SOFT_GRAY,
@@ -403,7 +421,10 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       2: { cellWidth: 40, halign: 'right' },
     },
     didParseCell: data => {
-      if (data.section === 'body' && data.row.index === tableItems.length + 1) {
+      if (
+        data.section === 'body' &&
+        (data.row.index === tableItems.length || data.row.index === tableItems.length + 2)
+      ) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.font = FONT_HEADING;
       }
@@ -442,6 +463,8 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
         lineColor: BORDER_GRAY,
         lineWidth: 0.2,
         textColor: TEXT_PRIMARY,
+        overflow: 'linebreak',
+        valign: 'top',
       },
       headStyles: {
         fillColor: SOFT_GRAY,
@@ -655,26 +678,26 @@ export const generateQuotationPDF = (quotation: QuotationData): { pdf: jsPDF, fi
       },
     });
 
-    yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 4;
-
     yPos = (tableDoc.lastAutoTable?.finalY ?? yPos) + 8;
 
-    const signBoxWidth = (contentWidth - 28) / 2;
+    const signatureGap = 8;
+    const signBoxWidth = (contentWidth - signatureGap) / 2;
     const signBoxHeight = 36;
     if (ensureSpace(signBoxHeight + 12)) {
       drawSectionBar('SIGNATURES');
     }
 
+    const leftBoxX = margin;
+    const rightBoxX = leftBoxX + signBoxWidth + signatureGap;
+
     doc.setDrawColor(...BORDER_GRAY);
     doc.setLineWidth(0.2);
-    doc.rect(margin + 14, yPos, signBoxWidth, signBoxHeight, 'S');
-    doc.rect(margin + 14 + signBoxWidth + 28, yPos, signBoxWidth, signBoxHeight, 'S');
+    doc.rect(leftBoxX, yPos, signBoxWidth, signBoxHeight, 'S');
+    doc.rect(rightBoxX, yPos, signBoxWidth, signBoxHeight, 'S');
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.1);
     doc.setTextColor(...TEXT_SUBTLE);
-    const leftBoxX = margin + 14;
-    const rightBoxX = margin + 14 + signBoxWidth + 28;
 
     doc.text('Customer Signature', leftBoxX + 2, yPos + signBoxHeight - 10);
     doc.line(leftBoxX + 36, yPos + signBoxHeight - 10.5, leftBoxX + signBoxWidth - 3, yPos + signBoxHeight - 10.5);

@@ -70,6 +70,11 @@ const normalizeQuotationStatus = (status: unknown): string => {
   return status
 }
 
+const isRejectedStatus = (status: string | undefined): boolean => {
+  const normalizedStatus = status?.trim().toLowerCase() || ''
+  return normalizedStatus === 'rejected' || normalizedStatus.startsWith('reject due to')
+}
+
 interface FirebaseQuotation {
   id: string;
   quoteNumber: string;
@@ -121,6 +126,7 @@ interface FirebaseQuotation {
   assignedTo?: string;
   assignedToId?: string;
   showAssignedToInPdf?: boolean;
+  outcomeRemarks?: string;
 }
 
 interface Props {
@@ -193,8 +199,16 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
         assignedTo: data.assignedTo || '',
         assignedToId: data.assignedToId || '',
         showAssignedToInPdf: Boolean(data.showAssignedToInPdf),
+        outcomeRemarks: typeof data.outcomeRemarks === 'string' ? data.outcomeRemarks : '',
       }
     }) as FirebaseQuotation[]
+  }
+
+  const getStatusDisplayText = (quotation: FirebaseQuotation) => {
+    if (isRejectedStatus(quotation.status) && quotation.outcomeRemarks?.trim()) {
+      return quotation.outcomeRemarks.trim()
+    }
+    return quotation.status || 'Approved'
   }
 
   const cleanupLegacyInsuranceFields = useCallback(async (snapshot: { docs: Array<{ id: string; data: () => QuotationDocPayload }> }) => {
@@ -478,12 +492,12 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
         return 'bg-orange-100 text-orange-700 border border-orange-200'
       case 'reject due to high price':
       case 'reject due to other reason':
+      case 'rejected':
+        return 'bg-red-100 text-red-700 border border-red-200'
       case 'approved':
         return 'bg-green-100 text-green-700 border border-green-200'
       case 'sent':
         return 'bg-blue-100 text-blue-700 border border-blue-200'
-      case 'rejected':
-        return 'bg-red-100 text-red-700 border border-red-200'
       case 'draft':
         return 'bg-gray-100 text-gray-700 border border-gray-200'
       case 'expired':
@@ -550,7 +564,10 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
       q.createdBy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       q.assignedTo?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesStatus = statusFilter === 'All' || q.status === statusFilter
+    const matchesStatus =
+      statusFilter === 'All' ||
+      q.status === statusFilter ||
+      (statusFilter === 'Rejected' && isRejectedStatus(q.status))
     
     return matchesSearch && matchesStatus
   })
@@ -560,7 +577,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
     total: quotations.length,
     sent: quotations.filter(q => q.status === 'Sent').length,
     approved: quotations.filter(q => q.status === 'Approved').length,
-    rejected: quotations.filter(q => q.status === 'Rejected').length,
+    rejected: quotations.filter(q => isRejectedStatus(q.status)).length,
     won: quotations.filter(q => q.status === 'Won').length,
   }
 
@@ -732,15 +749,18 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                       </p>
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
+                      <span
+                        title={getStatusDisplayText(q)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${isRejectedStatus(q.status) ? '' : 'uppercase'} ${getStatusBadgeStyle(q.status)}`}
+                      >
                         {getStatusIcon(q.status)}
-                        {q.status || 'Approved'}
+                        {getStatusDisplayText(q)}
                       </span>
                       <select
                         value={q.status || 'Approved'}
                         onChange={(e) => handleStatusChange(q, e.target.value)}
                         disabled={updatingStatusId === q.id}
-                        className="mt-2 w-full px-2 py-1 border border-gray-200 rounded text-[10px] font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                        className="mt-2 w-40 max-w-full px-2 py-1 border border-gray-200 rounded text-[10px] font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
                       >
                         {QUOTATION_STATUS_OPTIONS.map((statusOption) => (
                           <option key={statusOption} value={statusOption}>
@@ -850,9 +870,12 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                   <p className="text-[11px] text-gray-500 font-medium">{q.client}</p>
                   <p className="text-[10px] text-gray-400">{q.company}</p>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${getStatusBadgeStyle(q.status)}`}>
+                <span
+                  title={getStatusDisplayText(q)}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${isRejectedStatus(q.status) ? '' : 'uppercase'} ${getStatusBadgeStyle(q.status)}`}
+                >
                   {getStatusIcon(q.status)}
-                  {q.status || 'Approved'}
+                  {getStatusDisplayText(q)}
                 </span>
               </div>
 
@@ -875,7 +898,7 @@ export default function QuotationList({ onEdit, onView, refreshTrigger }: Props)
                   value={q.status || 'Approved'}
                   onChange={(e) => handleStatusChange(q, e.target.value)}
                   disabled={updatingStatusId === q.id}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                  className="w-48 max-w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold bg-white focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
                 >
                   {QUOTATION_STATUS_OPTIONS.map((statusOption) => (
                     <option key={statusOption} value={statusOption}>

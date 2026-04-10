@@ -153,6 +153,37 @@ export default function RootLayout({
     if (define(perf, name, methods[name])) continue;
     define(proto, name, methods[name]);
   }
+
+  var wrapSafe = function(target, name) {
+    if (!target) return;
+    try {
+      var original = target[name];
+      if (typeof original !== 'function') return;
+      if (original.__homeworkSafeWrapped) return;
+
+      var safe = function() {
+        try {
+          return original.apply(this, arguments);
+        } catch (err) {
+          var errName = err && err.name ? String(err.name) : '';
+          var errMessage = err && err.message ? String(err.message) : '';
+          if (errName === 'TypeError' || /measure|mark/i.test(errMessage)) {
+            return undefined;
+          }
+          throw err;
+        }
+      };
+
+      try { safe.__homeworkSafeWrapped = true; } catch (_) {}
+      Object.defineProperty(target, name, { value: safe, configurable: true, writable: true });
+    } catch (_) {}
+  };
+
+  var methodsToWrap = ['mark', 'measure', 'clearMarks', 'clearMeasures', 'getEntriesByName', 'getEntriesByType'];
+  for (var i = 0; i < methodsToWrap.length; i++) {
+    wrapSafe(perf, methodsToWrap[i]);
+    wrapSafe(proto, methodsToWrap[i]);
+  }
 })();`,
           }}
         />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { Suspense, useState, useCallback, useMemo, useEffect } from 'react'
 import {
   Plus,
   Search,
@@ -28,10 +28,80 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, where, getDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { useRouter } from 'next/navigation'
+import { db, storage } from '@/lib/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { useRouter, useSearchParams } from 'next/navigation'
 import * as XLSX from 'xlsx'
 import SearchSuggestSelect from '@/components/ui/search-suggest-select'
+
+type ExecutionPhotoStage = 'before' | 'inProgress' | 'after' | 'qualityCheck'
+
+interface ExecutionPhotoEvidence {
+  stage: ExecutionPhotoStage
+  title: string
+  description: string
+  url: string
+  fileName: string
+  uploadedAt: string
+}
+
+const EXECUTION_PHOTO_STAGES: ExecutionPhotoStage[] = ['before', 'inProgress', 'after', 'qualityCheck']
+
+const EXECUTION_PHOTO_STAGE_LABELS: Record<ExecutionPhotoStage, string> = {
+  before: 'Before Photo',
+  inProgress: 'In Progress Photo',
+  after: 'After Photo',
+  qualityCheck: 'Quality Check Photo'
+}
+
+const createEmptyExecutionPhotos = (): Record<ExecutionPhotoStage, ExecutionPhotoEvidence | null> => ({
+  before: null,
+  inProgress: null,
+  after: null,
+  qualityCheck: null
+})
+
+const collectExecutionPhotosByStage = (executionLogs: Array<Record<string, unknown>>) => {
+  const grouped: Record<ExecutionPhotoStage, ExecutionPhotoEvidence[]> = {
+    before: [],
+    inProgress: [],
+    after: [],
+    qualityCheck: []
+  }
+
+  executionLogs.forEach((log) => {
+    const photos = log.photos
+    if (!photos || typeof photos !== 'object') return
+
+    EXECUTION_PHOTO_STAGES.forEach((stage) => {
+      const rawPhoto = (photos as Record<string, unknown>)[stage]
+      if (!rawPhoto || typeof rawPhoto !== 'object') return
+
+      const url = String((rawPhoto as Record<string, unknown>).url || '').trim()
+      if (!url) return
+
+      grouped[stage].push({
+        stage,
+        title: String((rawPhoto as Record<string, unknown>).title || EXECUTION_PHOTO_STAGE_LABELS[stage]),
+        description: String((rawPhoto as Record<string, unknown>).description || ''),
+        url,
+        fileName: String((rawPhoto as Record<string, unknown>).fileName || ''),
+        uploadedAt: String((rawPhoto as Record<string, unknown>).uploadedAt || '')
+      })
+    })
+  })
+
+  return grouped
+}
+
+const formatPhotosForExport = (photos: ExecutionPhotoEvidence[]) => {
+  return photos
+    .map((photo) => {
+      const descriptionPart = photo.description ? ` - ${photo.description}` : ''
+      return `${photo.title}${descriptionPart} (${photo.url})`
+    })
+    .join(' | ')
+}
 
 interface Job {
   id: string
@@ -226,8 +296,9 @@ type UserWeeklyAvailability = Record<DayKey, Array<{ start: string; end: string 
 
 const JOB_TAX_RATE = 0.05
 
-export default function JobsPage() {
+function JobsPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [jobs, setJobs] = useState<Job[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [clients, setClients] = useState<ClientLead[]>([])
@@ -250,6 +321,8 @@ export default function JobsPage() {
   const [selectedJobForExecution, setSelectedJobForExecution] = useState<Job | null>(null)
   const [executionChecklist, setExecutionChecklist] = useState<string[]>([])
   const [executionNotes, setExecutionNotes] = useState('')
+  const [executionPhotosByStage, setExecutionPhotosByStage] = useState<Record<ExecutionPhotoStage, ExecutionPhotoEvidence | null>>(createEmptyExecutionPhotos)
+  const [uploadingPhotoStage, setUploadingPhotoStage] = useState<ExecutionPhotoStage | null>(null)
   const [editingJobId, setEditingJobId] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -258,6 +331,7 @@ export default function JobsPage() {
   const [travelBufferMinutes, setTravelBufferMinutes] = useState(30)
   const [lunchBufferMinutes, setLunchBufferMinutes] = useState(30)
   const [selectedTeamMemberToAdd, setSelectedTeamMemberToAdd] = useState('')
+  const [calendarPrefillApplied, setCalendarPrefillApplied] = useState(false)
 
   const [newJobForm, setNewJobForm] = useState<NewJobForm>({
     title: '',
@@ -344,6 +418,36 @@ export default function JobsPage() {
         label: value,
       }))
   }, [jobCategoryValues, newJobForm.title])
+
+  useEffect(() => {
+    if (calendarPrefillApplied) return
+    if (searchParams.get('create') !== '1') return
+
+    const date = searchParams.get('date') || ''
+    const time = normalizeTime24(searchParams.get('time') || '')
+    const memberId = searchParams.get('member') || ''
+
+    const selectedEmployees = memberId && employees.some((employee) => employee.id === memberId)
+      ? [memberId]
+      : []
+
+    setEditingJobId(null)
+    setShowTasksSection(false)
+    setSelectedTeamMemberToAdd('')
+    setNewJobForm((prev) => ({
+      ...prev,
+      scheduledDate: date,
+      scheduledEndDate: date,
+      scheduledTime: time,
+      endTime: prev.endTime || time,
+      selectedEmployees,
+      teamRequired: selectedEmployees.length > 0 ? Math.max(1, selectedEmployees.length) : prev.teamRequired
+    }))
+    setShowNewJobModal(true)
+    setCalendarPrefillApplied(true)
+
+    router.replace('/admin/jobs')
+  }, [calendarPrefillApplied, employees, router, searchParams])
 
   // Fetch jobs, employees, clients, equipment, permits and services from Firebase
   useEffect(() => {
@@ -451,7 +555,7 @@ export default function JobsPage() {
         
         setEmployees(employeesData)
 
-        // Fetch user availability used by Universal Calendar (employee:<id>)
+        // Fetch user availability mapping (employee:<id>)
         const availabilitySnapshot = await getDocs(collection(db, 'user-availability'))
         const availabilityMap: Record<string, UserWeeklyAvailability> = {}
         availabilitySnapshot.docs.forEach((availabilityDoc) => {
@@ -1485,7 +1589,10 @@ export default function JobsPage() {
       return
     }
 
-    const rows = filteredJobs.map(job => ({
+    const rows = filteredJobs.map(job => {
+      const photosByStage = collectExecutionPhotosByStage(job.executionLogs || [])
+
+      return ({
       'Job ID': job.id,
       'Title': job.title,
       'Client': job.client,
@@ -1545,8 +1652,13 @@ export default function JobsPage() {
       'Payment Method': job.paymentMethod || '',
       'Payment Reference': job.paymentReference || '',
       'Payment Link Generated By': job.paymentLinkGeneratedBy || '',
-      'Availability Override': job.availabilityOverride ? 'Yes' : 'No'
-    }))
+      'Availability Override': job.availabilityOverride ? 'Yes' : 'No',
+      'Before Photos': formatPhotosForExport(photosByStage.before),
+      'In Progress Photos': formatPhotosForExport(photosByStage.inProgress),
+      'After Photos': formatPhotosForExport(photosByStage.after),
+      'Quality Check Photos': formatPhotosForExport(photosByStage.qualityCheck)
+    })
+    })
 
     const worksheet = XLSX.utils.json_to_sheet(rows)
     const workbook = XLSX.utils.book_new()
@@ -1873,7 +1985,66 @@ export default function JobsPage() {
     setSelectedJobForExecution(job)
     setExecutionChecklist([])
     setExecutionNotes('')
+    setExecutionPhotosByStage(createEmptyExecutionPhotos())
     setShowExecutionModal(true)
+  }
+
+  const handleExecutionPhotoUpload = async (stage: ExecutionPhotoStage, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !selectedJobForExecution) {
+      event.target.value = ''
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file only.')
+      event.target.value = ''
+      return
+    }
+
+    const defaultTitle = file.name.replace(/\.[^/.]+$/, '') || EXECUTION_PHOTO_STAGE_LABELS[stage]
+    const titleInput = window.prompt(`Enter a title for ${EXECUTION_PHOTO_STAGE_LABELS[stage]}`, defaultTitle)
+    if (titleInput === null) {
+      event.target.value = ''
+      return
+    }
+
+    const descriptionInput = window.prompt(`Enter a description for ${EXECUTION_PHOTO_STAGE_LABELS[stage]} (optional)`, '')
+    if (descriptionInput === null) {
+      event.target.value = ''
+      return
+    }
+
+    try {
+      setUploadingPhotoStage(stage)
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const filePath = `jobs/${selectedJobForExecution.id}/execution-photos/${stage}/${Date.now()}_${safeName}`
+      const storageRef = ref(storage, filePath)
+
+      await uploadBytes(storageRef, file)
+      const downloadURL = await getDownloadURL(storageRef)
+
+      const uploadedPhoto: ExecutionPhotoEvidence = {
+        stage,
+        title: titleInput.trim() || EXECUTION_PHOTO_STAGE_LABELS[stage],
+        description: descriptionInput.trim(),
+        url: downloadURL,
+        fileName: file.name,
+        uploadedAt: new Date().toISOString()
+      }
+
+      setExecutionPhotosByStage((prev) => ({
+        ...prev,
+        [stage]: uploadedPhoto
+      }))
+    } catch (error) {
+      console.error('Error uploading execution photo:', error)
+      alert('Error uploading image. Please try again.')
+    } finally {
+      setUploadingPhotoStage(null)
+      event.target.value = ''
+    }
   }
 
   const handleLogExecution = async () => {
@@ -1890,6 +2061,7 @@ export default function JobsPage() {
         timestamp: new Date().toISOString(),
         checklist: executionChecklist,
         notes: executionNotes,
+        photos: executionPhotosByStage,
         type: 'execution_started'
       }
 
@@ -2947,7 +3119,7 @@ export default function JobsPage() {
                 {newJobForm.scheduledDate && newJobForm.scheduledTime && newJobForm.selectedEmployees.length > 0 && (
                   <div className={`rounded-lg border p-3 text-sm ${employeeScheduleInsights.isTeamSlotValid ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
                     <p className="font-semibold">
-                      Team slot alignment with Universal Calendar: {employeeScheduleInsights.isTeamSlotValid ? 'Aligned' : 'Not aligned'}
+                      Team slot alignment with availability schedule: {employeeScheduleInsights.isTeamSlotValid ? 'Aligned' : 'Not aligned'}
                     </p>
                     {!employeeScheduleInsights.isTeamSlotValid && (
                       <>
@@ -3597,13 +3769,44 @@ export default function JobsPage() {
               {/* Photos */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-900">Documentation</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  {['Before', 'During', 'After'].map(label => (
-                    <div key={label} className="aspect-square bg-gray-100 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500">
-                      <Camera className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-xs text-gray-600">{label}</p>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {EXECUTION_PHOTO_STAGES.map((stage) => {
+                    const stageLabel = EXECUTION_PHOTO_STAGE_LABELS[stage]
+                    const photo = executionPhotosByStage[stage]
+                    const isUploading = uploadingPhotoStage === stage
+
+                    return (
+                      <label
+                        key={stage}
+                        className="aspect-square bg-gray-100 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 p-3 overflow-hidden"
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(event) => handleExecutionPhotoUpload(stage, event)}
+                          disabled={isUploading}
+                        />
+
+                        {photo?.url ? (
+                          <>
+                            <img src={photo.url} alt={photo.title || stageLabel} className="h-24 w-full object-cover rounded-md mb-2" />
+                            <p className="text-xs font-medium text-gray-700 text-center line-clamp-1">{photo.title || stageLabel}</p>
+                            <p className="text-xs text-gray-500 text-center line-clamp-2 mt-1">{photo.description || 'No description'}</p>
+                            <p className="text-[10px] text-blue-600 mt-1">Click to replace</p>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="h-8 w-8 text-gray-400 mb-2" />
+                            <p className="text-xs font-medium text-gray-700 text-center">{stageLabel}</p>
+                            <p className="text-xs text-gray-500 text-center mt-1">
+                              {isUploading ? 'Uploading...' : 'Click to upload'}
+                            </p>
+                          </>
+                        )}
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -3633,5 +3836,13 @@ export default function JobsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-500">Loading jobs...</div>}>
+      <JobsPageContent />
+    </Suspense>
   )
 }

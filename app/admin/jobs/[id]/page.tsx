@@ -79,6 +79,83 @@ import {
 import { db, storage } from '@/lib/firebase'
 import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage'
 
+const EXECUTION_STAGE_ORDER = ['Before', 'In Progress', 'After', 'Quality Check']
+
+const normalizeExecutionStage = (rawStage: string): string => {
+  const stage = String(rawStage || '').trim().toLowerCase()
+  if (stage === 'before') return 'Before'
+  if (stage === 'inprogress' || stage === 'in progress' || stage === 'during') return 'In Progress'
+  if (stage === 'after') return 'After'
+  if (stage === 'qualitycheck' || stage === 'quality check') return 'Quality Check'
+  return rawStage || 'Unknown'
+}
+
+const collectPhotosFromExecutionLogs = (executionLogs: any[] = []) => {
+  const photosFromLogs: any[] = []
+
+  executionLogs.forEach((log: any, index: number) => {
+    if (!log || typeof log !== 'object' || !log.photos || typeof log.photos !== 'object') return
+
+    Object.entries(log.photos).forEach(([stageKey, photo]) => {
+      if (!photo || typeof photo !== 'object') return
+      const photoRecord = photo as Record<string, any>
+      const url = String(photoRecord.url || '').trim()
+      if (!url) return
+
+      photosFromLogs.push({
+        id: String(photoRecord.id || `log-photo-${index}-${stageKey}`),
+        stage: normalizeExecutionStage(stageKey),
+        title: String(photoRecord.title || `${normalizeExecutionStage(stageKey)} Photo`),
+        remarks: String(photoRecord.description || photoRecord.remarks || ''),
+        url,
+        fileName: String(photoRecord.fileName || ''),
+        uploadedAt: String(photoRecord.uploadedAt || log.timestamp || new Date().toISOString()),
+        source: 'execution-log'
+      })
+    })
+  })
+
+  return photosFromLogs
+}
+
+const mergeExecutionPhotos = (directPhotos: any[] = [], executionLogs: any[] = []) => {
+  const normalizedDirectPhotos = (Array.isArray(directPhotos) ? directPhotos : [])
+    .filter((photo) => photo && typeof photo === 'object' && String(photo.url || '').trim())
+    .map((photo: any, index: number) => ({
+      ...photo,
+      id: String(photo.id || `direct-photo-${index}`),
+      stage: normalizeExecutionStage(photo.stage || ''),
+      title: String(photo.title || `${normalizeExecutionStage(photo.stage || '')} Photo`),
+      remarks: String(photo.remarks || photo.description || ''),
+      uploadedAt: String(photo.uploadedAt || new Date().toISOString()),
+      source: 'execution-photos'
+    }))
+
+  const merged = [...normalizedDirectPhotos, ...collectPhotosFromExecutionLogs(executionLogs)]
+  const deduped = new Map<string, any>()
+
+  merged.forEach((photo, index) => {
+    const key = String(photo.url || `${photo.id}-${index}`)
+    if (!deduped.has(key)) {
+      deduped.set(key, photo)
+    }
+  })
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const stageWeight = (stageValue: string) => {
+      const idx = EXECUTION_STAGE_ORDER.indexOf(stageValue)
+      return idx === -1 ? 99 : idx
+    }
+
+    const byStage = stageWeight(a.stage) - stageWeight(b.stage)
+    if (byStage !== 0) return byStage
+
+    const aTime = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0
+    const bTime = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0
+    return bTime - aTime
+  })
+}
+
 export default function JobDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -107,6 +184,11 @@ export default function JobDetailPage() {
   })
   const [executionNotes, setExecutionNotes] = useState('')
   const [executionPhotos, setExecutionPhotos] = useState<any[]>([])
+  const [imageDocStage, setImageDocStage] = useState('Before')
+  const [imageDocTitle, setImageDocTitle] = useState('')
+  const [imageDocRemarks, setImageDocRemarks] = useState('')
+  const [isUploadingExecutionPhotos, setIsUploadingExecutionPhotos] = useState(false)
+  const [executionPhotoUploadProgress, setExecutionPhotoUploadProgress] = useState(0)
   const [jobNotes, setJobNotes] = useState<any[]>([])
  const [showMilestoneForm, setShowMilestoneForm] = useState(false)
 const [milestoneDescription, setMilestoneDescription] = useState('')
@@ -386,6 +468,8 @@ const [milestones, setMilestones] = useState<Array<{
         const jobData = jobDoc.data()
         
         // Convert all timestamps properly
+        const mergedExecutionPhotos = mergeExecutionPhotos(jobData.executionPhotos || [], jobData.executionLogs || [])
+
         const realJob = {
           id: jobDoc.id,
           title: jobData.title || '',
@@ -445,7 +529,7 @@ const [milestones, setMilestones] = useState<Array<{
           preJobChecklist: jobData.preJobChecklist || [],
           executionData: jobData.executionData || {},
           executionNotes: jobData.executionNotes || '',
-          executionPhotos: jobData.executionPhotos || [],
+          executionPhotos: mergedExecutionPhotos,
           // Employee feedback
           employeeFeedback: jobData.employeeFeedback || []
         }
@@ -599,7 +683,7 @@ const [milestones, setMilestones] = useState<Array<{
         // Set execution data from Firebase
         if (jobData.executionData) {
           setExecutionNotes(jobData.executionNotes || '')
-          setExecutionPhotos(jobData.executionPhotos || [])
+          setExecutionPhotos(mergedExecutionPhotos)
         }
 
         const tracking = jobData.executionTracking || {}
@@ -715,6 +799,14 @@ const [milestones, setMilestones] = useState<Array<{
       )
 
       setEmployeeReports(buildEmployeeReportsFromJobData(data))
+
+      const mergedExecutionPhotos = mergeExecutionPhotos(data.executionPhotos || [], data.executionLogs || [])
+      setExecutionPhotos(mergedExecutionPhotos)
+      setJob((prev: any) => ({
+        ...prev,
+        executionLogs: data.executionLogs || prev?.executionLogs || [],
+        executionPhotos: mergedExecutionPhotos
+      }))
 
       if (Array.isArray(data.permitDocuments)) {
         setPermitDocuments(normalizeUploadedDocuments(data.permitDocuments))
@@ -1605,8 +1697,10 @@ const handleDeleteMilestone = async (milestoneId: string) => {
       
       // Add to execution photos
       const newPhoto = {
-        id: executionPhotos.length + 1,
+        id: `photo-${Date.now()}`,
         stage: stage,
+        title: `${stage} Photo`,
+        remarks: '',
         url: downloadURL,
         fileName: fileName,
         uploadedAt: new Date().toISOString()
@@ -1621,6 +1715,84 @@ const handleDeleteMilestone = async (milestoneId: string) => {
     } catch (error) {
       console.error('Error uploading image:', error)
       alert('Error uploading image')
+    }
+  }
+
+  const handleUploadImageDocumentation = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    if (!imageDocTitle.trim()) {
+      alert('Please add a title before uploading image documentation.')
+      e.target.value = ''
+      return
+    }
+
+    if (!imageDocRemarks.trim()) {
+      alert('Please add remarks before uploading image documentation.')
+      e.target.value = ''
+      return
+    }
+
+    const nonImageFile = files.find((file) => !file.type.startsWith('image/'))
+    if (nonImageFile) {
+      alert('Only image files are allowed in image documentation upload.')
+      e.target.value = ''
+      return
+    }
+
+    try {
+      setIsUploadingExecutionPhotos(true)
+      setExecutionPhotoUploadProgress(0)
+
+      const now = new Date()
+      const uploadedPhotos: any[] = []
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const filePath = `job-photos/${jobId}/${now.getTime()}_${i}_${safeName}`
+        const storageRef = ref(storage, filePath)
+
+        await uploadBytes(storageRef, file)
+        const downloadURL = await getDownloadURL(storageRef)
+
+        uploadedPhotos.push({
+          id: `photo-${now.getTime()}-${i}`,
+          stage: imageDocStage,
+          title: imageDocTitle.trim(),
+          remarks: imageDocRemarks.trim(),
+          url: downloadURL,
+          fileName: safeName,
+          originalFileName: file.name,
+          storagePath: filePath,
+          mimeType: file.type,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: 'Current User'
+        })
+
+        setExecutionPhotoUploadProgress(Math.round(((i + 1) / files.length) * 100))
+      }
+
+      const jobRef = doc(db, 'jobs', jobId)
+      await updateDoc(jobRef, {
+        executionPhotos: arrayUnion(...uploadedPhotos),
+        updatedAt: Timestamp.fromDate(new Date())
+      })
+
+      setExecutionPhotos((prev) => [...uploadedPhotos, ...prev])
+      addActivityLog('Image Documentation Uploaded', `${uploadedPhotos.length} image(s) uploaded with title "${imageDocTitle.trim()}"`)
+      setImageDocTitle('')
+      setImageDocRemarks('')
+      alert(`Uploaded ${uploadedPhotos.length} documentation image(s) successfully.`)
+    } catch (error) {
+      console.error('Error uploading image documentation:', error)
+      alert('Error uploading image documentation')
+    } finally {
+      setIsUploadingExecutionPhotos(false)
+      setExecutionPhotoUploadProgress(0)
+      e.target.value = ''
     }
   }
 
@@ -2150,21 +2322,6 @@ const handleDeleteMilestone = async (milestoneId: string) => {
     }
   }
 
-  if (!job) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
-        <p className="text-gray-600">Loading job details...</p>
-      </div>
-    )
-  }
-
-  const progressMetrics = calculateProgressMetrics()
-  const requiredTeamLimit = Math.max(1, Number(job?.teamRequired) || 1)
-  const currentTeamTotal = teamMembers.length + additionalTeamMembers.length
-  const availableTeamSlots = Math.max(0, requiredTeamLimit - currentTeamTotal)
-  const canAddMoreTeamMembers = availableTeamSlots > 0
-
   const timeSignal = useMemo(() => {
     const estimatedMinutes = Number(job?.estimatedDurationMinutes || parseDurationToMinutes(job?.estimatedDuration) || 0)
     const actualMinutes = Number(job?.actualDurationMinutes || parseDurationToMinutes(job?.actualDuration) || (job?.status === 'Completed' ? executionTime.elapsedTotalMinutes : 0) || 0)
@@ -2190,14 +2347,44 @@ const handleDeleteMilestone = async (milestoneId: string) => {
     }
   }, [job, executionTime.elapsedTotalMinutes])
 
+  if (!job) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+        <p className="text-gray-600">Loading job details...</p>
+      </div>
+    )
+  }
+
+  const progressMetrics = calculateProgressMetrics()
+  const requiredTeamLimit = Math.max(1, Number(job?.teamRequired) || 1)
+  const currentTeamTotal = teamMembers.length + additionalTeamMembers.length
+  const availableTeamSlots = Math.max(0, requiredTeamLimit - currentTeamTotal)
+  const canAddMoreTeamMembers = availableTeamSlots > 0
+
   // PDF Download Function
 
   // PDF Download Function - COMPLETE WITH ALL DETAILS
 
   // PDF Download Function - ULTIMATE FIX
-const downloadJobPDF = () => {
+const downloadJobPDF = async () => {
   const doc = new jsPDF();
   let yPosition = 20;
+
+  const loadImageAsDataUrl = async (imageUrl: string): Promise<{ dataUrl: string; format: 'JPEG' | 'PNG' }> => {
+    const response = await fetch(imageUrl)
+    const blob = await response.blob()
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+
+    const format: 'JPEG' | 'PNG' = blob.type === 'image/png' ? 'PNG' : 'JPEG'
+    return { dataUrl, format }
+  }
   
   // ========== HEADER SECTION ==========
   // Company Header
@@ -2737,6 +2924,70 @@ const downloadJobPDF = () => {
     yPosition += 4;
   }
   
+  // ========== IMAGE DOCUMENTATION ==========
+  if (executionPhotos.length > 0) {
+    if (yPosition > 220) {
+      doc.addPage()
+      yPosition = 20
+    }
+
+    doc.setFontSize(14)
+    doc.setTextColor(0, 0, 0)
+    doc.text('11. IMAGE DOCUMENTATION', 14, yPosition)
+    yPosition += 8
+
+    const imageItems = [...executionPhotos]
+      .sort((a: any, b: any) => {
+        const aTime = a?.uploadedAt ? new Date(a.uploadedAt).getTime() : 0
+        const bTime = b?.uploadedAt ? new Date(b.uploadedAt).getTime() : 0
+        return bTime - aTime
+      })
+
+    for (let index = 0; index < imageItems.length; index++) {
+      const photo = imageItems[index]
+
+      if (yPosition > 230) {
+        doc.addPage()
+        yPosition = 20
+      }
+
+      doc.setDrawColor(220, 220, 220)
+      doc.setFillColor(248, 250, 252)
+      doc.rect(14, yPosition, 182, 58, 'FD')
+
+      doc.setFontSize(10)
+      doc.setTextColor(45, 55, 72)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Stage: ${String(photo.stage || 'N/A')}`, 16, yPosition + 6)
+      doc.text(`Title: ${String(photo.title || photo.fileName || 'Untitled')}`, 16, yPosition + 12)
+
+      doc.setFont('helvetica', 'normal')
+      const remarksText = String(photo.remarks || 'No remarks added')
+      const wrappedRemarks = doc.splitTextToSize(`Remarks: ${remarksText}`, 94)
+      doc.text(wrappedRemarks, 16, yPosition + 18)
+
+      const uploadedLabel = photo.uploadedAt ? new Date(photo.uploadedAt).toLocaleString() : 'N/A'
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 100)
+      doc.text(`Uploaded: ${uploadedLabel}`, 16, yPosition + 53)
+
+      if (photo.url) {
+        try {
+          const { dataUrl, format } = await loadImageAsDataUrl(photo.url)
+          doc.addImage(dataUrl, format, 112, yPosition + 4, 80, 48)
+        } catch {
+          doc.setFontSize(9)
+          doc.setTextColor(140, 140, 140)
+          doc.text('Preview unavailable', 130, yPosition + 30)
+        }
+      }
+
+      yPosition += 64
+    }
+
+    yPosition += 4
+  }
+
   // ========== TIMESTAMPS ==========
   // Check if we need a new page
   if (yPosition > 250) {
@@ -3801,7 +4052,79 @@ const downloadJobPDF = () => {
 
                 {/* Image Documentation */}
                 <div className="bg-white border border-gray-300 rounded-2xl p-6">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4">Image Documentation</h4>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                    <h4 className="text-lg font-bold text-gray-900">Image Documentation</h4>
+                    <button
+                      onClick={() => { void downloadJobPDF() }}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                    >
+                      <Download className="w-4 h-4" /> Download Documentation Report
+                    </button>
+                  </div>
+
+                  <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Stage</label>
+                        <select
+                          value={imageDocStage}
+                          onChange={(e) => setImageDocStage(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                        >
+                          {['Before', 'In Progress', 'After', 'Quality Check'].map((stage) => (
+                            <option key={stage} value={stage}>{stage}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={imageDocTitle}
+                          onChange={(e) => setImageDocTitle(e.target.value)}
+                          placeholder="Ex: Kitchen hood before cleaning"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Remarks</label>
+                      <textarea
+                        value={imageDocRemarks}
+                        onChange={(e) => setImageDocRemarks(e.target.value)}
+                        placeholder="Add findings, observations, and actions taken..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 cursor-pointer">
+                        <Plus className="w-4 h-4" />
+                        <span>{isUploadingExecutionPhotos ? 'Uploading...' : 'Upload Multiple Images'}</span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          multiple
+                          onChange={handleUploadImageDocumentation}
+                          disabled={isUploadingExecutionPhotos}
+                        />
+                      </label>
+                      <span className="text-xs text-gray-600">Title and remarks will be applied to all selected images in this upload.</span>
+                    </div>
+                    {isUploadingExecutionPhotos && (
+                      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-2">
+                        <div className="flex items-center justify-between text-xs text-indigo-700 font-medium mb-1">
+                          <span>Uploading image documentation...</span>
+                          <span>{executionPhotoUploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-indigo-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-600 transition-all duration-200" style={{ width: `${executionPhotoUploadProgress}%` }}></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     {['Before', 'In Progress', 'After', 'Quality Check'].map((stage) => (
                       <div key={stage} className="aspect-square">
@@ -3831,9 +4154,15 @@ const downloadJobPDF = () => {
                       executionPhotos.map((photo) => (
                         <div key={photo.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-300">
                           <div className="flex items-center gap-3">
-                            <Camera className="w-4 h-4 text-gray-600" />
+                            {photo.url ? (
+                              <img src={photo.url} alt={photo.title || photo.stage || 'Execution photo'} className="w-14 h-14 rounded-lg object-cover border border-gray-300" />
+                            ) : (
+                              <Camera className="w-4 h-4 text-gray-600" />
+                            )}
                             <div>
-                              <div className="font-medium text-gray-700">{photo.stage}</div>
+                              <div className="font-medium text-gray-700">{photo.title || photo.stage}</div>
+                              <div className="text-xs text-gray-500">Stage: {photo.stage}</div>
+                              <div className="text-xs text-gray-500">Remarks: {photo.remarks || 'No remarks'}</div>
                               <div className="text-xs text-gray-500">
                                 {new Date(photo.uploadedAt).toLocaleString()}
                               </div>
@@ -4778,6 +5107,47 @@ const downloadJobPDF = () => {
                     </div>
                   </div>
                 )}
+
+                {executionPhotos.length > 0 && (
+                  <div className="mt-6">
+                    <div className="text-sm font-bold text-gray-700 mb-3">Execution Photo Evidence</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {executionPhotos.map((photo) => (
+                        <div key={photo.id} className="bg-white border border-gray-300 rounded-xl p-3 flex gap-3">
+                          {photo.url ? (
+                            <img
+                              src={photo.url}
+                              alt={photo.title || photo.stage || 'Execution photo'}
+                              className="w-20 h-20 rounded-lg object-cover border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                              No Image
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{photo.title || `${photo.stage} Photo`}</p>
+                            <p className="text-xs text-gray-600 mt-1">Stage: {photo.stage || 'N/A'}</p>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{photo.remarks || 'No remarks'}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {photo.uploadedAt ? new Date(photo.uploadedAt).toLocaleString() : 'Unknown upload time'}
+                            </p>
+                            {photo.url && (
+                              <a
+                                href={photo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-semibold text-blue-600 hover:text-blue-800 mt-1 inline-block"
+                              >
+                                Open Image
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Employee Reports List */}
@@ -5384,7 +5754,7 @@ const downloadJobPDF = () => {
                 Print Report
               </button>
               <button
-                onClick={() => downloadJobPDF()}
+                onClick={() => { void downloadJobPDF() }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all flex items-center gap-2"
               >
                 <FileText className="w-4 h-4" />
