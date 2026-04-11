@@ -245,6 +245,7 @@ interface ClientLead {
   company: string
   email: string
   phone: string
+  location: string
   type: 'client' | 'lead'
   status?: string
 }
@@ -294,7 +295,7 @@ type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'satu
 
 type UserWeeklyAvailability = Record<DayKey, Array<{ start: string; end: string }>>
 
-const JOB_TAX_RATE = 0.05
+const DEFAULT_TAX_RATE = 5
 
 function JobsPageContent() {
   const router = useRouter()
@@ -305,6 +306,7 @@ function JobsPageContent() {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [permits, setPermits] = useState<PermitLicense[]>([])
   const [services, setServices] = useState<ServiceItem[]>([])
+  const [taxRate, setTaxRate] = useState(DEFAULT_TAX_RATE)
   const [userAvailability, setUserAvailability] = useState<Record<string, UserWeeklyAvailability>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [showSearchBar, setShowSearchBar] = useState(false)
@@ -453,6 +455,22 @@ function JobsPageContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        try {
+          const taxDoc = await getDoc(doc(db, 'tax', 'default'))
+          if (taxDoc.exists()) {
+            const taxData = taxDoc.data() as { rate?: number }
+            const resolvedRate = typeof taxData.rate === 'number' && Number.isFinite(taxData.rate)
+              ? taxData.rate
+              : DEFAULT_TAX_RATE
+            setTaxRate(resolvedRate)
+          } else {
+            setTaxRate(DEFAULT_TAX_RATE)
+          }
+        } catch (error) {
+          console.error('Error fetching tax rate:', error)
+          setTaxRate(DEFAULT_TAX_RATE)
+        }
+
         // Fetch jobs
         const jobsQuery = query(collection(db, 'jobs'))
         const jobsSnapshot = await getDocs(jobsQuery)
@@ -581,6 +599,7 @@ function JobsPageContent() {
             company: data.company || '',
             email: data.email || '',
             phone: data.phone || '',
+            location: data.address || data.location || '',
             type: 'client',
             status: data.status || 'Active'
           })
@@ -601,6 +620,7 @@ function JobsPageContent() {
             company: data.company || '',
             email: data.email || '',
             phone: data.phone || '',
+            location: data.address || data.location || '',
             type: 'lead',
             status: data.status || 'Won'
           })
@@ -1224,11 +1244,6 @@ function JobsPageContent() {
       return
     }
 
-    if (!newJobForm.jobResponsibleBy) {
-      alert('Please select the responsible person for this job')
-      return
-    }
-
     if (newJobForm.quotationRequired && newJobForm.quotationStatus !== 'Approved' && !newJobForm.allowValidationOverride) {
       alert('Quotation must be approved before scheduling this job. Enable override to proceed anyway.')
       return
@@ -1299,8 +1314,12 @@ function JobsPageContent() {
         .filter(p => newJobForm.selectedPermits.includes(p.id))
         .map(p => p.name)
 
+      const effectiveJobResponsibleBy = newJobForm.jobResponsibleBy || newJobForm.jobCreatedBy
+
       const enteredBudget = Math.max(0, Number(newJobForm.budget) || 0)
-      const taxAmount = Number((enteredBudget * JOB_TAX_RATE).toFixed(2))
+      const resolvedTaxRate = Number.isFinite(taxRate) ? taxRate : DEFAULT_TAX_RATE
+      const taxRateDecimal = resolvedTaxRate / 100
+      const taxAmount = Number((enteredBudget * taxRateDecimal).toFixed(2))
       const budgetWithTax = Number((enteredBudget + taxAmount).toFixed(2))
       const existingJob = editingJobId ? jobs.find((job) => job.id === editingJobId) : null
 
@@ -1317,7 +1336,7 @@ function JobsPageContent() {
         teamRequired: newJobForm.teamRequired,
         budget: editingJobId ? enteredBudget : budgetWithTax,
         baseBudget: enteredBudget,
-        taxRate: JOB_TAX_RATE,
+        taxRate: taxRateDecimal,
         taxAmount,
         description: newJobForm.description,
         riskLevel: newJobForm.riskLevel,
@@ -1342,7 +1361,7 @@ function JobsPageContent() {
         assignedTo: selectedEmployeesDetails.map(emp => emp.name),
         assignedEmployees: selectedEmployeesDetails,
         jobCreatedBy: newJobForm.jobCreatedBy, // 👈 NEW FIELD SAVED TO FIREBASE
-        jobResponsibleBy: newJobForm.jobResponsibleBy || '',
+        jobResponsibleBy: effectiveJobResponsibleBy,
         quotationRequired: newJobForm.quotationRequired,
         quotationStatus: newJobForm.quotationRequired ? newJobForm.quotationStatus : 'Not Required',
         surveyRequired: newJobForm.surveyRequired,
@@ -1454,6 +1473,7 @@ function JobsPageContent() {
     }
   }, [
     newJobForm,
+    taxRate,
     jobs,
     editingJobId,
     employees,
@@ -1479,10 +1499,12 @@ function JobsPageContent() {
 
   const budgetTaxPreview = useMemo(() => {
     const base = Math.max(0, Number(newJobForm.budget) || 0)
-    const tax = Number((base * JOB_TAX_RATE).toFixed(2))
+    const resolvedTaxRate = Number.isFinite(taxRate) ? taxRate : DEFAULT_TAX_RATE
+    const taxRateDecimal = resolvedTaxRate / 100
+    const tax = Number((base * taxRateDecimal).toFixed(2))
     const total = Number((base + tax).toFixed(2))
-    return { base, tax, total }
-  }, [newJobForm.budget])
+    return { base, tax, total, rate: resolvedTaxRate }
+  }, [newJobForm.budget, taxRate])
 
   const getLocalDateKey = (date: Date) => {
     const year = date.getFullYear()
@@ -1631,8 +1653,8 @@ function JobsPageContent() {
       'Assigned Employees': JSON.stringify(job.assignedEmployees || []),
       'Job Created By ID': job.jobCreatedBy || '',
       'Job Created By Name': job.jobCreatedBy ? getCreatorName(job.jobCreatedBy) : '',
-      'Job Responsible By ID': job.jobResponsibleBy || '',
-      'Job Responsible By Name': job.jobResponsibleBy ? getCreatorName(job.jobResponsibleBy) : '',
+      'Job Responsible By ID': job.jobResponsibleBy || job.jobCreatedBy || '',
+      'Job Responsible By Name': (job.jobResponsibleBy || job.jobCreatedBy) ? getCreatorName(job.jobResponsibleBy || job.jobCreatedBy || '') : '',
       'Reminder Enabled': job.reminderEnabled ? 'Yes' : 'No',
       'Reminder Date': job.reminderDate || '',
       'Reminder Sent': job.reminderSent ? 'Yes' : 'No',
@@ -2412,7 +2434,7 @@ function JobsPageContent() {
                           <span className="font-medium">Created by:</span> {getCreatorName(job.jobCreatedBy)}
                         </div>
                         <div>
-                          <span className="font-medium">Responsible:</span> {job.jobResponsibleBy ? getCreatorName(job.jobResponsibleBy) : 'N/A'}
+                          <span className="font-medium">Responsible:</span> {job.jobResponsibleBy || job.jobCreatedBy ? getCreatorName(job.jobResponsibleBy || job.jobCreatedBy || '') : 'N/A'}
                         </div>
                         {job.status === 'Completed' && (
                           <div>
@@ -2628,13 +2650,14 @@ function JobsPageContent() {
                         setNewJobForm({
                           ...newJobForm,
                           clientId: selected?.id || null,
-                          client: selected?.name || ''
+                          client: selected?.name || '',
+                          location: selected?.location || ''
                         })
                       }}
                       options={clients.map((client) => ({
                         value: client.id,
                         label: `${client.name} - ${client.company} (${client.type === 'client' ? 'Client' : `${client.status || 'Lead'} Lead`})`,
-                        keywords: [client.name, client.company, client.email, client.phone, client.status || '', client.type]
+                        keywords: [client.name, client.company, client.email, client.phone, client.status || '', client.type, client.location]
                       }))}
                       placeholder="Search and select client or lead..."
                       inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -2694,7 +2717,7 @@ function JobsPageContent() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Job Responsible Person *
+                    Job Responsible Person (Optional)
                   </label>
                   <SearchSuggestSelect
                     value={newJobForm.jobResponsibleBy}
@@ -2704,20 +2727,19 @@ function JobsPageContent() {
                     inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    This person owns job execution accountability.
+                    If left empty, the job creator will be assigned as responsible by default.
                   </p>
                 </div>
 
-                {newJobForm.jobResponsibleBy && (
+                {(newJobForm.jobResponsibleBy || newJobForm.jobCreatedBy) && (
                   <div className="mt-2 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
                     <p className="text-sm text-gray-700">
                       <span className="font-semibold">Responsible Person:</span>{' '}
-                      {employees.find(e => e.id === newJobForm.jobResponsibleBy)?.name || ''}
+                      {employees.find(e => e.id === (newJobForm.jobResponsibleBy || newJobForm.jobCreatedBy))?.name || ''}
                     </p>
                   </div>
                 )}
               </div>
-
               {/* Team Assignment Section */}
               <div className="space-y-4 border border-gray-200 rounded-xl bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between">
@@ -2729,7 +2751,6 @@ function JobsPageContent() {
                     Selected: {newJobForm.selectedEmployees.length} of {newJobForm.teamRequired}
                   </span>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Team Size Required *</label>
@@ -3182,7 +3203,7 @@ function JobsPageContent() {
                   />
                   {!editingJobId && budgetTaxPreview.base > 0 && (
                     <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-2 text-xs text-blue-800">
-                      <p>Auto Tax (5%): AED {budgetTaxPreview.tax.toLocaleString()}</p>
+                      <p>Auto Tax ({budgetTaxPreview.rate}%): AED {budgetTaxPreview.tax.toLocaleString()}</p>
                       <p className="font-bold">Total with tax: AED {budgetTaxPreview.total.toLocaleString()}</p>
                     </div>
                   )}
